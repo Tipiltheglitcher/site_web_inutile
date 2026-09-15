@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Fessée Légendaire</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .game { max-width: 1000px; margin: 0 auto; }
+  .stage {
+    position: relative; height: 400px; border-radius: 24px; overflow: hidden; user-select: none;
+    background: linear-gradient(#bfe6ff 0%, #e8f6ff 62%, #8fcf6f 62%, #6fb552 100%);
+    display: flex; align-items: flex-end; justify-content: center; gap: 0; padding-bottom: 20px;
+  }
+  html[data-theme="dark"] .stage { background: linear-gradient(#1b2340 0%, #2a3358 62%, #2e5a28 62%, #22461d 100%); }
+  .stage.shake { animation: shake .3s linear; }
+  @keyframes shake { 20% { transform: translate(-7px, 3px); } 40% { transform: translate(6px, -4px); } 60% { transform: translate(-4px, -2px); } 80% { transform: translate(4px, 4px); } }
+  .char { position: relative; width: 220px; text-align: center; }
+  .char svg { width: 220px; height: 320px; overflow: visible; display: block; }
+  .tag { position: absolute; left: 50%; top: -2px; transform: translateX(-50%); background: #1d1d1f; color: #fff; padding: 3px 12px; border-radius: 99px; font-weight: 800; font-size: .9rem; white-space: nowrap; max-width: 210px; overflow: hidden; text-overflow: ellipsis; z-index: 2; }
+  #att { z-index: 3; margin-right: -40px; transition: transform .15s; }
+  #att.lunge { transform: translateX(18px); }
+  #svgB.hit { animation: ouch .45s ease-out; }
+  @keyframes ouch { 0% { transform: translate(0,0) rotate(0); } 25% { transform: translate(28px,-50px) rotate(12deg); } 55% { transform: translate(14px,-18px) rotate(-6deg); } 100% { transform: translate(0,0) rotate(0); } }
+  .arm { transform-box: view-box; transform-origin: 150px 150px; transform: rotate(-12deg); }
+  #att.swing .arm { animation: swing .3s ease-in; }
+  @keyframes swing { 0% { transform: rotate(-12deg); } 40% { transform: rotate(150deg); } 72% { transform: rotate(-95deg); } 100% { transform: rotate(-12deg); } }
+  .hurt, svg.ouch .normal { display: none; }
+  svg.ouch .hurt { display: inline; }
+  .hat { transform-box: view-box; transform-origin: 110px 50px; }
+  .hat.fly { animation: hatfly 1.4s ease-in forwards; }
+  @keyframes hatfly { 0% { transform: translate(0,0) rotate(0); } 60% { transform: translate(120px,-260px) rotate(540deg); opacity: 1; } 100% { transform: translate(160px,-400px) rotate(720deg); opacity: 0; } }
+  .fx { position: absolute; pointer-events: none; font-weight: 900; z-index: 10; white-space: nowrap; }
+  .paf { font-size: 3rem; color: #ffd43b; -webkit-text-stroke: 3px #e03131; paint-order: stroke fill; animation: paf .7s ease-out forwards; font-family: Impact, "Arial Black", sans-serif; letter-spacing: 1px; }
+  @keyframes paf { 0% { transform: scale(.2) rotate(var(--r)); opacity: 1; } 30% { transform: scale(1.25) rotate(var(--r)); } 100% { transform: scale(1) translateY(-40px) rotate(var(--r)); opacity: 0; } }
+  .star { font-size: 1.8rem; animation: star .8s ease-out forwards; }
+  @keyframes star { to { transform: translate(var(--dx), var(--dy)) rotate(300deg) scale(.4); opacity: 0; } }
+  .speech { position: absolute; background: #fff; color: #1d1d1f; border: 3px solid #1d1d1f; border-radius: 16px; padding: 6px 12px; font-weight: 800; z-index: 11; max-width: 240px; white-space: normal; text-align: center; animation: pop .25s ease-out; }
+  @keyframes pop { from { transform: scale(.3); } to { transform: scale(1); } }
+  .hud { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .counter { font-size: 2.2rem; font-weight: 900; }
+  .counter small { font-size: 1rem; color: var(--muted); font-weight: 600; }
+  .combo { font-weight: 900; color: var(--accent); min-width: 110px; font-size: 1.3rem; }
+  #spank { font-size: 1.5rem; padding: 18px 40px; background: var(--accent); color: #fff; box-shadow: 0 6px 0 #b93a1d; border-radius: 18px; }
+  #spank:hover { background: #ff6d4d; }
+  #spank:active { transform: translateY(4px); box-shadow: 0 2px 0 #b93a1d; }
+  .comment { text-align: center; font-weight: 700; min-height: 1.6em; margin-bottom: 18px; }
+  .editors { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .tag { font-size: .75rem; max-width: 150px; } #tagB { top: 26px; } .field { grid-template-columns: 88px 1fr auto; } .editors { grid-template-columns: 1fr; } .char, .char svg { width: 160px; } .char svg { height: 233px; } .stage { height: 300px; } #att { margin-right: -30px; } }
+  .editor h3 { margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; }
+  .field { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; align-items: center; margin-bottom: 9px; }
+  .field label { font-weight: 600; font-size: .92rem; }
+  .field select, .field input[type=text] { font: inherit; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); min-width: 0; width: 100%; }
+  .field input[type=color] { width: 42px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; }
+  .field .none { width: 42px; }
+  .presetbtns { display: flex; gap: 8px; margin: 0 0 14px; flex-wrap: wrap; }
+  .btn.small { padding: 7px 12px; font-size: .88rem; border-radius: 10px; }
+  .field.preset select { font-weight: 700; }
+  .bar2 { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🍑</span></div>
+<div class="wrap game">
+  <h1 class="center">La Fessée Légendaire</h1>
+  <p class="sub center">Crée deux personnages, habille-les comme tu veux, choisis l'arme… et que la fessée commence. (Aucun personnage n'a été blessé. C'est du dessin animé.)</p>
+
+  <div class="stage" id="stage">
+    <div class="char" id="att"><div class="tag" id="tagA"></div><div id="svgA"></div></div>
+    <div class="char" id="vic"><div class="tag" id="tagB"></div><div id="svgB"></div></div>
+  </div>
+
+  <div class="hud">
+    <div class="counter"><span id="count">0</span> <small>fessées</small></div>
+    <button class="btn" id="spank">🖐️ FESSÉE !</button>
+    <div class="combo" id="combo"></div>
+  </div>
+  <div class="comment" id="comment">Clique sur le bouton (ou appuie sur Espace).</div>
+
+  <div class="bar2">
+    <button class="btn alt" id="swap">🔄 Inverser les rôles</button>
+    <button class="btn alt" id="rnd">🎲 Tout au hasard</button>
+    <button class="btn alt" id="reset">🧹 Remettre le compteur à zéro</button>
+  </div>
+
+  <div class="editors">
+    <div class="panel editor" id="edA"></div>
+    <div class="panel editor" id="edB"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var OPTIONS = {
+    hair: [["court", "Court"], ["long", "Long"], ["crete", "Crête punk"], ["afro", "Afro"], ["chauve", "Chauve"]],
+    hat: [["aucun", "Aucun"], ["casquette", "Casquette"], ["haut", "Haut-de-forme"], ["couronne", "Couronne"], ["fete", "Chapeau de fête"], ["bonnet", "Bonnet"], ["viking", "Casque viking"]],
+    top: [["tshirt", "T-shirt"], ["chemise", "Chemise + cravate"], ["raye", "Pull rayé"], ["costume", "Costume"], ["hawai", "Chemise hawaïenne"], ["super", "Cape de super-héros"]],
+    bottom: [["pantalon", "Pantalon"], ["short", "Short"], ["jupe", "Jupe"], ["pyjama", "Pyjama à pois"], ["kilt", "Kilt écossais"]],
+    shoes: [["baskets", "Baskets"], ["bottes", "Bottes"], ["tongs", "Tongs"], ["clown", "Chaussures de clown"]],
+    acc: [["aucun", "Aucun"], ["lunettes", "Lunettes"], ["soleil", "Lunettes de soleil"], ["moustache", "Moustache"], ["noeud", "Nœud papillon"], ["nez", "Nez de clown"], ["monocle", "Monocle"]],
+    weapon: [["main", "Main géante 🖐️"], ["tapette", "Tapette à mouches"], ["poisson", "Poisson 🐟"], ["baguette", "Baguette 🥖"], ["chaussette", "Chaussette mouillée 🧦"], ["plumeau", "Plumeau 🪶"]]
+  };
+  var SKINS = ["#ffdbac", "#f1c27d", "#e0ac69", "#c68642", "#8d5524", "#7ed957", "#8ab6ff"];
+  var NAMES = ["Bernard le Magnifique", "Tatie Josiane", "Kevin du 3ème", "Le Baron Moustache", "Mamie Turbo", "Capitaine Flan", "Jean-Michel Patate", "Duchesse Crumble", "Tonton Raclette", "Professeur Pouet"];
+
+  var chars = [
+    { name: "Capitaine Flan", skin: "#ffdbac", hair: "court", hairC: "#6b3e1f", hat: "casquette", hatC: "#e03131", top: "hawai", topC: "#20c997", bottom: "short", bottomC: "#1c7ed6", shoes: "baskets", acc: "soleil", weapon: "main" },
+    { name: "Tonton Raclette", skin: "#f1c27d", hair: "chauve", hairC: "#222222", hat: "haut", hatC: "#222222", top: "costume", topC: "#495057", bottom: "pyjama", bottomC: "#f783ac", shoes: "clown", acc: "moustache", weapon: "poisson" }
+  ];
+  var PRESETS = [
+    { name: "Capitaine Barbe-Molle", skin: "#e0ac69", hair: "long", hairC: "#222222", hat: "haut", hatC: "#1d1d1f", top: "raye", topC: "#c92a2a", bottom: "pantalon", bottomC: "#343a40", shoes: "bottes", acc: "monocle", weapon: "poisson" },
+    { name: "Sa Majesté Gratin", skin: "#ffdbac", hair: "court", hairC: "#f1f3f5", hat: "couronne", hatC: "#ffd43b", top: "costume", topC: "#7048e8", bottom: "pantalon", bottomC: "#5f3dc4", shoes: "bottes", acc: "moustache", weapon: "baguette" },
+    { name: "Pouetpouet le Clown", skin: "#ffdbac", hair: "afro", hairC: "#ff6b00", hat: "fete", hatC: "#37b24d", top: "raye", topC: "#1c7ed6", bottom: "pyjama", bottomC: "#f03e3e", shoes: "clown", acc: "nez", weapon: "tapette" },
+    { name: "Super Raclette", skin: "#f1c27d", hair: "crete", hairC: "#1c7ed6", hat: "aucun", hatC: "#000000", top: "super", topC: "#1971c2", bottom: "short", bottomC: "#e03131", shoes: "bottes", acc: "soleil", weapon: "main" },
+    { name: "Monsieur Excel", skin: "#c68642", hair: "court", hairC: "#343a40", hat: "aucun", hatC: "#000000", top: "chemise", topC: "#e7f5ff", bottom: "pantalon", bottomC: "#212529", shoes: "baskets", acc: "lunettes", weapon: "tapette" },
+    { name: "Mamie Punk", skin: "#ffdbac", hair: "crete", hairC: "#e64980", hat: "aucun", hatC: "#000000", top: "tshirt", topC: "#212529", bottom: "jupe", bottomC: "#862e9c", shoes: "bottes", acc: "soleil", weapon: "chaussette" },
+    { name: "Zorg l'Alien", skin: "#7ed957", hair: "chauve", hairC: "#000000", hat: "fete", hatC: "#ae3ec9", top: "super", topC: "#2b2d42", bottom: "short", bottomC: "#6c63ff", shoes: "clown", acc: "monocle", weapon: "plumeau" },
+    { name: "Hamish des Highlands", skin: "#ffdbac", hair: "court", hairC: "#d9480f", hat: "bonnet", hatC: "#2f9e44", top: "raye", topC: "#2b8a3e", bottom: "kilt", bottomC: "#c92a2a", shoes: "bottes", acc: "moustache", weapon: "baguette" },
+    { name: "Le Touriste Perdu", skin: "#ffc9c9", hair: "chauve", hairC: "#000000", hat: "casquette", hatC: "#fab005", top: "hawai", topC: "#15aabf", bottom: "short", bottomC: "#f8f9fa", shoes: "tongs", acc: "soleil", weapon: "poisson" },
+    { name: "Björn le Viking", skin: "#ffdbac", hair: "long", hairC: "#f59f00", hat: "viking", hatC: "#adb5bd", top: "tshirt", topC: "#8d5524", bottom: "kilt", bottomC: "#495057", shoes: "bottes", acc: "moustache", weapon: "main" },
+    { name: "Le Schtroumpf Grognon", skin: "#8ab6ff", hair: "chauve", hairC: "#000000", hat: "bonnet", hatC: "#f8f9fa", top: "tshirt", topC: "#f8f9fa", bottom: "pantalon", bottomC: "#f8f9fa", shoes: "baskets", acc: "aucun", weapon: "plumeau" }
+  ];
+  var KEYS = ["name", "skin", "hair", "hairC", "hat", "hatC", "top", "topC", "bottom", "bottomC", "shoes", "acc", "weapon"];
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem("fessee-presets") || "[]"); if (!Array.isArray(saved)) saved = []; } catch (e) { saved = []; }
+  function applyPreset(i, p) { KEYS.forEach(function (k) { if (p[k] != null) chars[i][k] = p[k]; }); }
+
+  var attacker = 0, count = 0, combo = 0, lastHit = 0, hatGone = false, audio = null;
+  try { count = +localStorage.getItem("fessee-count") || 0; } catch (e) {}
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (m) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]; }); }
+  function darker(hex, k) {
+    var n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    k = k || 0.75;
+    return "rgb(" + Math.round(r * k) + "," + Math.round(g * k) + "," + Math.round(b * k) + ")";
+  }
+
+  // ---------- Character drawing (viewBox 220x320) ----------
+  function weaponSVG(w) {
+    // hand is at about (150, 232) when arm hangs down
+    switch (w) {
+      case "tapette": return '<g transform="translate(150 232)"><rect x="-3" y="0" width="6" height="55" fill="#8d5524"/><rect x="-22" y="52" width="44" height="40" rx="6" fill="#ff922b" stroke="#1d1d1f" stroke-width="3"/><path d="M-14 60 v24 M-5 60 v24 M4 60 v24 M13 60 v24" stroke="#1d1d1f" stroke-width="2"/></g>';
+      case "poisson": return '<g transform="translate(150 232) rotate(90)"><ellipse cx="38" cy="0" rx="38" ry="16" fill="#74c0fc" stroke="#1d1d1f" stroke-width="3"/><path d="M74 0 l22 -16 v32z" fill="#74c0fc" stroke="#1d1d1f" stroke-width="3"/><circle cx="16" cy="-4" r="3.5" fill="#1d1d1f"/></g>';
+      case "baguette": return '<g transform="translate(150 232) rotate(80)"><rect x="-6" y="-11" width="110" height="22" rx="11" fill="#e9a84f" stroke="#1d1d1f" stroke-width="3"/><path d="M15 -6 l10 12 M40 -6 l10 12 M65 -6 l10 12" stroke="#b8741a" stroke-width="3"/></g>';
+      case "chaussette": return '<g transform="translate(150 232)"><path d="M-10 0 h22 v50 q0 10 10 16 q12 10 0 22 q-10 8 -24 -2 l-12 -12 q-6 -6 -6 -16z" fill="#fff" stroke="#1d1d1f" stroke-width="3"/><rect x="-11" y="10" width="24" height="6" fill="#e03131"/><circle cx="20" cy="95" r="3" fill="#74c0fc"/><circle cx="6" cy="102" r="2.5" fill="#74c0fc"/></g>';
+      case "plumeau": return '<g transform="translate(150 232)"><rect x="-3" y="0" width="6" height="45" fill="#6b3e1f"/><g fill="#f783ac" stroke="#1d1d1f" stroke-width="2"><ellipse cx="-12" cy="62" rx="9" ry="22" transform="rotate(20 -12 62)"/><ellipse cx="12" cy="62" rx="9" ry="22" transform="rotate(-20 12 62)"/><ellipse cx="0" cy="68" rx="10" ry="24"/></g></g>';
+      default: return '<g transform="translate(158 232)"><ellipse cx="0" cy="10" rx="24" ry="24" fill="SKIN" stroke="#1d1d1f" stroke-width="3"/><path d="M-17 18 v22 M-6 22 v30 M6 22 v30 M17 18 v24 M-22 0 l-14 12" stroke="#1d1d1f" stroke-width="11" stroke-linecap="round" fill="none"/><path d="M-17 18 v22 M-6 22 v30 M6 22 v30 M17 18 v24 M-22 0 l-14 12" stroke="SKIN" stroke-width="5.5" stroke-linecap="round" fill="none"/><ellipse cx="0" cy="8" rx="20" ry="18" fill="SKIN"/></g>';
+    }
+  }
+
+  function draw(c, isAtt) {
+    var S = c.skin, sk = 'stroke="#1d1d1f" stroke-width="3" stroke-linejoin="round"';
+    var o = "";
+    o += '<ellipse cx="110" cy="312" rx="70" ry="9" fill="#00000030"/>';
+    // legs
+    o += '<rect x="80" y="220" width="22" height="70" fill="' + S + '" ' + sk + '/><rect x="118" y="220" width="22" height="70" fill="' + S + '" ' + sk + "/>";
+    // bottoms
+    var B = c.bottomC;
+    if (c.bottom === "pantalon") o += '<path d="M72 205 h76 l-4 85 h-28 l-6 -55 l-6 55 h-28z" fill="' + B + '" ' + sk + "/>";
+    if (c.bottom === "short") o += '<path d="M72 205 h76 l-2 42 h-30 l-6 -18 l-6 18 h-30z" fill="' + B + '" ' + sk + "/>";
+    if (c.bottom === "jupe") o += '<path d="M76 205 h68 l18 55 h-104z" fill="' + B + '" ' + sk + "/>";
+    if (c.bottom === "kilt") o += '<path d="M74 205 h72 l6 50 h-84z" fill="' + B + '" ' + sk + '/><path d="M74 222 h72 M72 240 h76 M92 205 v50 M110 205 v50 M128 205 v50" stroke="#ffffff99" stroke-width="3"/>';
+    if (c.bottom === "pyjama") o += '<path d="M72 205 h76 l-4 85 h-28 l-6 -55 l-6 55 h-28z" fill="' + B + '" ' + sk + '/><g fill="#fff"><circle cx="85" cy="225" r="4"/><circle cx="130" cy="220" r="4"/><circle cx="95" cy="260" r="4"/><circle cx="128" cy="255" r="4"/><circle cx="110" cy="215" r="4"/><circle cx="84" cy="280" r="4"/><circle cx="134" cy="282" r="4"/></g>';
+    // shoes
+    var sh = { baskets: ["#f8f9fa", 30, 12], bottes: ["#6b3e1f", 30, 26], tongs: [S, 30, 6], clown: ["#e03131", 50, 16] }[c.shoes];
+    o += '<rect x="' + (91 - sh[1]) + '" y="' + (298 - sh[2]) + '" width="' + (sh[1] + 12) + '" height="' + (sh[2] + 8) + '" rx="8" fill="' + sh[0] + '" ' + sk + "/>";
+    o += '<rect x="' + (117) + '" y="' + (298 - sh[2]) + '" width="' + (sh[1] + 12) + '" height="' + (sh[2] + 8) + '" rx="8" fill="' + sh[0] + '" ' + sk + "/>";
+    if (c.shoes === "tongs") o += '<path d="M70 295 l8 -6 l8 6 M126 295 l8 -6 l8 6" stroke="#e03131" stroke-width="3" fill="none"/>';
+    // cape behind body
+    if (c.top === "super") o += '<path d="M78 125 h64 l24 110 h-112z" fill="#e03131" ' + sk + "/>";
+    // torso
+    var T = c.topC;
+    o += '<rect x="70" y="120" width="80" height="95" rx="18" fill="' + T + '" ' + sk + "/>";
+    if (c.top === "chemise") o += '<path d="M96 120 l14 16 l14 -16" fill="#fff" ' + sk + '/><path d="M110 136 l-7 10 l7 50 l7 -50z" fill="#e03131" ' + sk + "/>";
+    if (c.top === "raye") o += '<path d="M72 140 h76 M71 160 h78 M71 180 h78 M72 200 h76" stroke="#ffffffbb" stroke-width="8"/>';
+    if (c.top === "costume") o += '<path d="M110 122 v92" stroke="#1d1d1f" stroke-width="3"/><path d="M96 120 l14 30 l14 -30" fill="#fff" ' + sk + '/><path d="M104 124 l6 6 l6 -6 l-6 40z" fill="#1d1d1f"/><circle cx="118" cy="175" r="3" fill="#1d1d1f"/><circle cx="118" cy="195" r="3" fill="#1d1d1f"/>';
+    if (c.top === "hawai") o += '<g fill="#ffd43b" stroke="#1d1d1f" stroke-width="1.5"><circle cx="88" cy="145" r="7"/><circle cx="128" cy="160" r="7"/><circle cx="98" cy="190" r="7"/><circle cx="135" cy="200" r="6"/></g><g fill="#e64980"><circle cx="88" cy="145" r="2.5"/><circle cx="128" cy="160" r="2.5"/><circle cx="98" cy="190" r="2.5"/></g>';
+    if (c.top === "super") o += '<path d="M96 150 h28 l-14 24z" fill="#ffd43b" ' + sk + "/>";
+    if (c.top === "tshirt") o += '<path d="M98 120 q12 12 24 0" fill="none" ' + sk + "/>";
+    // left arm (static)
+    o += '<rect x="52" y="128" width="20" height="92" rx="10" fill="' + T + '" ' + sk + '/><circle cx="62" cy="228" r="11" fill="' + S + '" ' + sk + "/>";
+    // right arm (animated for the attacker)
+    o += '<g class="arm"><rect x="148" y="128" width="20" height="92" rx="10" fill="' + T + '" ' + sk + '/><circle cx="158" cy="228" r="11" fill="' + S + '" ' + sk + "/>";
+    if (isAtt) o += weaponSVG(c.weapon).replace(/SKIN/g, S);
+    o += "</g>";
+    if (c.acc === "noeud") o += '<path d="M110 124 l-18 -9 v20z M110 124 l18 -9 v20z" fill="#e03131" ' + sk + '/><circle cx="110" cy="124" r="5" fill="#c92a2a" ' + sk + "/>";
+    // neck + head
+    o += '<rect x="100" y="104" width="20" height="20" fill="' + S + '"/>';
+    var H = c.hairC;
+    if (c.hair === "long") o += '<path d="M58 60 q52 -70 104 0 v70 h-104z" fill="' + H + '" ' + sk + "/>";
+    if (c.hair === "afro") o += '<circle cx="110" cy="52" r="58" fill="' + H + '" ' + sk + "/>";
+    o += '<circle cx="110" cy="68" r="44" fill="' + S + '" ' + sk + "/>";
+    if (c.hair === "court") o += '<path d="M66 64 q4 -46 44 -46 q40 0 44 46 q-10 -22 -44 -24 q-34 2 -44 24z" fill="' + H + '" ' + sk + "/>";
+    if (c.hair === "long") o += '<path d="M66 62 q6 -42 44 -42 q38 0 44 42 q-24 -18 -44 -18 q-20 0 -44 18z" fill="' + H + '" ' + sk + "/>";
+    if (c.hair === "crete") o += '<path d="M96 30 l6 -30 l8 22 l8 -26 l6 30 l6 -18 l2 26z" fill="' + H + '" ' + sk + "/>";
+    if (c.hair === "afro") o += '<path d="M68 55 q42 -30 84 0" fill="none" stroke="' + H + '" stroke-width="10"/>';
+    // ears
+    o += '<circle cx="66" cy="72" r="8" fill="' + S + '" ' + sk + '/><circle cx="154" cy="72" r="8" fill="' + S + '" ' + sk + "/>";
+    // face: normal
+    o += '<g class="normal"><circle cx="95" cy="64" r="5" fill="#1d1d1f"/><circle cx="125" cy="64" r="5" fill="#1d1d1f"/>' +
+      (isAtt ? '<path d="M92 88 q18 16 36 0" fill="none" stroke="#1d1d1f" stroke-width="4" stroke-linecap="round"/><path d="M86 52 l16 5 M134 52 l-16 5" stroke="#1d1d1f" stroke-width="4" stroke-linecap="round"/>'
+             : '<path d="M96 90 q14 6 28 0" fill="none" stroke="#1d1d1f" stroke-width="4" stroke-linecap="round"/>') + "</g>";
+    // face: hurt
+    o += '<g class="hurt"><path d="M88 57 l14 14 M102 57 l-14 14 M118 57 l14 14 M132 57 l-14 14" stroke="#1d1d1f" stroke-width="4" stroke-linecap="round"/><ellipse cx="110" cy="92" rx="11" ry="13" fill="#1d1d1f"/><ellipse cx="110" cy="97" rx="6" ry="5" fill="#ff6b6b"/><circle cx="82" cy="82" r="8" fill="#ff6b6b88"/><circle cx="138" cy="82" r="8" fill="#ff6b6b88"/><path d="M84 72 q-4 14 0 18" stroke="#74c0fc" stroke-width="4" fill="none" stroke-linecap="round"/></g>';
+    // accessories
+    if (c.acc === "lunettes") o += '<g fill="#ffffff55" stroke="#1d1d1f" stroke-width="3"><circle cx="95" cy="64" r="13"/><circle cx="125" cy="64" r="13"/></g><path d="M108 64 h4" stroke="#1d1d1f" stroke-width="3"/>';
+    if (c.acc === "soleil") o += '<path d="M78 56 h26 q2 18 -13 18 q-13 0 -13 -18z M116 56 h26 q0 18 -13 18 q-15 0 -13 -18z M104 58 h12" fill="#1d1d1f" stroke="#1d1d1f" stroke-width="3"/>';
+    if (c.acc === "moustache") o += '<path d="M110 80 q-10 -6 -22 2 q-8 6 -16 0 q6 14 20 10 q12 -3 18 -8 q6 5 18 8 q14 4 20 -10 q-8 6 -16 0 q-12 -8 -22 -2z" fill="#3b2314"/>';
+    if (c.acc === "nez") o += '<circle cx="110" cy="78" r="10" fill="#e03131" stroke="#1d1d1f" stroke-width="2"/>';
+    if (c.acc === "monocle") o += '<circle cx="125" cy="64" r="13" fill="#ffffff44" stroke="#c9a227" stroke-width="3"/><path d="M137 70 q10 30 -4 60" stroke="#c9a227" stroke-width="2" fill="none"/>';
+    // hat
+    var K = c.hatC, hat = "";
+    if (c.hat === "casquette") hat = '<path d="M68 48 q42 -48 84 0z" fill="' + K + '" ' + sk + '/><path d="M140 46 q30 -2 40 8 q-20 4 -44 0z" fill="' + darker(K) + '" ' + sk + "/>";
+    if (c.hat === "haut") hat = '<rect x="80" y="-10" width="60" height="50" fill="' + K + '" ' + sk + '/><rect x="62" y="36" width="96" height="10" rx="4" fill="' + K + '" ' + sk + '/><rect x="80" y="26" width="60" height="8" fill="#e03131"/>';
+    if (c.hat === "couronne") hat = '<path d="M76 40 l-4 -34 l20 16 l18 -24 l18 24 l20 -16 l-4 34z" fill="#ffd43b" ' + sk + '/><circle cx="110" cy="28" r="5" fill="#e03131"/><circle cx="90" cy="32" r="4" fill="#1c7ed6"/><circle cx="130" cy="32" r="4" fill="#2f9e44"/>';
+    if (c.hat === "fete") hat = '<path d="M84 40 l26 -62 l26 62z" fill="' + K + '" ' + sk + '/><path d="M94 18 l24 10 M100 2 l14 6" stroke="#ffd43b" stroke-width="4"/><circle cx="110" cy="-24" r="8" fill="#ffd43b" ' + sk + "/>";
+    if (c.hat === "bonnet") hat = '<path d="M66 50 q0 -48 44 -48 q44 0 44 48z" fill="' + K + '" ' + sk + '/><rect x="62" y="40" width="96" height="16" rx="8" fill="' + darker(K, 0.8) + '" ' + sk + '/><circle cx="110" cy="0" r="12" fill="#fff" ' + sk + "/>";
+    if (c.hat === "viking") hat = '<path d="M66 50 q0 -46 44 -46 q44 0 44 46z" fill="#adb5bd" ' + sk + '/><path d="M68 34 q-30 -10 -30 -44 q14 26 40 26z M152 34 q30 -10 30 -44 q-14 26 -40 26z" fill="#fff4d6" ' + sk + "/>";
+    o += '<g class="hat">' + hat + "</g>";
+    return '<svg viewBox="0 0 220 320" xmlns="http://www.w3.org/2000/svg">' + o + "</svg>";
+  }
+
+  function renderChars() {
+    var a = chars[attacker], b = chars[1 - attacker];
+    $("svgA").innerHTML = draw(a, true);
+    $("svgB").innerHTML = draw(b, false);
+    $("tagA").textContent = (a.name || "Sans nom") + " 🖐️";
+    $("tagB").textContent = "🍑 " + (b.name || "Sans nom");
+    hatGone = false;
+  }
+
+  // ---------- Editors ----------
+  function sel(key, opts, val) { return '<select data-k="' + key + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === val ? " selected" : "") + ">" + o[1] + "</option>"; }).join("") + "</select>"; }
+  function col(key, val) { return '<input type="color" data-k="' + key + '" value="' + val + '">'; }
+  function renderEditor(i) {
+    var c = chars[i], role = i === attacker ? "🖐️ Celui qui donne" : "🍑 Celui qui reçoit";
+    var h = '<h3><span>Personnage ' + (i + 1) + '</span><small style="font-weight:600">' + role + "</small></h3>";
+    h += '<div class="field preset"><label>⭐ Preset</label><select data-preset="1"><option value="">— Choisir un perso —</option><optgroup label="Persos tout prêts">' +
+      PRESETS.map(function (p, n) { return '<option value="p' + n + '">' + esc(p.name) + "</option>"; }).join("") + "</optgroup>" +
+      (saved.length ? '<optgroup label="Mes persos">' + saved.map(function (p, n) { return '<option value="s' + n + '">' + esc(p.name || "Sans nom") + "</option>"; }).join("") + "</optgroup>" : "") +
+      '</select><span class="none"></span></div>';
+    h += '<div class="presetbtns"><button class="btn alt small" data-save="1">💾 Sauver ce perso</button><button class="btn alt small" data-del="1" disabled>🗑️ Supprimer</button></div>';
+    h += '<div class="field"><label>Nom</label><input type="text" maxlength="24" data-k="name" value="' + esc(c.name) + '"><span class="none"></span></div>';
+    h += '<div class="field"><label>Peau</label><select data-k="skin">' + SKINS.map(function (s, n) { return '<option value="' + s + '"' + (s === c.skin ? " selected" : "") + ">" + ["Très clair", "Clair", "Mat", "Doré", "Foncé", "Extraterrestre vert", "Schtroumpf bleu"][n] + "</option>"; }).join("") + '</select><span class="none"></span></div>';
+    h += '<div class="field"><label>Cheveux</label>' + sel("hair", OPTIONS.hair, c.hair) + col("hairC", c.hairC) + "</div>";
+    h += '<div class="field"><label>Chapeau</label>' + sel("hat", OPTIONS.hat, c.hat) + col("hatC", c.hatC) + "</div>";
+    h += '<div class="field"><label>Haut</label>' + sel("top", OPTIONS.top, c.top) + col("topC", c.topC) + "</div>";
+    h += '<div class="field"><label>Bas</label>' + sel("bottom", OPTIONS.bottom, c.bottom) + col("bottomC", c.bottomC) + "</div>";
+    h += '<div class="field"><label>Chaussures</label>' + sel("shoes", OPTIONS.shoes, c.shoes) + '<span class="none"></span></div>';
+    h += '<div class="field"><label>Accessoire</label>' + sel("acc", OPTIONS.acc, c.acc) + '<span class="none"></span></div>';
+    h += '<div class="field"><label>Arme</label>' + sel("weapon", OPTIONS.weapon, c.weapon) + '<span class="none"></span></div>';
+    var ed = $(i === 0 ? "edA" : "edB");
+    ed.innerHTML = h;
+    var ps = ed.querySelector("[data-preset]"), del = ed.querySelector("[data-del]");
+    ps.addEventListener("change", function () {
+      var v = ps.value; if (!v) return;
+      var p = v[0] === "p" ? PRESETS[+v.slice(1)] : saved[+v.slice(1)];
+      if (!p) return;
+      applyPreset(i, p); renderChars(); renderEditor(i);
+      var ps2 = $(i === 0 ? "edA" : "edB").querySelector("[data-preset]"); ps2.value = v;
+      $(i === 0 ? "edA" : "edB").querySelector("[data-del]").disabled = v[0] !== "s";
+      $("comment").textContent = "« " + (chars[i].name || "Sans nom") + " » entre en scène !";
+    });
+    ed.querySelector("[data-save]").addEventListener("click", function () {
+      var copy = {}; KEYS.forEach(function (k) { copy[k] = chars[i][k]; });
+      var same = -1; saved.forEach(function (p, n) { if (p.name === copy.name) same = n; });
+      if (same >= 0) saved[same] = copy; else saved.push(copy);
+      if (saved.length > 30) saved.shift();
+      try { localStorage.setItem("fessee-presets", JSON.stringify(saved)); } catch (e) {}
+      renderEditor(0); renderEditor(1);
+      $("comment").textContent = "💾 « " + (copy.name || "Sans nom") + " » est sauvegardé dans « Mes persos ».";
+    });
+    del.addEventListener("click", function () {
+      var v = ed.querySelector("[data-preset]").value; if (!v || v[0] !== "s") return;
+      var gone = saved.splice(+v.slice(1), 1)[0];
+      try { localStorage.setItem("fessee-presets", JSON.stringify(saved)); } catch (e) {}
+      renderEditor(0); renderEditor(1);
+      $("comment").textContent = "🗑️ « " + ((gone && gone.name) || "Sans nom") + " » a été supprimé.";
+    });
+    ed.querySelectorAll("[data-k]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        chars[i][el.dataset.k] = el.value;
+        if (el.dataset.k === "name") { var a = chars[attacker], b = chars[1 - attacker]; $("tagA").textContent = (a.name || "Sans nom") + " 🖐️"; $("tagB").textContent = "🍑 " + (b.name || "Sans nom"); }
+        else renderChars();
+      });
+    });
+  }
+  function renderAll() { renderChars(); renderEditor(0); renderEditor(1); }
+
+  // ---------- Spanking ----------
+  var SOUNDS = { main: "PAF !", tapette: "CLAC !", poisson: "SPLOTCH !", baguette: "CROUNCH !", chaussette: "FLOUCH !", plumeau: "fwip…" };
+  var LINES = ["AÏE !", "Ouille !", "Mais euh !", "Pas les fesses !", "Je vais le dire à ma mère !", "C'était mérité…", "Encore ! Non, j'rigole !", "Mon honneur !", "Ça pique !", "Je porte plainte !"];
+  var COMMENTS = [
+    "{A} donne une fessée magistrale à {B} !", "{B} ne s'assiéra pas avant mardi.", "{A} a clairement fait ça toute sa vie.",
+    "Les voisins applaudissent.", "{B} regrette tous ses choix de vie.", "Style impeccable de {A}.", "{B} découvre la gravité.",
+    "Le public réclame un rappel !", "{A} n'a aucune pitié.", "Quelqu'un filme ?"
+  ];
+  var MILESTONES = { 10: "🎖️ 10 fessées ! {B} commence à comprendre.", 25: "🔥 25 ! Le chapeau de {B} n'a pas survécu.", 50: "🚨 50 fessées ! Les autorités du dessin animé sont prévenues.", 100: "👑 100 ! {A} est officiellement Légende de la Fessée.", 250: "🌋 250 ! Le sol tremble. {B} est en orbite.", 500: "🪐 500. Il faut vraiment que tu sortes prendre l'air.", 1000: "🏆 1 000 FESSÉES. Plus rien n'a de sens." };
+
+  function fill(t) { return t.replace(/\{A\}/g, chars[attacker].name || "Sans nom").replace(/\{B\}/g, chars[1 - attacker].name || "Sans nom"); }
+
+  function sound(w) {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      var t = audio.currentTime, len = w === "plumeau" ? 0.25 : 0.12;
+      var buf = audio.createBuffer(1, audio.sampleRate * len, audio.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, w === "poisson" || w === "chaussette" ? 1.5 : 4);
+      var src = audio.createBufferSource(); src.buffer = buf;
+      var f = audio.createBiquadFilter(); f.type = "lowpass";
+      f.frequency.value = { main: 2500, tapette: 5000, poisson: 900, baguette: 3500, chaussette: 700, plumeau: 6000 }[w] || 2500;
+      var g = audio.createGain(); g.gain.value = w === "plumeau" ? 0.15 : 0.6;
+      src.connect(f); f.connect(g); g.connect(audio.destination); src.start(t);
+    } catch (e) {}
+  }
+
+  function fx(cls, text, x, y, extra) {
+    var el = document.createElement("div"); el.className = "fx " + cls; el.textContent = text;
+    el.style.left = x + "px"; el.style.top = y + "px";
+    if (extra) for (var k in extra) el.style.setProperty(k, extra[k]);
+    $("stage").appendChild(el);
+    setTimeout(function () { el.remove(); }, 1600);
+    return el;
+  }
+
+  function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+  var speechTimer = null;
+  function spank() {
+    var now = performance.now();
+    combo = now - lastHit < 600 ? combo + 1 : 1;
+    lastHit = now;
+    count++;
+    try { localStorage.setItem("fessee-count", count); } catch (e) {}
+    $("count").textContent = count.toLocaleString("fr-FR");
+    $("combo").textContent = combo >= 3 ? "COMBO ×" + combo : "";
+
+    var att = $("att"), vic = $("vic"), stage = $("stage");
+    restart(att, "swing");
+    att.classList.add("lunge"); setTimeout(function () { att.classList.remove("lunge"); }, 180);
+
+    setTimeout(function () {
+      var w = chars[attacker].weapon;
+      sound(w);
+      restart($("svgB"), "hit");
+      var svg = vic.querySelector("svg");
+      if (svg) { svg.classList.add("ouch"); clearTimeout(svg._t); svg._t = setTimeout(function () { svg.classList.remove("ouch"); }, 500); }
+      var sr = stage.getBoundingClientRect(), vr = vic.getBoundingClientRect();
+      var hx = vr.left - sr.left + vr.width * 0.35, hy = vr.top - sr.top + vr.height * 0.62;
+      fx("paf", SOUNDS[w], hx - 40 + Math.random() * 40, hy - 90 - Math.random() * 30, { "--r": (Math.random() * 30 - 15) + "deg" });
+      var stars = ["⭐", "💥", "✨", "💫"];
+      for (var i = 0; i < 4; i++) fx("star", stars[i], hx + 10, hy - 20, { "--dx": (Math.random() * 160 - 40) + "px", "--dy": (-40 - Math.random() * 100) + "px" });
+      if (w === "poisson" || w === "chaussette") for (var j = 0; j < 3; j++) fx("star", "💧", hx, hy, { "--dx": (Math.random() * 120 - 20) + "px", "--dy": (-30 - Math.random() * 60) + "px" });
+      if (combo >= 5) restart(stage, "shake");
+
+      if (Math.random() < 0.35 || combo === 1) {
+        var old = stage.querySelector(".speech"); if (old) old.remove();
+        var sp = document.createElement("div"); sp.className = "speech";
+        sp.textContent = LINES[Math.floor(Math.random() * LINES.length)];
+        sp.style.left = Math.max(4, vr.left - sr.left + vr.width * 0.35) + "px"; sp.style.top = "100px";
+        stage.appendChild(sp);
+        clearTimeout(speechTimer); speechTimer = setTimeout(function () { sp.remove(); }, 1100);
+      }
+      if (!hatGone && count % 25 === 0 && chars[1 - attacker].hat !== "aucun") {
+        var hat = vic.querySelector(".hat"); if (hat) { hatGone = true; restart(hat, "fly"); setTimeout(function () { hat.classList.remove("fly"); hatGone = false; }, 2500); }
+      }
+      $("comment").textContent = MILESTONES[count] ? fill(MILESTONES[count]) : (count % 3 === 0 ? fill(COMMENTS[Math.floor(Math.random() * COMMENTS.length)]) : $("comment").textContent);
+      if (MILESTONES[count]) for (var k = 0; k < 12; k++) fx("star", ["🎉", "🎊", "⭐"][k % 3], sr.width / 2, sr.height / 2, { "--dx": (Math.random() * 500 - 250) + "px", "--dy": (Math.random() * -300) + "px" });
+    }, 110);
+  }
+
+  $("spank").addEventListener("click", spank);
+  document.addEventListener("keydown", function (e) {
+    if ((e.code === "Space" || e.key === " ") && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); if (!e.repeat) spank(); }
+  });
+  $("swap").addEventListener("click", function () { attacker = 1 - attacker; renderAll(); $("comment").textContent = fill("Retournement de situation ! {A} prend sa revanche."); });
+  $("reset").addEventListener("click", function () { count = 0; combo = 0; try { localStorage.setItem("fessee-count", 0); } catch (e) {} $("count").textContent = "0"; $("combo").textContent = ""; $("comment").textContent = "Compteur remis à zéro. Les fesses sont neuves."; });
+  $("rnd").addEventListener("click", function () {
+    function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+    function rc() { return "#" + ("00000" + Math.floor(Math.random() * 0xffffff).toString(16)).slice(-6); }
+    var used = {};
+    chars.forEach(function (c) {
+      var n; do { n = pick(NAMES); } while (used[n]); used[n] = 1;
+      c.name = n; c.skin = pick(SKINS); c.hair = pick(OPTIONS.hair)[0]; c.hairC = rc(); c.hat = pick(OPTIONS.hat)[0]; c.hatC = rc();
+      c.top = pick(OPTIONS.top)[0]; c.topC = rc(); c.bottom = pick(OPTIONS.bottom)[0]; c.bottomC = rc(); c.shoes = pick(OPTIONS.shoes)[0]; c.acc = pick(OPTIONS.acc)[0]; c.weapon = pick(OPTIONS.weapon)[0];
+    });
+    renderAll();
+  });
+
+  $("count").textContent = count.toLocaleString("fr-FR");
+  renderAll();
+})();
+</script>
+</body>
+</html>
