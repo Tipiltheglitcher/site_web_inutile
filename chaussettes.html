@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Tiroir à Chaussettes</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .game { max-width: 900px; margin: 0 auto; }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; font-weight: 700; }
+  .timer { flex: 1; min-width: 160px; height: 16px; background: #eee; border-radius: 99px; overflow: hidden; }
+  .timer i { display: block; height: 100%; background: var(--good); border-radius: 99px; }
+  .drawer { background: #c89b6d; border-radius: 20px; padding: 18px; box-shadow: inset 0 0 0 8px #a97c50, 0 8px 0 #7d5a37; position: relative; min-height: 300px; }
+  .socks { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 10px; }
+  .sock { background: #f5ead9; border: none; border-radius: 12px; padding: 6px; cursor: pointer; transition: transform .12s, opacity .3s; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; }
+  .sock svg { width: 100%; height: 100%; }
+  .sock:hover { transform: rotate(-5deg) scale(1.05); }
+  .sock.sel { outline: 4px solid #1d1d1f; transform: scale(1.08); }
+  .sock.gone { opacity: 0; pointer-events: none; transform: scale(.3) rotate(40deg); }
+  .sock.wrong { animation: no .35s; background: #ffd0d0; }
+  @keyframes no { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  .msg { text-align: center; min-height: 1.6em; font-weight: 600; margin: 12px 0; }
+  .over { position: absolute; inset: 0; border-radius: 20px; background: rgba(255,250,240,.96); display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 3; }
+  .over.show { display: flex; }
+  .over .big { font-size: 4rem; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🧦</span></div>
+<div class="wrap game">
+  <h1 class="center">Le Tiroir à Chaussettes</h1>
+  <p class="sub center">Clique sur deux chaussettes <b>identiques</b> pour les ranger. Couleur, motif ET taille. Quand il ne reste qu'une chaussette orpheline, niveau suivant !</p>
+  <div class="bar"><span>Niveau <span id="lvl">1</span></span><div class="timer"><i id="tbar"></i></div><span>⏱️ <span id="tleft">0</span> s</span><span>Score <span id="score">0</span></span></div>
+  <div class="drawer">
+    <div class="socks" id="socks"></div>
+    <div class="over show" id="over"><div class="big" id="oEmo">🧦</div><h2 id="oTitle">Le tiroir est en bazar</h2><p id="oText">Retrouve les paires avant la fin du temps. Une erreur = 2 secondes en moins.</p><button class="btn" id="go">Ranger le tiroir</button></div>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var COLORS = ["#e03131", "#1c7ed6", "#2f9e44", "#f59f00", "#9c36b5", "#212529", "#f783ac", "#20c997"];
+  var PATTERNS = ["plain", "stripes", "dots", "heart"];
+  var ORPHAN = ["« Où est ma sœur ? »", "La chaussette orpheline pleure doucement.", "Elle a sûrement été mangée par la machine à laver.", "Encore une chaussette seule. La vie est dure."];
+  var level, score, timeLeft, timer, sel, remaining, playing = false, last = 0, best = 0;
+  try { best = +localStorage.getItem("chaussettes-best") || 0; } catch (e) {}
+
+  function svg(s) {
+    var c = s.color, id = "p" + Math.random().toString(36).slice(2);
+    var pat = "";
+    if (s.pattern === "stripes") pat = '<pattern id="' + id + '" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="' + c + '"/><rect width="10" height="4" fill="#fff" opacity=".85"/></pattern>';
+    if (s.pattern === "dots") pat = '<pattern id="' + id + '" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="' + c + '"/><circle cx="6" cy="6" r="2.6" fill="#fff"/></pattern>';
+    var fill = (s.pattern === "stripes" || s.pattern === "dots") ? "url(#" + id + ")" : c;
+    var sc = s.size === "L" ? 1 : 0.78;
+    var heart = s.pattern === "heart" ? '<path d="M30 52 l-7-7 a4.5 4.5 0 0 1 7-5 a4.5 4.5 0 0 1 7 5z" fill="#fff"/>' : "";
+    return '<svg viewBox="0 0 60 80"><defs>' + pat + '</defs><g transform="translate(30 40) scale(' + sc + ') translate(-30 -40)">' +
+      '<path d="M18 4 h22 v38 q0 6 5 10 l8 7 q7 7 0 14 q-6 5 -14 0 l-18 -14 q-5 -4 -5 -12 V4z" fill="' + fill + '" stroke="#1d1d1f" stroke-width="2.5" stroke-linejoin="round"/>' +
+      '<rect x="17" y="3" width="24" height="8" rx="2" fill="#fff" stroke="#1d1d1f" stroke-width="2.5"/>' + heart + "</g></svg>";
+  }
+
+  function makeLevel() {
+    var pairs = Math.min(3 + level, 12);
+    // later levels use fewer colors so socks look alike
+    var nColors = Math.max(3, 8 - Math.floor(level / 2)), types = [], seen = {};
+    while (types.length < pairs + 1) {
+      var t = { color: COLORS[Math.floor(Math.random() * nColors)], pattern: PATTERNS[Math.floor(Math.random() * (level > 1 ? 4 : 2))], size: level > 2 && Math.random() < .5 ? "S" : "L" };
+      var key = t.color + t.pattern + t.size;
+      if (seen[key]) { if (Object.keys(seen).length >= nColors * 4 * 2) break; continue; }
+      seen[key] = 1; t.key = key; types.push(t);
+    }
+    var list = [];
+    for (var i = 0; i < pairs; i++) { list.push(types[i]); list.push(types[i]); }
+    list.push(types[types.length - 1]); // the orphan
+    for (var j = list.length - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)); var tmp = list[j]; list[j] = list[k]; list[k] = tmp; }
+    var box = $("socks"); box.innerHTML = "";
+    list.forEach(function (s) {
+      var b = document.createElement("button"); b.className = "sock"; b.innerHTML = svg(s); b.dataset.key = s.key;
+      b.addEventListener("click", function () { clickSock(b); });
+      box.appendChild(b);
+    });
+    remaining = list.length; sel = null;
+    timeLeft = 18 + pairs * 4;
+    $("lvl").textContent = level;
+    $("msg").textContent = "Niveau " + level + " : " + pairs + " paires à trouver.";
+  }
+
+  function clickSock(b) {
+    if (!playing || b.classList.contains("gone")) return;
+    if (sel === b) { b.classList.remove("sel"); sel = null; return; }
+    if (!sel) { sel = b; b.classList.add("sel"); return; }
+    var a = sel; sel = null; a.classList.remove("sel");
+    if (a.dataset.key === b.dataset.key) {
+      a.classList.add("gone"); b.classList.add("gone"); remaining -= 2; score += 10 * level;
+      $("score").textContent = score;
+      $("msg").textContent = ["Parfait !", "Une paire de plus !", "Réunies à jamais 💞", "Bien joué !"][Math.floor(Math.random() * 4)];
+      if (remaining === 1) {
+        score += Math.ceil(timeLeft) * 2; $("score").textContent = score;
+        $("msg").textContent = ORPHAN[Math.floor(Math.random() * ORPHAN.length)] + " Bonus temps : +" + Math.ceil(timeLeft) * 2;
+        level++; playing = false;
+        setTimeout(function () { makeLevel(); playing = true; }, 1200);
+      }
+    } else {
+      timeLeft -= 2;
+      [a, b].forEach(function (x) { x.classList.remove("wrong"); void x.offsetWidth; x.classList.add("wrong"); });
+      $("msg").textContent = "Ce ne sont pas les mêmes ! −2 s";
+    }
+  }
+
+  function tick() {
+    var now = performance.now(), dt = (now - last) / 1000; last = now;
+    if (playing) timeLeft -= dt;
+    var max = 18 + Math.min(3 + level, 12) * 4;
+    $("tleft").textContent = Math.max(0, Math.ceil(timeLeft));
+    $("tbar").style.width = Math.max(0, Math.min(100, timeLeft / max * 100)) + "%";
+    $("tbar").style.background = timeLeft < 6 ? "var(--bad)" : "var(--good)";
+    if (playing && timeLeft <= 0) end();
+  }
+
+  function end() {
+    playing = false; clearInterval(timer);
+    var rec = score > best;
+    if (rec) { best = score; try { localStorage.setItem("chaussettes-best", best); } catch (e) {} }
+    $("oEmo").textContent = "⏰"; $("oTitle").textContent = "Temps écoulé !";
+    $("oText").textContent = "Tu as atteint le niveau " + level + " avec " + score + " points." + (rec ? " 🏆 Nouveau record !" : " Record : " + best + " points.");
+    $("go").textContent = "Recommencer";
+    $("over").classList.add("show");
+  }
+
+  $("go").addEventListener("click", function () {
+    level = 1; score = 0; $("score").textContent = 0;
+    $("over").classList.remove("show");
+    makeLevel(); playing = true; last = performance.now();
+    clearInterval(timer); timer = setInterval(tick, 100);
+  });
+})();
+</script>
+</body>
+</html>

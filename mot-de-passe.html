@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Mot de Passe</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .game { max-width: 640px; margin: 0 auto; }
+  label { font-weight: 700; display: block; margin-bottom: 8px; }
+  textarea {
+    width: 100%; font: inherit; font-size: 1.3rem; padding: 14px 16px; border-radius: 14px;
+    border: 2px solid var(--line); background: #fff; resize: vertical; min-height: 64px;
+    word-break: break-all;
+  }
+  textarea:focus { outline: none; border-color: var(--ink); }
+  .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: .9rem; margin: 6px 2px 18px; }
+  .rule { border-radius: 14px; margin-bottom: 12px; overflow: hidden; border: 2px solid; }
+  .rule .head { padding: 6px 14px; font-weight: 700; font-size: .9rem; }
+  .rule .body { padding: 12px 14px; background: #fff; }
+  .rule.ok { border-color: #8bd6a8; } .rule.ok .head { background: #c9f0d6; color: #11623a; }
+  .rule.ko { border-color: #f0a0a0; } .rule.ko .head { background: #fbd0d0; color: #8a1c1c; }
+  .hex { display: inline-block; width: 90px; height: 40px; border-radius: 8px; vertical-align: middle; border: 1px solid #0002; margin-top: 6px; }
+  .win { text-align: center; padding: 30px; background: #c9f0d6; border-radius: 18px; font-size: 1.3rem; font-weight: 700; margin-bottom: 18px; display: none; }
+  @keyframes pop { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🔐</span></div>
+<div class="wrap game">
+  <h1>Le Mot de Passe</h1>
+  <p class="sub">Choisis un mot de passe qui respecte toutes les règles. Elles apparaissent une par une…</p>
+  <div id="win" class="win">🎉 Bravo ! Ton mot de passe est parfait.<br>(Personne ne pourra jamais le retenir, toi compris.)<br><br><button class="btn" onclick="resetGame()">Rejouer</button></div>
+  <label for="pw">Ton mot de passe</label>
+  <textarea id="pw" spellcheck="false" autocomplete="off" placeholder="Tape ici…"></textarea>
+  <div class="meta"><span id="count">0 caractère</span><span id="progress">Règle 0 / 0</span></div>
+  <div id="rules"></div>
+</div>
+<script>
+(function () {
+  var MONTHS = ["janvier","fevrier","février","mars","avril","mai","juin","juillet","aout","août","septembre","octobre","novembre","decembre","décembre"];
+  var PLANETS = ["mercure","venus","vénus","terre","mars","jupiter","saturne","uranus","neptune"];
+  var hexColor = "";
+
+  function randomHex() {
+    var letters = "abcdef", s = "";
+    for (var i = 0; i < 6; i++) s += letters[Math.floor(Math.random() * 6)];
+    return s;
+  }
+  function digitSum(p) {
+    var s = 0, m = p.match(/[0-9]/g) || [];
+    for (var i = 0; i < m.length; i++) s += +m[i];
+    return s;
+  }
+  function isPrime(n) {
+    if (n < 2) return false;
+    for (var i = 2; i * i <= n; i++) if (n % i === 0) return false;
+    return true;
+  }
+  function has(list, p) {
+    var low = p.toLowerCase();
+    for (var i = 0; i < list.length; i++) if (low.indexOf(list[i]) !== -1) return true;
+    return false;
+  }
+  function len(p) { return Array.from(p).length; }
+
+  var RULES = [
+    { t: "Ton mot de passe doit contenir au moins 5 caractères.", f: function (p) { return len(p) >= 5; } },
+    { t: "Ton mot de passe doit contenir un chiffre.", f: function (p) { return /[0-9]/.test(p); } },
+    { t: "Ton mot de passe doit contenir une majuscule.", f: function (p) { return /[A-ZÀ-Ý]/.test(p); } },
+    { t: "Ton mot de passe doit contenir un caractère spécial (!, ?, @, #…).", f: function (p) { return /[^A-Za-z0-9À-ÿ\s]/.test(p); } },
+    { t: "Ton mot de passe doit contenir un mois de l'année.", f: function (p) { return has(MONTHS, p); } },
+    { t: "Ton mot de passe doit contenir le résultat de 7 × 8.", f: function (p) { return p.indexOf("56") !== -1; } },
+    { t: "Ton mot de passe doit contenir un chiffre romain en majuscule (I, V, X, L, C, D ou M).", f: function (p) { return /[IVXLCDM]/.test(p); } },
+    { t: "Ton mot de passe doit contenir un truc à manger bien français : baguette, croissant ou fromage.", f: function (p) { return has(["baguette","croissant","fromage"], p); } },
+    { t: "Ton mot de passe doit contenir le nom d'une planète du système solaire.", f: function (p) { return has(PLANETS, p); } },
+    { t: "Ton mot de passe doit contenir l'année en cours.", f: function (p) { return p.indexOf(String(new Date().getFullYear())) !== -1; } },
+    { t: "La somme des chiffres de ton mot de passe doit faire exactement 25.", f: function (p) { return digitSum(p) === 25; }, extra: function (p) { return "Somme actuelle : <b>" + digitSum(p) + "</b>"; } },
+    { t: "Ton mot de passe doit contenir le mot « poulet ». Pourquoi ? Parce que.", f: function (p) { return p.toLowerCase().indexOf("poulet") !== -1; } },
+    { t: "Ton mot de passe doit contenir le code de cette couleur (sans le #) :", f: function (p) { return p.toLowerCase().indexOf(hexColor) !== -1; }, extra: function () { return '<span class="hex" style="background:#' + hexColor + '"></span> <button class="btn alt" style="padding:6px 12px;margin-left:8px" onclick="newHex()">🔄 Autre couleur</button><br><small style="color:#6b6b70">Indice : ce code n\'utilise que les lettres a à f.</small>'; } },
+    { t: "Ton mot de passe ne doit pas contenir d'espace. Les espaces, c'est pour les faibles.", f: function (p) { return !/\s/.test(p); } },
+    { t: "Le nombre de caractères de ton mot de passe doit être un nombre premier.", f: function (p) { return isPrime(len(p)); }, extra: function (p) { return "Longueur actuelle : <b>" + len(p) + "</b>"; } },
+    { t: "Ton mot de passe doit se terminer par un point d'exclamation !", f: function (p) { return /!$/.test(p); } }
+  ];
+
+  var input = document.getElementById("pw");
+  var box = document.getElementById("rules");
+  var revealed = 0;
+
+  function check() {
+    var p = input.value;
+    var n = len(p);
+    document.getElementById("count").textContent = n + (n > 1 ? " caractères" : " caractère");
+
+    if (p.length > 0 && revealed === 0) revealed = 1;
+    // Reveal next rules as long as all revealed ones pass
+    while (revealed > 0 && revealed < RULES.length) {
+      var allOk = true;
+      for (var i = 0; i < revealed; i++) if (!RULES[i].f(p)) { allOk = false; break; }
+      if (!allOk) break;
+      revealed++;
+    }
+
+    var items = [];
+    for (var j = 0; j < revealed; j++) items.push({ i: j, ok: RULES[j].f(p) });
+    // failing rules first, then newest first
+    items.sort(function (a, b) { if (a.ok !== b.ok) return a.ok ? 1 : -1; return b.i - a.i; });
+
+    var html = "";
+    items.forEach(function (it) {
+      var r = RULES[it.i];
+      html += '<div class="rule ' + (it.ok ? "ok" : "ko") + '"><div class="head">' + (it.ok ? "✔" : "✖") + " Règle " + (it.i + 1) + '</div><div class="body">' + r.t + (r.extra ? "<div style='margin-top:6px'>" + r.extra(p) + "</div>" : "") + "</div></div>";
+    });
+    box.innerHTML = html;
+
+    var passed = items.filter(function (x) { return x.ok; }).length;
+    document.getElementById("progress").textContent = "Règle " + passed + " / " + RULES.length;
+    var won = revealed === RULES.length && passed === RULES.length;
+    document.getElementById("win").style.display = won ? "block" : "none";
+  }
+
+  window.newHex = function () { hexColor = randomHex(); check(); };
+  window.resetGame = function () { input.value = ""; revealed = 0; hexColor = randomHex(); check(); input.focus(); };
+
+  hexColor = randomHex();
+  input.addEventListener("input", check);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
+  check();
+})();
+</script>
+</body>
+</html>

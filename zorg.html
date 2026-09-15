@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Dîner de Zorg</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  body { background: #14162b; color: #fff; }
+  .topbar a.back { background: #23264a; color: #fff; border-color: #34386a; }
+  .game { max-width: 720px; margin: 0 auto; }
+  .sub { color: #aab; }
+  .zorg { text-align: center; font-size: 5rem; line-height: 1; }
+  .zorg.eat { animation: chew .25s 4 alternate; }
+  @keyframes chew { to { transform: scaleY(.85) scaleX(1.08); } }
+  .talk { background: #23264a; border: 2px solid #6c63ff; border-radius: 16px; padding: 12px 16px; text-align: center; margin: 10px auto 18px; max-width: 520px; font-weight: 600; min-height: 50px; }
+  .plate { display: flex; gap: 10px; justify-content: center; align-items: center; background: radial-gradient(#fff 55%, #dfe3f0 56%, #fff 62%, #c9cde0 63%); border-radius: 50%; width: 320px; height: 320px; margin: 0 auto; max-width: 100%; aspect-ratio: 1; flex-wrap: wrap; align-content: center; padding: 60px; }
+  @media (max-width: 400px) { .plate { width: 260px; height: 260px; padding: 45px; } }
+  .slot { width: 64px; height: 64px; border-radius: 16px; border: 3px dashed #b8bdd6; display: flex; align-items: center; justify-content: center; font-size: 2.3rem; cursor: pointer; background: #fff; }
+  .slot.filled { border-style: solid; border-color: #6c63ff; }
+  .slot .n { position: absolute; }
+  .pantry { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+  .ing { font: inherit; color: #fff; background: #23264a; border: 1px solid #34386a; border-radius: 14px; padding: 10px 4px; cursor: pointer; font-size: .85rem; }
+  .ing span { display: block; font-size: 2rem; }
+  .ing:hover:not(:disabled) { background: #30346a; }
+  .ing:disabled { opacity: .3; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; justify-content: center; }
+  .btn.serve { background: #6c63ff; } .btn.serve:hover { background: #5a52e0; }
+  .btn.alt { background: transparent; color: #fff; border-color: #34386a; }
+  .btn.alt:hover { background: #23264a; }
+  .hist { margin-top: 24px; }
+  .h { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #1c1f3d; border-radius: 12px; padding: 8px 14px; margin-bottom: 6px; }
+  .h .dish { font-size: 1.6rem; letter-spacing: 4px; }
+  .h .fb { font-size: 1.1rem; letter-spacing: 2px; }
+  .legend { color: #aab; font-size: .9rem; text-align: center; margin-top: 8px; }
+  .tries { text-align: center; color: #aab; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">👽</span></div>
+<div class="wrap game">
+  <h1 class="center">Le Dîner de Zorg</h1>
+  <p class="sub center">Zorg, ambassadeur de la planète Gloub, vient dîner. Il veut <b>4 ingrédients précis, dans un ordre précis</b>. Tu as 8 essais avant qu'il ne déclare la guerre à la Terre.</p>
+  <div class="zorg" id="zorg">👽</div>
+  <div class="talk" id="talk">« Humain. Nourris-moi. »</div>
+  <div class="tries" id="tries"></div>
+  <div class="plate" id="plate"></div>
+  <p class="legend">Clique sur un ingrédient pour le poser. Clique sur l'assiette pour l'enlever.</p>
+  <div class="pantry" id="pantry"></div>
+  <div class="row"><button class="btn alt" id="clear">Vider l'assiette</button><button class="btn serve" id="serve" disabled>Servir à Zorg 🍽️</button></div>
+  <div class="legend">🟢 bon ingrédient au bon endroit · 🟡 bon ingrédient mal placé · ❌ ingrédient qu'il déteste</div>
+  <div class="hist" id="hist"></div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ING = [["🍌","Banane"],["🧀","Fromage"],["🌶️","Piment"],["🐟","Sardine"],["🍫","Chocolat"],["🥒","Cornichon"],["🍕","Pizza"],["🦗","Criquet"]];
+  var MAX = 8;
+  var secret, plate, history, over;
+
+  var REACT = [
+    ["😖", ["« Beurk. Sur Gloub, on donne ça aux prisonniers. »", "« Tu essaies de m'empoisonner, humain ? »", "« Mes trois estomacs protestent. »"]],
+    ["😐", ["« Mmh. Il y a une vague idée. Très vague. »", "« C'est… mangeable. Pour un humain. »", "« Mon antenne gauche frémit un peu. »"]],
+    ["🙂", ["« Intéressant. Continue, petit cuisinier. »", "« Ça sent presque la maison. »", "« Pas mal, pour une espèce sans tentacules. »"]],
+    ["😋", ["« OH. On y est presque ! »", "« Mes antennes dansent ! »", "« Encore un petit effort et je n'envahis pas ta planète. »"]]
+  ];
+
+  var pantry = $("pantry");
+  ING.forEach(function (it, i) {
+    var b = document.createElement("button"); b.className = "ing";
+    b.innerHTML = "<span>" + it[0] + "</span>" + it[1];
+    b.addEventListener("click", function () { add(i); });
+    it.btn = b; pantry.appendChild(b);
+  });
+
+  function add(i) {
+    if (over || plate.indexOf(i) !== -1) return;
+    var free = plate.indexOf(-1);
+    if (free === -1) return;
+    plate[free] = i; render();
+  }
+
+  function render() {
+    var h = "";
+    plate.forEach(function (v, i) { h += '<div class="slot' + (v >= 0 ? " filled" : "") + '" data-i="' + i + '">' + (v >= 0 ? ING[v][0] : '<small style="color:#b8bdd6;font-size:1rem">' + (i + 1) + "</small>") + "</div>"; });
+    $("plate").innerHTML = h;
+    ING.forEach(function (it, i) { it.btn.disabled = over || plate.indexOf(i) !== -1 || plate.indexOf(-1) === -1; });
+    $("serve").disabled = over || plate.indexOf(-1) !== -1;
+    $("tries").textContent = "Essai " + Math.min(history.length + 1, MAX) + " / " + MAX;
+    var hh = "";
+    history.forEach(function (g, n) {
+      hh += '<div class="h"><span style="color:#aab">#' + (n + 1) + '</span><span class="dish">' + g.dish.map(function (x) { return ING[x][0]; }).join("") + '</span><span class="fb">' + "🟢".repeat(g.good) + "🟡".repeat(g.mis) + "❌".repeat(4 - g.good - g.mis) + "</span></div>";
+    });
+    $("hist").innerHTML = hh;
+  }
+
+  $("plate").addEventListener("click", function (e) {
+    var s = e.target.closest(".slot");
+    if (!s || over) return;
+    plate[+s.dataset.i] = -1; render();
+  });
+  $("clear").addEventListener("click", function () { if (over) { start(); return; } plate = [-1, -1, -1, -1]; render(); });
+
+  $("serve").addEventListener("click", function () {
+    if (over || plate.indexOf(-1) !== -1) return;
+    var good = 0, mis = 0;
+    plate.forEach(function (v, i) { if (secret[i] === v) good++; else if (secret.indexOf(v) !== -1) mis++; });
+    history.push({ dish: plate.slice(), good: good, mis: mis });
+    var z = $("zorg"); z.classList.remove("eat"); void z.offsetWidth; z.classList.add("eat");
+    if (good === 4) {
+      over = true;
+      z.textContent = "🥰";
+      $("talk").textContent = "« DÉLICIEUX ! Gloub et la Terre sont désormais amies. Tu as trouvé en " + history.length + " essai" + (history.length > 1 ? "s" : "") + ". »";
+      $("clear").textContent = "Nouveau dîner";
+    } else if (history.length >= MAX) {
+      over = true;
+      z.textContent = "👾";
+      $("talk").textContent = "« ÇA SUFFIT. J'envahis ta planète. » Le plat parfait était : " + secret.map(function (x) { return ING[x][0]; }).join(" ");
+      $("clear").textContent = "Nouveau dîner";
+    } else {
+      var score = good * 2 + mis, lvl = score >= 6 ? 3 : score >= 4 ? 2 : score >= 2 ? 1 : 0;
+      var r = REACT[lvl];
+      z.textContent = r[0];
+      $("talk").textContent = r[1][Math.floor(Math.random() * r[1].length)];
+    }
+    plate = [-1, -1, -1, -1];
+    render();
+  });
+
+  function start() {
+    var pool = [0, 1, 2, 3, 4, 5, 6, 7];
+    for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    secret = pool.slice(0, 4); plate = [-1, -1, -1, -1]; history = []; over = false;
+    $("zorg").textContent = "👽"; $("talk").textContent = "« Humain. Nourris-moi. »"; $("clear").textContent = "Vider l'assiette";
+    render();
+  }
+  start();
+})();
+</script>
+</body>
+</html>

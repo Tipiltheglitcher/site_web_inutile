@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Négocie avec le Pigeon</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .game { max-width: 680px; margin: 0 auto; }
+  .scene { text-align: center; font-size: 5rem; line-height: 1; margin: 10px 0; user-select: none; }
+  .scene .p { display: inline-block; transition: transform .3s; }
+  .scene .p.hop { animation: hop .4s ease; }
+  @keyframes hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-25px) rotate(-8deg); } }
+  .meters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .meter b { display: flex; justify-content: space-between; font-size: .9rem; }
+  .bar { height: 14px; background: #eee; border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
+  .say { background: #fff; border: 2px solid var(--ink); border-radius: 18px; padding: 16px 18px; font-size: 1.1rem; position: relative; margin: 14px 0 18px; min-height: 60px; }
+  .say:before { content: ""; position: absolute; top: -12px; left: 50%; border: 10px solid transparent; border-bottom-color: var(--ink); border-top: 0; transform: translateX(-50%); }
+  .narr { color: var(--muted); font-style: italic; margin-bottom: 8px; }
+  .choices { display: grid; gap: 10px; }
+  .choice { font: inherit; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .choice:hover { background: #fff3d6; border-color: #f0c36d; }
+  .step { text-align: center; color: var(--muted); font-size: .9rem; }
+  .end { text-align: center; }
+  .end h2 { font-size: 1.8rem; margin: 6px 0; }
+  .endings { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
+  .endings span { font-size: 1.6rem; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: #eee; border-radius: 12px; opacity: .35; filter: grayscale(1); }
+  .endings span.on { opacity: 1; filter: none; background: #fdffb6; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🐦</span></div>
+<div class="wrap game">
+  <h1 class="center">Négocie avec le Pigeon</h1>
+  <p class="sub center">Tu étais tranquille sur un banc. Un pigeon t'a volé ton sandwich jambon-beurre. Il est là, à deux mètres, et il te regarde.</p>
+  <div class="scene"><span class="p" id="pig">🐦</span> <span id="sand">🥪</span></div>
+  <div class="meters">
+    <div class="meter"><b><span>🤝 Confiance du pigeon</span><span id="cv"></span></b><div class="bar"><i id="cb" style="background:#1fa55b"></i></div></div>
+    <div class="meter"><b><span>🎩 Ta dignité</span><span id="dv"></span></b><div class="bar"><i id="db" style="background:#2b6fd6"></i></div></div>
+  </div>
+  <div id="play">
+    <div class="step" id="step"></div>
+    <div class="say" id="say"></div>
+    <div class="choices" id="choices"></div>
+  </div>
+  <div id="end" class="panel end" style="display:none"></div>
+  <p class="center" style="margin-top:20px;color:var(--muted)">Fins découvertes :</p>
+  <div class="endings" id="endings"></div>
+</div>
+<script>
+(function () {
+  // Each round: the pigeon says something, you pick among 3 answers (shuffled from a pool)
+  var ROUNDS = [
+    { narr: "Le pigeon penche la tête. Il mâchouille lentement ton sandwich.", say: "Rou… rou ?",
+      c: [
+        ["Rendez-moi ce sandwich, monsieur.", "Il est surpris qu'on le vouvoie. Il apprécie.", 12, 0],
+        ["ROU ROU ROU ! (imiter le pigeon)", "Il te regarde comme on regarde un cousin décevant.", 8, -20],
+        ["Lui courir après en hurlant.", "Il s'envole sur la statue et te nargue de là-haut.", -20, -15],
+        ["Faire semblant de ne pas l'avoir vu.", "Il s'approche, vexé d'être ignoré.", 6, 5]
+      ] },
+    { narr: "Il pose une patte sur le sandwich, comme un avocat pose la main sur un dossier.", say: "Rou. (Traduction : qu'est-ce que tu proposes ?)",
+      c: [
+        ["Proposer une frite en échange.", "Il réfléchit. Une frite, c'est bien. Mais c'est pas un jambon-beurre.", 10, 0],
+        ["Lui expliquer que tu as eu une semaine difficile.", "Il hoche la tête. Lui aussi, il a eu une semaine difficile.", 15, -8],
+        ["Menacer d'appeler la police.", "Il sait très bien que la police ne viendra pas pour un pigeon.", -15, 0],
+        ["Lui offrir ta montre.", "Il ne sait pas lire l'heure. Il est confus mais intrigué.", 5, -10]
+      ] },
+    { narr: "Un deuxième pigeon arrive. Il a l'air d'être son cousin. Ou son avocat.", say: "Rou rou. (On est deux maintenant.)",
+      c: [
+        ["Saluer poliment le cousin.", "Le cousin est touché. On salue rarement les cousins.", 12, 0],
+        ["Chasser le cousin avec ton journal.", "Le cousin s'en va, mais la famille s'en souviendra.", -12, 5],
+        ["Proposer un partage équitable à trois.", "Ils se consultent du regard. C'est une offre sérieuse.", 14, -5],
+        ["Te mettre à genoux et supplier.", "Ils sont gênés pour toi. Très gênés.", 8, -25]
+      ] },
+    { narr: "Un enfant passe avec un paquet de chips. Le pigeon hésite.", say: "…rou ? (Les chips, c'est tentant.)",
+      c: [
+        ["Dire : « Les chips, c'est mauvais pour la santé. »", "Il te trouve un peu donneur de leçons, mais il reste.", 4, 5],
+        ["Lui montrer que ton sandwich est bien plus beau.", "Il regarde le sandwich. C'est vrai qu'il est beau.", 10, 0],
+        ["Laisser faire en espérant qu'il parte.", "Il reste, par pur esprit de contradiction.", -5, 10],
+        ["Voler les chips de l'enfant pour les lui offrir.", "L'enfant pleure. Le pigeon est impressionné, toi moins.", 18, -30]
+      ] },
+    { narr: "Le pigeon fait trois pas vers toi. C'est le moment de vérité.", say: "ROU. (Dernière offre.)",
+      c: [
+        ["Tendre la main, paume ouverte, en silence.", "Un moment de pure confiance entre deux êtres.", 15, 5],
+        ["Promettre de revenir demain avec du pain.", "Un pigeon n'oublie jamais une promesse.", 12, 0],
+        ["Lui dire que c'est lui le vrai patron du parc.", "Il gonfle ses plumes. Il le savait.", 16, -10],
+        ["Tenter de l'attraper d'un coup.", "Tu attrapes une plume. Juste une plume.", -25, -10]
+      ] }
+  ];
+  var ENDINGS = {
+    friend: ["🤝", "Meilleurs amis", "Le pigeon te rend le sandwich et s'installe sur ton épaule. Vous vous voyez tous les mardis maintenant."],
+    half: ["🥪", "Le partage", "Le pigeon coupe le sandwich en deux avec son bec. Tu récupères la moitié la moins bonne. C'est la vie."],
+    lost: ["🪶", "Défaite totale", "Le pigeon s'envole avec le sandwich. En partant, il laisse un souvenir blanc sur ta veste."],
+    gang: ["🕶️", "La mafia des pigeons", "Quinze pigeons arrivent. Ils prennent le sandwich, ton écharpe et ton ticket de métro."],
+    shame: ["🤡", "Sans dignité", "Tu as récupéré le sandwich… mais tout le parc t'a filmé. Tu es sur internet maintenant."],
+    boss: ["👑", "Roi du parc", "Le pigeon te rend le sandwich ET te nomme chef des pigeons. Tu as un nouveau travail."]
+  };
+  var found = {};
+  try { found = JSON.parse(localStorage.getItem("pigeon-endings") || "{}") || {}; } catch (e) {}
+
+  var trust, dignity, round;
+  var $ = function (id) { return document.getElementById(id); };
+  function clamp(v) { return Math.max(0, Math.min(100, v)); }
+
+  function meters() {
+    $("cv").textContent = trust; $("cb").style.width = trust + "%";
+    $("dv").textContent = dignity; $("db").style.width = dignity + "%";
+  }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  function showRound(reaction) {
+    var r = ROUNDS[round];
+    $("step").textContent = "Négociation " + (round + 1) + " / " + ROUNDS.length;
+    $("say").innerHTML = (reaction ? '<div class="narr">' + reaction + "</div>" : "") + '<div class="narr">' + r.narr + "</div><b>🐦 " + r.say + "</b>";
+    var box = $("choices"); box.innerHTML = "";
+    shuffle(r.c).slice(0, 3).forEach(function (ch) {
+      var b = document.createElement("button");
+      b.className = "choice"; b.textContent = ch[0];
+      b.addEventListener("click", function () { pick(ch); });
+      box.appendChild(b);
+    });
+  }
+
+  function pick(ch) {
+    trust = clamp(trust + ch[2]); dignity = clamp(dignity + ch[3]);
+    meters();
+    var pig = $("pig"); pig.classList.remove("hop"); void pig.offsetWidth; pig.classList.add("hop");
+    round++;
+    if (round >= ROUNDS.length) finish(ch[1]); else showRound("➜ " + ch[1]);
+  }
+
+  function finish(last) {
+    var key;
+    if (trust >= 80 && dignity >= 60) key = "boss";
+    else if (trust >= 65 && dignity < 25) key = "shame";
+    else if (trust >= 65) key = "friend";
+    else if (trust >= 40) key = "half";
+    else if (trust < 20) key = "gang";
+    else key = "lost";
+    var e = ENDINGS[key];
+    found[key] = true;
+    try { localStorage.setItem("pigeon-endings", JSON.stringify(found)); } catch (err) {}
+    $("play").style.display = "none";
+    $("sand").textContent = (key === "friend" || key === "boss" || key === "shame") ? "🥪" : (key === "half" ? "🍞" : "💨");
+    $("end").style.display = "block";
+    $("end").innerHTML = '<div class="narr">➜ ' + last + '</div><div style="font-size:4rem">' + e[0] + "</div><h2>" + e[1] + "</h2><p>" + e[2] + '</p><button class="btn" id="again">Recommencer</button>';
+    $("again").addEventListener("click", start);
+    renderEndings();
+  }
+
+  function renderEndings() {
+    var h = "";
+    Object.keys(ENDINGS).forEach(function (k) { h += '<span class="' + (found[k] ? "on" : "") + '" title="' + (found[k] ? ENDINGS[k][1] : "???") + '">' + ENDINGS[k][0] + "</span>"; });
+    $("endings").innerHTML = h + '<div style="width:100%;text-align:center;color:#6b6b70;font-size:.9rem">' + Object.keys(found).length + " / " + Object.keys(ENDINGS).length + "</div>";
+  }
+
+  function start() {
+    trust = 30; dignity = 70; round = 0;
+    $("play").style.display = "block"; $("end").style.display = "none"; $("sand").textContent = "🥪";
+    meters(); showRound(); renderEndings();
+  }
+  start();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dépense 100 milliards</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .money {
+    position: sticky; top: 0; z-index: 10; background: linear-gradient(90deg,#1fa55b,#2ec27e);
+    color: #fff; text-align: center; font-size: clamp(1.5rem, 5vw, 2.6rem); font-weight: 800;
+    padding: 14px; border-radius: 0 0 18px 18px; box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  }
+  .money small { display: block; font-size: .9rem; font-weight: 600; opacity: .9; }
+  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+  .item { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; text-align: center; }
+  .item .emo { font-size: 3rem; }
+  .item h3 { margin: 6px 0 2px; font-size: 1.05rem; }
+  .item .price { color: var(--good); font-weight: 700; margin-bottom: 12px; }
+  .ctrl { display: flex; gap: 6px; align-items: center; }
+  .ctrl button { flex: 0 0 auto; padding: 10px 14px; }
+  .ctrl .sell { background: #e03131; } .ctrl .sell:hover { background: #c02525; }
+  .ctrl .buy { background: #1fa55b; } .ctrl .buy:hover { background: #178a4b; }
+  .ctrl input { flex: 1; min-width: 0; font: inherit; text-align: center; padding: 9px 4px; border: 1px solid var(--line); border-radius: 10px; }
+  .receipt { max-width: 460px; margin: 40px auto 0; background: #fff; border: 1px dashed #aaa; padding: 24px; font-family: Consolas, "Courier New", monospace; }
+  .receipt h2 { text-align: center; margin: 0 0 14px; }
+  .receipt .row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+  .receipt .total { border-top: 1px dashed #aaa; margin-top: 10px; padding-top: 10px; font-weight: 700; }
+  .note { text-align: center; color: var(--muted); font-size: .9rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">💸</span></div>
+<div class="money" id="money">100 000 000 000 €<small id="pct">Tu as dépensé 0 % de ta fortune</small></div>
+<div class="wrap">
+  <h1 class="center">Dépense 100 milliards d'euros</h1>
+  <p class="sub center">Tu viens d'hériter d'une fortune absurde. Arriveras-tu à tout claquer ?</p>
+  <div class="items" id="items"></div>
+  <div class="receipt" id="receipt" style="display:none">
+    <h2>🧾 Ton ticket de caisse</h2>
+    <div id="lines"></div>
+    <div class="row total"><span>TOTAL</span><span id="total"></span></div>
+    <div class="center" style="margin-top:16px"><button class="btn alt" id="reset">Tout revendre</button></div>
+  </div>
+  <p class="note">Prix approximatifs et à peine sérieux.</p>
+</div>
+<script>
+(function () {
+  var START = 100000000000;
+  var ITEMS = [
+    ["🥐", "Croissant", 1.5], ["🍔", "Burger", 12], ["🩴", "Paire de tongs", 15],
+    ["📚", "Livre", 20], ["🎮", "Jeu vidéo", 70], ["🎧", "Casque audio", 300],
+    ["🕹️", "Console de jeu", 500], ["📱", "Smartphone", 1200], ["💻", "Ordinateur portable", 2000],
+    ["🚲", "Vélo électrique", 2500], ["🐴", "Cheval", 8000], ["🚗", "Voiture citadine", 18000],
+    ["🥇", "Lingot d'or (1 kg)", 90000], ["🏎️", "Voiture de sport", 250000], ["🏡", "Maison", 350000],
+    ["🏙️", "Appartement à Paris", 1200000], ["🎨", "Tableau de maître", 5000000], ["🛥️", "Yacht", 8000000],
+    ["🏰", "Château", 15000000], ["🏝️", "Île privée", 30000000], ["🚀", "Lancement de fusée", 60000000],
+    ["✈️", "Jet privé", 65000000], ["🎬", "Film à gros budget", 200000000], ["🏢", "Gratte-ciel", 850000000],
+    ["⚽", "Club de foot", 1000000000], ["🏟️", "Stade", 1500000000], ["🛳️", "Paquebot de croisière", 2000000000]
+  ];
+  var qty = ITEMS.map(function () { return 0; });
+  var fmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+  function euros(n) { return fmt.format(n) + " €"; }
+
+  function spent() {
+    var s = 0;
+    for (var i = 0; i < ITEMS.length; i++) s += qty[i] * ITEMS[i][2];
+    return s;
+  }
+  function left() { return START - spent(); }
+
+  var grid = document.getElementById("items");
+  ITEMS.forEach(function (it, i) {
+    var el = document.createElement("div");
+    el.className = "item";
+    el.innerHTML = '<div class="emo">' + it[0] + "</div><h3>" + it[1] + '</h3><div class="price">' + euros(it[2]) +
+      '</div><div class="ctrl"><button class="btn sell">Vendre</button><input type="number" min="0" step="1" value="0" inputmode="numeric"><button class="btn buy">Acheter</button></div>';
+    var input = el.querySelector("input");
+    el.querySelector(".sell").addEventListener("click", function () { setQty(i, qty[i] - 1); });
+    el.querySelector(".buy").addEventListener("click", function () { setQty(i, qty[i] + 1); });
+    input.addEventListener("input", function () {
+      var v = parseInt(input.value, 10);
+      setQty(i, isNaN(v) ? 0 : v, true);
+    });
+    input.addEventListener("blur", function () { input.value = qty[i]; });
+    it.el = el;
+    grid.appendChild(el);
+  });
+
+  function setQty(i, n, fromInput) {
+    n = Math.max(0, Math.floor(n));
+    var otherSpent = spent() - qty[i] * ITEMS[i][2];
+    var maxAffordable = Math.floor(Math.round((START - otherSpent) * 100) / Math.round(ITEMS[i][2] * 100));
+    if (n > maxAffordable) n = maxAffordable;
+    qty[i] = n;
+    var inp = ITEMS[i].el.querySelector("input");
+    if (!fromInput || (inp.value !== "" && parseInt(inp.value, 10) !== n)) inp.value = n;
+    render();
+  }
+
+  function render() {
+    var l = Math.round(left() * 100) / 100;
+    var moneyEl = document.getElementById("money");
+    moneyEl.firstChild.nodeValue = euros(l);
+    var pct = (spent() / START) * 100;
+    document.getElementById("pct").textContent = l < 1.5
+      ? "🎉 Bravo, tu es ruiné ! Mission accomplie."
+      : "Tu as dépensé " + (pct < 0.01 && pct > 0 ? pct.toFixed(6) : pct.toFixed(2)).replace(".", ",") + " % de ta fortune";
+
+    ITEMS.forEach(function (it, i) {
+      it.el.querySelector(".buy").disabled = Math.round(it[2] * 100) > Math.round(l * 100);
+      it.el.querySelector(".sell").disabled = qty[i] === 0;
+    });
+
+    var lines = "", any = false;
+    ITEMS.forEach(function (it, i) {
+      if (qty[i] > 0) {
+        any = true;
+        lines += '<div class="row"><span>' + it[0] + " " + it[1] + " × " + fmt.format(qty[i]) + "</span><span>" + euros(qty[i] * it[2]) + "</span></div>";
+      }
+    });
+    document.getElementById("lines").innerHTML = lines;
+    document.getElementById("total").textContent = euros(spent());
+    document.getElementById("receipt").style.display = any ? "block" : "none";
+  }
+
+  document.getElementById("reset").addEventListener("click", function () {
+    for (var i = 0; i < qty.length; i++) { qty[i] = 0; ITEMS[i].el.querySelector("input").value = 0; }
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

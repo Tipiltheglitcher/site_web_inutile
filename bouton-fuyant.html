@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Bouton Fuyant</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .arena {
+    position: relative; height: 62vh; min-height: 380px; background: #fff; border: 2px dashed var(--line);
+    border-radius: 22px; overflow: hidden; touch-action: manipulation; user-select: none;
+  }
+  #runner {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    font: inherit; font-weight: 800; font-size: 1.15rem; padding: 14px 26px; border-radius: 14px;
+    border: none; background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap;
+    transition: left .18s ease-out, top .18s ease-out, background .3s;
+    box-shadow: 0 6px 0 #c23d1f;
+  }
+  #runner:active { box-shadow: 0 2px 0 #c23d1f; }
+  .bubble {
+    position: absolute; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff;
+    padding: 8px 16px; border-radius: 999px; font-weight: 600; white-space: nowrap; max-width: 92%;
+    overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+  }
+  .stats { display: flex; gap: 14px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 18px; text-align: center; min-width: 130px; }
+  .stat b { display: block; font-size: 1.5rem; }
+  .victory { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: #fdffb6; text-align: center; padding: 20px; }
+  .victory .big { font-size: 5rem; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🏃</span></div>
+<div class="wrap">
+  <h1 class="center">Le Bouton Fuyant</h1>
+  <p class="sub center">Il suffit de cliquer sur le bouton. C'est tout. Vraiment.</p>
+  <div class="stats">
+    <div class="stat"><b id="esc">0</b>fuites</div>
+    <div class="stat"><b id="tim">0,0 s</b>temps</div>
+    <div class="stat"><b id="energy">100 %</b>énergie du bouton</div>
+  </div>
+  <div class="arena" id="arena">
+    <div class="bubble" id="bubble">Essaie de m'attraper 😏</div>
+    <button id="runner">Clique-moi</button>
+    <div class="victory" id="victory">
+      <div class="big">🏆</div>
+      <h2 id="vtxt">Tu m'as eu !</h2>
+      <p id="vsub"></p>
+      <button class="btn" id="again">Recommencer</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var arena = document.getElementById("arena"), btn = document.getElementById("runner");
+  var bubble = document.getElementById("bubble");
+  var MAX = 30; // escapes before the button is exhausted
+  var escapes = 0, start = 0, timer = null, done = false, lastJump = 0;
+  var LINES = [
+    "Essaie de m'attraper 😏", "Trop lent !", "Raté !", "Hé hé hé", "Tu y étais presque… non.",
+    "Je suis un bouton libre !", "Tu cliques comme ma grand-mère", "Pas aujourd'hui !", "Olé ! 💃",
+    "Tu vas y passer la nuit", "Je fais du cardio", "Allez, encore un effort", "Je commence à fatiguer…",
+    "Pfiou… 😮‍💨", "Laisse-moi respirer", "Je… n'en… peux… plus…"
+  ];
+
+  function energy() { return Math.max(0, 1 - escapes / MAX); }
+
+  function place(x, y) { btn.style.left = x + "px"; btn.style.top = y + "px"; }
+
+  function jump(px, py) {
+    var now = performance.now();
+    if (now - lastJump < 120) return;
+    lastJump = now;
+    if (!start) { start = now; timer = setInterval(tick, 100); }
+    var aw = arena.clientWidth, ah = arena.clientHeight;
+    var bw = btn.offsetWidth, bh = btn.offsetHeight;
+    var minX = bw / 2 + 10, maxX = aw - bw / 2 - 10, minY = bh / 2 + 60, maxY = ah - bh / 2 - 10;
+    var e = energy();
+    var dist = 80 + 260 * e; // jumps get shorter when tired
+    var nx, ny, tries = 0;
+    do {
+      var a = Math.random() * Math.PI * 2;
+      nx = btn.offsetLeft + Math.cos(a) * dist;
+      ny = btn.offsetTop + Math.sin(a) * dist;
+      tries++;
+    } while (tries < 30 && (nx < minX || nx > maxX || ny < minY || ny > maxY || Math.hypot(nx - px, ny - py) < 90));
+    nx = Math.min(maxX, Math.max(minX, nx));
+    ny = Math.min(maxY, Math.max(minY, ny));
+    place(nx, ny);
+    escapes++;
+    var idx = Math.min(LINES.length - 1, Math.floor((escapes / MAX) * LINES.length));
+    if (Math.random() < 0.6 || escapes > MAX * 0.7) bubble.textContent = LINES[idx];
+    btn.style.background = "hsl(" + (12 + (1 - energy()) * 200) + ",85%,55%)";
+    btn.style.transitionDuration = (0.18 + (1 - energy()) * 0.35) + "s";
+    btn.textContent = energy() <= 0 ? "Bon ok… 😵" : energy() < 0.35 ? "Pitié…" : "Clique-moi";
+    updateStats();
+  }
+
+  function updateStats() {
+    document.getElementById("esc").textContent = escapes;
+    document.getElementById("energy").textContent = Math.round(energy() * 100) + " %";
+  }
+  function elapsed() { return start ? (performance.now() - start) / 1000 : 0; }
+  function tick() { document.getElementById("tim").textContent = elapsed().toFixed(1).replace(".", ",") + " s"; }
+
+  arena.addEventListener("pointermove", function (e) {
+    if (done || energy() <= 0 || e.pointerType !== "mouse") return;
+    var r = arena.getBoundingClientRect();
+    var px = e.clientX - r.left, py = e.clientY - r.top;
+    var bx = btn.offsetLeft, by = btn.offsetTop;
+    var radius = 40 + 60 * energy();
+    // distance from pointer to the button rectangle
+    var dx = Math.max(Math.abs(px - bx) - btn.offsetWidth / 2, 0);
+    var dy = Math.max(Math.abs(py - by) - btn.offsetHeight / 2, 0);
+    if (Math.hypot(dx, dy) < radius) jump(px, py);
+  });
+
+  // Touch screens: the button dodges the tap itself, less and less often
+  btn.addEventListener("pointerdown", function (e) {
+    btn.dataset.dodged = "";
+    if (done || e.pointerType === "mouse") return;
+    if (Math.random() < energy()) {
+      e.preventDefault();
+      var r = arena.getBoundingClientRect();
+      lastJump = 0;
+      jump(e.clientX - r.left, e.clientY - r.top);
+      btn.dataset.dodged = "1";
+    }
+  });
+
+  btn.addEventListener("click", function () {
+    if (done) return;
+    if (btn.dataset.dodged === "1") { btn.dataset.dodged = ""; return; }
+    done = true;
+    clearInterval(timer);
+    tick();
+    var t = elapsed().toFixed(1).replace(".", ",");
+    document.getElementById("vtxt").textContent = escapes === 0 ? "Quoi ?! Du premier coup ?" : "Tu m'as eu !";
+    document.getElementById("vsub").textContent = "Il t'a fallu " + t + " s et le bouton s'est enfui " + escapes + " fois.";
+    document.getElementById("victory").style.display = "flex";
+  });
+
+  document.getElementById("again").addEventListener("click", function () {
+    escapes = 0; start = 0; done = false; clearInterval(timer);
+    document.getElementById("victory").style.display = "none";
+    btn.style.transitionDuration = ""; btn.style.background = ""; btn.textContent = "Clique-moi";
+    bubble.textContent = LINES[0];
+    place(arena.clientWidth / 2, arena.clientHeight / 2);
+    updateStats(); document.getElementById("tim").textContent = "0,0 s";
+  });
+
+  place(arena.clientWidth / 2, arena.clientHeight / 2);
+  window.addEventListener("resize", function () { if (!done) place(arena.clientWidth / 2, arena.clientHeight / 2); });
+})();
+</script>
+</body>
+</html>

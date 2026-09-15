@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Bouton Inutile</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  body { transition: background .6s; }
+  body.disco { animation: disco 2s linear infinite; }
+  @keyframes disco { 0% { background: #ffd6a5; } 25% { background: #caffbf; } 50% { background: #9bf6ff; } 75% { background: #ffc6ff; } 100% { background: #ffd6a5; } }
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+  @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
+  .main { text-align: center; }
+  .count { font-size: clamp(2.5rem, 9vw, 4.5rem); font-weight: 800; line-height: 1; }
+  .rate { color: var(--muted); margin: 6px 0 20px; min-height: 1.5em; }
+  .bigbtn-wrap { position: relative; height: 300px; display: flex; align-items: center; justify-content: center; }
+  #big {
+    width: 200px; height: 200px; border-radius: 50%; border: none; cursor: pointer;
+    background: radial-gradient(circle at 35% 30%, #ff8a8a, #e03131 60%, #a51d1d);
+    box-shadow: 0 12px 0 #7a1414, 0 18px 30px rgba(0,0,0,.25); color: #fff; font: inherit; font-weight: 800; font-size: 1.2rem;
+    transition: transform .06s, box-shadow .06s, width .4s, height .4s; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  }
+  #big:active { transform: translateY(8px); box-shadow: 0 4px 0 #7a1414, 0 8px 14px rgba(0,0,0,.25); }
+  #big.huge { width: 260px; height: 260px; }
+  .float { position: absolute; font-weight: 800; pointer-events: none; animation: up .9s ease-out forwards; font-size: 1.3rem; }
+  @keyframes up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-80px); } }
+  .message { min-height: 3em; font-size: 1.15rem; font-weight: 600; margin-top: 10px; padding: 0 10px; }
+  .shop h3, .ach h3 { margin: 0 0 12px; }
+  .up { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 10px; background: #fff; cursor: pointer; width: 100%; text-align: left; font: inherit; color: inherit; }
+  .up:hover:not(:disabled) { background: #f7f3ea; }
+  .up:disabled { opacity: .45; cursor: not-allowed; }
+  .up .e { font-size: 1.8rem; }
+  .up .t { flex: 1; }
+  .up .t b { display: block; }
+  .up .t small { color: var(--muted); }
+  .up .c { font-weight: 700; white-space: nowrap; }
+  .ach { margin-top: 20px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { font-size: 1.6rem; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: #eee; border-radius: 12px; filter: grayscale(1); opacity: .35; }
+  .badge.on { filter: none; opacity: 1; background: #fdffb6; }
+  .reset { margin-top: 14px; font-size: .85rem; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🔴</span></div>
+<div class="wrap">
+  <h1 class="center">Le Bouton Inutile</h1>
+  <p class="sub center">Ce bouton ne fait rien. Absolument rien. Enfin… presque.</p>
+  <div class="layout">
+    <div class="panel main">
+      <div class="count" id="count">0</div>
+      <div class="rate" id="rate">clics</div>
+      <div class="bigbtn-wrap" id="wrap"><button id="big">NE PAS<br>APPUYER</button></div>
+      <div class="message" id="message">Vas-y. Clique. Tu sais que tu en as envie.</div>
+    </div>
+    <div>
+      <div class="panel shop"><h3>🛒 Boutique inutile</h3><div id="shop"></div></div>
+      <div class="panel ach"><h3>🏅 Succès</h3><div class="badges" id="badges"></div>
+        <button class="btn alt reset" id="reset">Tout effacer</button></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var S = { clicks: 0, total: 0, perClick: 1, auto: 0, owned: {}, ach: {}, sound: false };
+  var KEY = "bouton-inutile-v1";
+  try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && typeof saved.clicks === "number") S = Object.assign(S, saved); } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var UPGRADES = [
+    { id: "doigt", e: "👆", n: "Doigt musclé", d: "+1 par clic", base: 15, rep: true, buy: function () { S.perClick += 1; } },
+    { id: "chat", e: "🐈", n: "Chat qui marche sur le clavier", d: "+1 clic / seconde", base: 50, rep: true, buy: function () { S.auto += 1; } },
+    { id: "son", e: "🔊", n: "Son de pouet", d: "Le bouton fait pouet", base: 100, rep: false, buy: function () { S.sound = true; } },
+    { id: "mamie", e: "👵", n: "Mamie cliqueuse", d: "+10 clics / seconde", base: 600, rep: true, buy: function () { S.auto += 10; } },
+    { id: "gros", e: "🎈", n: "Bouton plus gros", d: "Il est plus gros. C'est tout.", base: 1000, rep: false, buy: function () {} },
+    { id: "disco", e: "🪩", n: "Mode disco", d: "Parce que pourquoi pas", base: 5000, rep: false, buy: function () {} },
+    { id: "usine", e: "🏭", n: "Usine à clics", d: "+100 clics / seconde", base: 8000, rep: true, buy: function () { S.auto += 100; } },
+    { id: "robot", e: "🤖", n: "IA de clic", d: "+1 000 clics / seconde", base: 100000, rep: true, buy: function () { S.auto += 1000; } }
+  ];
+  var MESSAGES = [
+    [1, "Bon. Tu as cliqué. Satisfait ?"], [10, "Il ne se passe toujours rien, tu sais."],
+    [25, "Tu as sûrement mieux à faire."], [50, "Ta productivité pleure en silence."],
+    [100, "100 clics. Ta souris te déteste."], [250, "On pourrait appeler ça une addiction."],
+    [500, "Tu as vu la boutique ? Elle est aussi inutile que le reste."], [1000, "1 000 ! Tu mérites une médaille (en chocolat imaginaire)."],
+    [2500, "Tes ancêtres seraient… perplexes."], [5000, "Ce bouton est désormais ton meilleur ami."],
+    [10000, "10 000 clics. Tu pourrais avoir appris l'espagnol."], [50000, "Le bouton commence à te respecter."],
+    [100000, "100 000. Le bouton te craint."], [1000000, "UN MILLION. Tu as gagné… rien. Félicitations !"]
+  ];
+  var ACH = [
+    ["🐣", "Premier clic", function () { return S.total >= 1; }], ["🔟", "10 clics", function () { return S.total >= 10; }],
+    ["💯", "100 clics", function () { return S.total >= 100; }], ["🛍️", "Premier achat", function () { return Object.keys(S.owned).length > 0; }],
+    ["🐈", "3 chats", function () { return (S.owned.chat || 0) >= 3; }], ["🔊", "Pouet", function () { return !!S.owned.son; }],
+    ["🪩", "Disco", function () { return !!S.owned.disco; }], ["🥉", "1 000 clics", function () { return S.total >= 1000; }],
+    ["🥈", "10 000 clics", function () { return S.total >= 10000; }], ["🥇", "100 000 clics", function () { return S.total >= 100000; }],
+    ["👑", "Un million", function () { return S.total >= 1000000; }]
+  ];
+
+  var fmt = new Intl.NumberFormat("fr-FR");
+  function cost(u) { return u.rep ? Math.floor(u.base * Math.pow(1.15, S.owned[u.id] || 0)) : u.base; }
+
+  var shop = document.getElementById("shop");
+  UPGRADES.forEach(function (u) {
+    var b = document.createElement("button");
+    b.className = "up";
+    b.innerHTML = '<span class="e">' + u.e + '</span><span class="t"><b></b><small>' + u.d + '</small></span><span class="c"></span>';
+    u.nameEl = b.querySelector("b"); u.costEl = b.querySelector(".c");
+    b.addEventListener("click", function () {
+      var c = cost(u);
+      if (S.clicks < c || (!u.rep && S.owned[u.id])) return;
+      S.clicks -= c; S.owned[u.id] = (S.owned[u.id] || 0) + 1; u.buy();
+      save(); render();
+    });
+    u.el = b; shop.appendChild(b);
+  });
+
+  var badges = document.getElementById("badges");
+  ACH.forEach(function (a) { var d = document.createElement("div"); d.className = "badge"; d.textContent = a[0]; d.title = a[1]; a.el = d; badges.appendChild(d); });
+
+  var audio = null;
+  function pouet() {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      var o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+      o.type = "square"; o.frequency.setValueAtTime(320 + Math.random() * 120, t); o.frequency.exponentialRampToValueAtTime(110, t + 0.18);
+      g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + 0.21);
+    } catch (e) {}
+  }
+
+  var lastMsg = -1;
+  function render() {
+    document.getElementById("count").textContent = fmt.format(Math.floor(S.clicks));
+    document.getElementById("rate").textContent = S.auto > 0 ? fmt.format(S.auto) + " clics / seconde · " + fmt.format(S.perClick) + " par clic" : (S.perClick > 1 ? fmt.format(S.perClick) + " par clic" : "clics");
+    UPGRADES.forEach(function (u) {
+      var owned = S.owned[u.id] || 0, c = cost(u), soldOut = !u.rep && owned > 0;
+      u.el.disabled = soldOut || S.clicks < c;
+      u.nameEl.textContent = u.n + (u.rep && owned ? " ×" + owned : "");
+      u.costEl.textContent = soldOut ? "✔" : fmt.format(c);
+    });
+    ACH.forEach(function (a) { a.el.className = "badge" + (a[2]() ? " on" : ""); });
+    document.getElementById("big").className = S.owned.gros ? "huge" : "";
+    document.body.className = S.owned.disco ? "disco" : "";
+    var idx = -1;
+    for (var i = 0; i < MESSAGES.length; i++) if (S.total >= MESSAGES[i][0]) idx = i;
+    if (idx !== lastMsg && idx >= 0) { document.getElementById("message").textContent = MESSAGES[idx][1]; lastMsg = idx; }
+  }
+
+  var wrap = document.getElementById("wrap");
+  document.getElementById("big").addEventListener("click", function (e) {
+    S.clicks += S.perClick; S.total += S.perClick;
+    if (S.sound) pouet();
+    var f = document.createElement("div");
+    f.className = "float"; f.textContent = "+" + fmt.format(S.perClick);
+    var r = wrap.getBoundingClientRect();
+    var x = e.clientX ? e.clientX - r.left : r.width / 2, y = e.clientY ? e.clientY - r.top : r.height / 2;
+    f.style.left = (x - 10 + (Math.random() * 30 - 15)) + "px"; f.style.top = (y - 30) + "px";
+    f.style.color = "hsl(" + Math.floor(Math.random() * 360) + ",80%,45%)";
+    wrap.appendChild(f);
+    setTimeout(function () { f.remove(); }, 900);
+    render();
+  });
+
+  var lastTick = performance.now(), saveCounter = 0;
+  setInterval(function () {
+    var now = performance.now(), dt = Math.min(5, (now - lastTick) / 1000);
+    lastTick = now;
+    if (S.auto > 0) { var g = S.auto * dt; S.clicks += g; S.total += g; render(); }
+    if (++saveCounter >= 20) { saveCounter = 0; save(); }
+  }, 100);
+  window.addEventListener("beforeunload", save);
+
+  document.getElementById("reset").addEventListener("click", function () {
+    if (!document.getElementById("reset").dataset.confirm) {
+      document.getElementById("reset").dataset.confirm = "1";
+      document.getElementById("reset").textContent = "Sûr ? Clique encore";
+      setTimeout(function () { var b = document.getElementById("reset"); b.dataset.confirm = ""; b.textContent = "Tout effacer"; }, 3000);
+      return;
+    }
+    S = { clicks: 0, total: 0, perClick: 1, auto: 0, owned: {}, ach: {}, sound: false };
+    lastMsg = -1; document.getElementById("message").textContent = "Tout est effacé. Comme si rien ne s'était passé.";
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

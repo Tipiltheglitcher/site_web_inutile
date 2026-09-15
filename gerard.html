@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gérard la plante</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .game { max-width: 760px; margin: 0 auto; }
+  .stage { position: relative; background: linear-gradient(#e3f6ff, #fdfbf3); border: 1px solid var(--line); border-radius: 22px; padding: 20px; text-align: center; overflow: hidden; }
+  .stage.dark { background: linear-gradient(#2c2c44, #4a4a5e); color: #fff; }
+  .plant { font-size: 7rem; line-height: 1; display: inline-block; transition: transform .3s; user-select: none; }
+  .plant.sad { transform: rotate(18deg) scale(.92); }
+  .plant.dance { animation: dance .5s ease-in-out infinite alternate; }
+  @keyframes dance { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+  .pot { font-size: 1rem; font-weight: 800; background: #b5651d; color: #fff; display: inline-block; padding: 4px 30px; border-radius: 0 0 20px 20px; margin-top: -8px; }
+  .face { font-size: 2rem; position: absolute; left: 50%; top: 88px; transform: translateX(-50%); pointer-events: none; }
+  .bubble { background: #fff; color: #1d1d1f; border: 2px solid #1d1d1f; border-radius: 16px; padding: 10px 14px; font-weight: 600; min-height: 48px; margin: 0 auto 14px; max-width: 480px; }
+  .bubble.urgent { background: #ffe0e0; border-color: var(--bad); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+  @media (max-width: 600px) { .stats { grid-template-columns: 1fr 1fr; } }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; text-align: left; font-size: .85rem; font-weight: 700; color: #1d1d1f; }
+  .bar { height: 10px; background: #eee; border-radius: 99px; overflow: hidden; margin-top: 5px; position: relative; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+  .bar.warnhigh:after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 15%; background: repeating-linear-gradient(45deg, #e0313155 0 4px, transparent 4px 8px); }
+  .actions { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  @media (max-width: 600px) { .actions { grid-template-columns: repeat(3, 1fr); } }
+  .act { font: inherit; font-weight: 700; padding: 12px 6px; border-radius: 14px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  .act span { display: block; font-size: 1.8rem; }
+  .act:hover:not(:disabled) { background: #eafbe7; }
+  .act:disabled { opacity: .4; cursor: wait; }
+  .act.wanted { border: 3px solid var(--bad); animation: pulse .6s infinite alternate; }
+  @keyframes pulse { to { transform: scale(1.06); } }
+  .top { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; }
+  .over { position: absolute; inset: 0; background: rgba(255,255,255,.95); color: #1d1d1f; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 5; }
+  .over.show { display: flex; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🪴</span></div>
+<div class="wrap game">
+  <h1 class="center">Gérard, la plante dramatique</h1>
+  <p class="sub center">Gérard a besoin d'eau, de lumière, de compliments et de divertissement. Mais attention : trop d'eau et il se noie. Et il fait des caprices.</p>
+  <div class="stage" id="stage">
+    <div class="top"><span>⏱️ <span id="time">0</span> s</span><span>🏆 Record : <span id="best">0</span> s</span></div>
+    <div class="bubble" id="bubble">Bonjour. Je suis Gérard. Clique sur « Commencer » si tu es prêt·e à assumer mes besoins.</div>
+    <div class="plant" id="plant">🪴</div><br><div class="pot">GÉRARD</div>
+    <div class="stats" id="stats"></div>
+    <div class="actions" id="actions"></div>
+    <div class="over show" id="over"><div style="font-size:4rem" id="overEmo">🪴</div><h2 id="overTitle" style="margin:6px 0">Prêt·e ?</h2><p id="overText">Survis le plus longtemps possible.</p><button class="btn" id="startBtn">Commencer</button></div>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var STATS = [
+    { k: "eau", n: "💧 Eau", col: "#2b8be0", max: true },
+    { k: "soleil", n: "☀️ Lumière", col: "#f2b705", max: true },
+    { k: "ego", n: "💖 Ego", col: "#e64980" },
+    { k: "fun", n: "🎉 Moral", col: "#7950f2" }
+  ];
+  var ACTIONS = [
+    { k: "eau", e: "💧", n: "Arroser", fx: { eau: 18 }, cd: 900, lines: ["Glou glou. Merci.", "Ahhh, de l'eau du robinet… comme c'est… modeste.", "Tu veux me noyer ou quoi ?"] },
+    { k: "soleil", e: "☀️", n: "Lumière", fx: { soleil: 20, eau: -5 }, cd: 900, lines: ["Je bronze.", "Ahhh, la photosynthèse.", "Je suis radieux. Littéralement."] },
+    { k: "ego", e: "💖", n: "Compliment", fx: { ego: 28 }, cd: 1100, lines: ["Oui, mes feuilles sont magnifiques. Je sais.", "Dis-le encore.", "Enfin quelqu'un qui me comprend."] },
+    { k: "fun", e: "🎵", n: "Musique", fx: { fun: 30, ego: -4 }, cd: 1200, lines: ["C'est mon morceau !", "Je danse. Enfin, je penche.", "Pas mal, mais je préfère l'opéra."] },
+    { k: "blague", e: "🤡", n: "Blague", fx: { fun: 18, ego: 8 }, cd: 1500, lines: ["Ha. Ha. Ha. (Gérard ne rit pas.)", "C'est l'histoire d'une plante… non, j'ai compris.", "Pfff. Bon, d'accord, elle était drôle."] }
+  ];
+  var CAPRICES = [
+    ["eau", "J'EXIGE DE L'EAU. MAINTENANT."], ["soleil", "Il fait trop sombre ici, j'ai peur !"],
+    ["ego", "Personne ne me dit jamais que je suis beau…"], ["fun", "Je m'ennuie à mourir. Mets de la musique !"],
+    ["blague", "Raconte-moi une blague ou je fane."]
+  ];
+  var IDLE = ["Tu as vu mes feuilles aujourd'hui ?", "Le cactus d'à côté me regarde bizarrement.", "Je pense, donc je pousse.", "Parfois je rêve d'être une tulipe.", "Tu m'aimes, hein ?", "J'ai vu une araignée. On ne se parle pas."];
+
+  var S, running = false, loop = null, best = 0, cooldown = {}, caprice = null, t0 = 0, lastIdle = 0;
+  try { best = +localStorage.getItem("gerard-best") || 0; } catch (e) {}
+  $("best").textContent = best;
+
+  var statsBox = $("stats");
+  STATS.forEach(function (s) {
+    var d = document.createElement("div"); d.className = "stat";
+    d.innerHTML = s.n + '<div class="bar' + (s.max ? " warnhigh" : "") + '"><i style="background:' + s.col + '"></i></div>';
+    s.bar = d.querySelector("i"); statsBox.appendChild(d);
+  });
+  var actBox = $("actions");
+  ACTIONS.forEach(function (a) {
+    var b = document.createElement("button"); b.className = "act";
+    b.innerHTML = "<span>" + a.e + "</span>" + a.n;
+    b.addEventListener("click", function () { doAction(a); });
+    a.btn = b; actBox.appendChild(b);
+  });
+
+  function say(txt, urgent) { $("bubble").textContent = txt; $("bubble").className = "bubble" + (urgent ? " urgent" : ""); }
+  function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  function doAction(a) {
+    if (!running || cooldown[a.k] > performance.now()) return;
+    for (var k in a.fx) S[k] += a.fx[k];
+    cooldown[a.k] = performance.now() + a.cd;
+    a.btn.disabled = true;
+    setTimeout(function () { a.btn.disabled = false; }, a.cd);
+    if (caprice && caprice.k === a.k) {
+      caprice = null; S.ego += 10; say("Merci. Tu es pardonné·e. Pour l'instant.");
+    } else if (caprice) {
+      S.ego -= 5; say("Ce n'est PAS ce que j'ai demandé !", true);
+    } else say(rnd(a.lines));
+    $("plant").className = "plant" + (a.k === "fun" ? " dance" : "");
+    if (a.k === "fun") setTimeout(function () { if (running) $("plant").className = "plant"; }, 1500);
+    render();
+  }
+
+  function render() {
+    STATS.forEach(function (s) { s.bar.style.width = Math.max(0, Math.min(100, S[s.k])) + "%"; });
+    ACTIONS.forEach(function (a) { a.btn.classList.toggle("wanted", !!caprice && caprice.k === a.k); });
+    $("stage").classList.toggle("dark", S.soleil < 25);
+    var low = STATS.some(function (s) { return S[s.k] < 25; });
+    if ($("plant").className.indexOf("dance") === -1) $("plant").className = "plant" + (low ? " sad" : "");
+  }
+
+  function tick() {
+    var now = performance.now(), el = (now - t0) / 1000;
+    var speed = 1 + el / 45; // gets harder
+    S.eau -= 1.1 * speed * 0.25; S.soleil -= 0.9 * speed * 0.25; S.ego -= 1.0 * speed * 0.25; S.fun -= 1.2 * speed * 0.25;
+    $("time").textContent = Math.floor(el);
+
+    if (caprice) {
+      var left = Math.ceil((caprice.until - now) / 1000);
+      if (left <= 0) { caprice = null; S.ego -= 25; S.fun -= 15; say("Tu m'as ignoré. Je m'en souviendrai toute ma vie.", true); }
+      else $("bubble").textContent = caprice.txt + " (" + left + " s)";
+    } else if (el > 5 && Math.random() < 0.012 * speed) {
+      var c = rnd(CAPRICES);
+      caprice = { k: c[0], txt: c[1], until: now + 6000 };
+      say(c[1], true);
+    } else if (now - lastIdle > 9000) { lastIdle = now; say(rnd(IDLE)); }
+
+    var dead = null;
+    if (S.eau > 100) dead = ["🌊", "Gérard s'est noyé", "Trop d'eau. Il est parti en faisant des bulles."];
+    else if (S.soleil > 100) dead = ["🔥", "Gérard a cramé", "Il voulait bronzer, pas devenir une frite."];
+    else if (S.eau <= 0) dead = ["🏜️", "Gérard est tout sec", "Il est devenu une plante séchée. Très déco, mais morte."];
+    else if (S.soleil <= 0) dead = ["🌑", "Gérard a peur du noir", "Il s'est enfui du pot pendant la nuit."];
+    else if (S.ego <= 0) dead = ["💔", "Gérard a démissionné", "Il est parti vivre chez des gens qui l'apprécient."];
+    else if (S.fun <= 0) dead = ["😴", "Gérard est mort d'ennui", "Il a fané en bâillant."];
+    render();
+    if (dead) gameOver(dead, Math.floor(el));
+  }
+
+  function gameOver(d, sec) {
+    running = false; clearInterval(loop); caprice = null;
+    ACTIONS.forEach(function (a) { a.btn.classList.remove("wanted"); });
+    var rec = sec > best;
+    if (rec) { best = sec; try { localStorage.setItem("gerard-best", best); } catch (e) {} $("best").textContent = best; }
+    $("overEmo").textContent = d[0]; $("overTitle").textContent = d[1];
+    $("overText").textContent = d[2] + " Tu as tenu " + sec + " secondes." + (rec ? " 🏆 Nouveau record !" : "");
+    $("startBtn").textContent = "Adopter un nouveau Gérard";
+    $("over").classList.add("show");
+  }
+
+  $("startBtn").addEventListener("click", function () {
+    S = { eau: 45, soleil: 45, ego: 60, fun: 60 };
+    cooldown = {}; caprice = null; running = true; t0 = performance.now(); lastIdle = t0;
+    ACTIONS.forEach(function (a) { a.btn.disabled = false; });
+    $("over").classList.remove("show");
+    say("C'est parti. Ne me déçois pas.");
+    render();
+    clearInterval(loop); loop = setInterval(tick, 250);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Réflexes de Limace</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .zone {
+    height: 58vh; min-height: 340px; border-radius: 24px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; color: #fff; cursor: pointer;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation; padding: 20px; transition: background .1s;
+  }
+  .zone .big { font-size: clamp(2.2rem, 7vw, 4rem); font-weight: 800; line-height: 1.1; }
+  .zone .small { font-size: 1.15rem; opacity: .9; margin-top: 10px; }
+  .idle { background: #2b6fd6; } .wait { background: #d63a2b; } .go { background: #1fa55b; }
+  .early { background: #f08c00; } .result { background: #2b6fd6; }
+  .tries { display: flex; gap: 10px; justify-content: center; margin: 18px 0; flex-wrap: wrap; }
+  .try { width: 84px; padding: 10px 0; border-radius: 12px; background: #fff; border: 1px solid var(--line); text-align: center; font-weight: 700; }
+  .try.empty { color: #bbb; }
+  .scale { margin-top: 24px; }
+  .scale .row { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 10px; }
+  .scale .row.me { background: #fdffb6; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">⚡</span></div>
+<div class="wrap">
+  <h1 class="center">Réflexes de Limace</h1>
+  <p class="sub center">Clique dès que l'écran devient vert. 5 essais. Pas de triche, on te voit.</p>
+  <div class="zone idle" id="zone"><div class="big" id="big">Clique pour commencer</div><div class="small" id="small">Tu peux aussi appuyer sur Espace</div></div>
+  <div class="tries" id="tries"></div>
+  <div class="panel scale">
+    <h3 style="margin-top:0">Où te situes-tu ?</h3>
+    <div id="scale"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var TRIES = 5;
+  var zone = document.getElementById("zone"), big = document.getElementById("big"), small = document.getElementById("small");
+  var state = "idle", times = [], timeout = null, goAt = 0;
+  var SCALE = [
+    [150, "🦸 Super-héros"], [200, "🐱 Chat"], [250, "🧑 Humain en forme"],
+    [300, "🧓 Humain le lundi matin"], [400, "🐢 Tortue"], [600, "🦥 Paresseux"], [Infinity, "🐌 Limace"]
+  ];
+
+  function rank(ms) { for (var i = 0; i < SCALE.length; i++) if (ms < SCALE[i][0]) return i; return SCALE.length - 1; }
+
+  function renderTries() {
+    var h = "";
+    for (var i = 0; i < TRIES; i++) h += times[i] != null ? '<div class="try">' + times[i] + " ms</div>" : '<div class="try empty">—</div>';
+    document.getElementById("tries").innerHTML = h;
+  }
+  function renderScale(ms) {
+    var me = ms == null ? -1 : rank(ms), h = "", prev = 0;
+    SCALE.forEach(function (s, i) {
+      var label = s[0] === Infinity ? "> " + prev + " ms" : "< " + s[0] + " ms";
+      h += '<div class="row' + (i === me ? " me" : "") + '"><span>' + s[1] + (i === me ? " ← toi" : "") + "</span><span>" + label + "</span></div>";
+      prev = s[0];
+    });
+    document.getElementById("scale").innerHTML = h;
+  }
+
+  function set(cls, b, s) { zone.className = "zone " + cls; big.textContent = b; small.textContent = s; }
+
+  function startRound() {
+    state = "wait";
+    set("wait", "Attends le vert…", "Ne clique pas encore !");
+    timeout = setTimeout(function () {
+      state = "go"; goAt = performance.now();
+      set("go", "CLIQUE !", "");
+    }, 1200 + Math.random() * 3300);
+  }
+
+  function action() {
+    if (state === "idle" || state === "early" || state === "between") {
+      startRound();
+    } else if (state === "wait") {
+      clearTimeout(timeout);
+      state = "early";
+      set("early", "Trop tôt ! 🙃", "Clique pour réessayer (cet essai ne compte pas)");
+    } else if (state === "go") {
+      var ms = Math.round(performance.now() - goAt);
+      times.push(ms);
+      renderTries();
+      if (times.length >= TRIES) {
+        var avg = Math.round(times.reduce(function (a, b) { return a + b; }, 0) / times.length);
+        state = "done";
+        set("result", avg + " ms de moyenne", "Tu es : " + SCALE[rank(avg)][1] + " — clique pour rejouer");
+        renderScale(avg);
+      } else {
+        state = "between";
+        set("result", ms + " ms", SCALE[rank(ms)][1] + " — clique pour l'essai suivant (" + (times.length + 1) + "/" + TRIES + ")");
+      }
+    } else if (state === "done") {
+      times = []; renderTries(); renderScale(null);
+      startRound();
+    }
+  }
+
+  zone.addEventListener("pointerdown", function (e) { e.preventDefault(); action(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.code === "Space" || e.key === " ") { e.preventDefault(); if (!e.repeat) action(); }
+  });
+
+  renderTries(); renderScale(null);
+})();
+</script>
+</body>
+</html>

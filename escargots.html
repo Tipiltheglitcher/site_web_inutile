@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Prix des Escargots</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  .game { max-width: 900px; margin: 0 auto; }
+  .track { background: #7cc36b; border-radius: 20px; padding: 14px 14px 14px 14px; position: relative; overflow: hidden; }
+  .lane { position: relative; height: 62px; border-bottom: 3px dashed #ffffff88; }
+  .lane:last-child { border-bottom: none; }
+  .lane .name { position: absolute; left: 6px; top: 2px; font-size: .75rem; font-weight: 800; color: #1d4d14; white-space: nowrap; }
+  .lane.me { background: #ffffff33; border-radius: 10px; }
+  .snail { position: absolute; top: 14px; font-size: 2.3rem; line-height: 1; transform: scaleX(-1); transition: left .1s linear; }
+  .snail .tag { font-size: .9rem; position: absolute; top: -8px; left: 50%; transform: scaleX(-1) translateX(50%); white-space: nowrap; }
+  .finish { position: absolute; top: 0; bottom: 0; right: 40px; width: 14px; background: repeating-linear-gradient(#000 0 10px, #fff 10px 20px); opacity: .8; }
+  .caster { background: #1d1d1f; color: #fff; border-radius: 14px; padding: 12px 16px; margin: 14px 0; font-weight: 600; min-height: 50px; }
+  .caster b { color: #ffd43b; }
+  .controls { display: flex; gap: 14px; justify-content: center; margin-top: 10px; }
+  .pad { font: inherit; font-size: 1.6rem; font-weight: 800; width: 130px; height: 90px; border-radius: 18px; border: none; background: #fff; box-shadow: 0 6px 0 #c9c2b2; cursor: pointer; touch-action: manipulation; user-select: none; }
+  .pad.next { background: #ffd43b; }
+  .pad:active { transform: translateY(4px); box-shadow: 0 2px 0 #c9c2b2; }
+  .center-big { text-align: center; font-size: 1.1rem; color: var(--muted); margin-top: 8px; }
+  .count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 6rem; font-weight: 900; color: #fff; text-shadow: 0 4px 0 #0005; pointer-events: none; }
+  .podium { text-align: center; }
+  .podium ol { display: inline-block; text-align: left; font-size: 1.15rem; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🐌</span></div>
+<div class="wrap game">
+  <h1 class="center">Grand Prix des Escargots</h1>
+  <p class="sub center">Tu es <b>Turbo-Jean-Pierre</b>. Alterne les touches <b>←</b> et <b>→</b> (ou les deux gros boutons) pour avancer. Appuie deux fois sur la même : tu glisses dans ta propre bave.</p>
+  <div class="track" id="track"><div class="finish"></div><div class="count" id="count"></div></div>
+  <div class="caster" id="caster">🎙️ Bienvenue au Grand Prix ! Les concurrents sont… sur la ligne. Lentement.</div>
+  <div id="panel">
+    <div class="controls"><button class="pad" id="L">←</button><button class="pad" id="R">→</button></div>
+    <div class="center"><button class="btn" id="start" style="margin-top:16px">🏁 Lancer la course</button></div>
+    <div class="center-big">Meilleur temps : <span id="best">—</span></div>
+  </div>
+  <div id="podium" class="panel podium" style="display:none;margin-top:10px"></div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var RACERS = [
+    { n: "Turbo-Jean-Pierre (toi)", me: true, e: "🐌" },
+    { n: "Baveuse Express", e: "🐌", base: 7.5 },
+    { n: "Monsieur Coquille", e: "🐌", base: 7 },
+    { n: "La Limace Masquée", e: "🐛", base: 8.2 }
+  ];
+  var GOAL = 100, state = "idle", lastKey = null, raf = 0, t0 = 0, lastT = 0, nextEvent = 0, best = 0, finishOrder = [];
+  try { best = +localStorage.getItem("escargots-best") || 0; } catch (e) {}
+  if (best) $("best").textContent = best.toFixed(2).replace(".", ",") + " s";
+
+  var track = $("track");
+  RACERS.forEach(function (r) {
+    var l = document.createElement("div"); l.className = "lane" + (r.me ? " me" : "");
+    l.innerHTML = '<span class="name">' + r.n + '</span><span class="snail">' + r.e + '<span class="tag"></span></span>';
+    r.el = l.querySelector(".snail"); r.tag = l.querySelector(".tag");
+    track.appendChild(l);
+  });
+
+  var EVENTS = [
+    function (r) { r.pause = 1.5; return "<b>" + r.n + "</b> s'arrête pour manger une feuille de salade. Priorités."; },
+    function (r) { r.boost = 2; return "<b>" + r.n + "</b> a trouvé une flaque ! Glisse de compétition !"; },
+    function (r) { r.pause = 1; return "<b>" + r.n + "</b> rentre dans sa coquille, intimidé par une fourmi."; },
+    function (r) { r.boost = 1.5; return "Le public en délire encourage <b>" + r.n + "</b> ! (Le public, c'est une coccinelle.)"; },
+    function (r) { r.pause = 1.2; return "<b>" + r.n + "</b> fait un selfie. Ça prend du temps."; },
+    function (r) { r.back = 4; return "Un coup de vent ! <b>" + r.n + "</b> recule un peu."; }
+  ];
+
+  function px(pos) { var w = track.clientWidth - 110; return 14 + (pos / GOAL) * w; }
+
+  function render() {
+    RACERS.forEach(function (r) { r.el.style.left = px(r.pos) + "px"; });
+  }
+
+  function reset() {
+    RACERS.forEach(function (r) { r.pos = 0; r.pause = 0; r.boost = 0; r.back = 0; r.done = 0; r.tag.textContent = ""; r.slip = 0; });
+    finishOrder = []; lastKey = null;
+    render();
+  }
+
+  function press(k) {
+    if (state !== "race") return;
+    var me = RACERS[0];
+    if (me.done) return;
+    if (me.slip > 0) return;
+    if (k === lastKey) {
+      me.slip = 0.6; me.tag.textContent = "💦";
+      $("caster").innerHTML = "🎙️ Oh non ! <b>Turbo-Jean-Pierre</b> glisse dans sa bave !";
+    } else {
+      me.pos += 1; lastKey = k;
+    }
+    $("L").classList.toggle("next", lastKey === "R" || lastKey === null);
+    $("R").classList.toggle("next", lastKey === "L" || lastKey === null);
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); if (!e.repeat) press(e.key === "ArrowLeft" ? "L" : "R"); }
+  });
+  $("L").addEventListener("pointerdown", function (e) { e.preventDefault(); press("L"); });
+  $("R").addEventListener("pointerdown", function (e) { e.preventDefault(); press("R"); });
+
+  function frame(now) {
+    var dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
+    var el = (now - t0) / 1000;
+    RACERS.forEach(function (r) {
+      if (r.done) return;
+      if (r.me) {
+        if (r.slip > 0) { r.slip -= dt; if (r.slip <= 0) { r.tag.textContent = ""; } }
+      } else {
+        if (r.pause > 0) { r.pause -= dt; r.tag.textContent = "💤"; }
+        else {
+          var sp = r.base * (0.7 + Math.random() * 0.6) * (r.boost > 0 ? 2.2 : 1);
+          r.pos += sp * dt;
+          r.tag.textContent = r.boost > 0 ? "💨" : "";
+        }
+        if (r.boost > 0) r.boost -= dt;
+      }
+      if (r.back > 0) { r.pos = Math.max(0, r.pos - r.back); r.back = 0; }
+      if (r.pos >= GOAL) { r.pos = GOAL; r.done = el; finishOrder.push(r); r.tag.textContent = ["🥇", "🥈", "🥉", "🍂"][finishOrder.length - 1]; }
+    });
+    if (now > nextEvent) {
+      var cands = RACERS.filter(function (r) { return !r.done; });
+      if (cands.length) { var r = cands[Math.floor(Math.random() * cands.length)]; $("caster").innerHTML = "🎙️ " + EVENTS[Math.floor(Math.random() * EVENTS.length)](r); }
+      nextEvent = now + 2500 + Math.random() * 2500;
+    }
+    render();
+    if (RACERS[0].done || finishOrder.length >= RACERS.length) return finish();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function finish() {
+    state = "idle";
+    var me = RACERS[0], place = finishOrder.indexOf(me) + 1;
+    // estimate the others' arrival order from their position
+    var rest = RACERS.filter(function (r) { return finishOrder.indexOf(r) === -1; }).sort(function (a, b) { return b.pos - a.pos; });
+    var order = finishOrder.concat(rest);
+    var rec = place === 1 && (!best || me.done < best);
+    if (rec) { best = me.done; try { localStorage.setItem("escargots-best", best); } catch (e) {} $("best").textContent = best.toFixed(2).replace(".", ",") + " s"; }
+    var titles = ["🏆 VICTOIRE ! Tu es l'escargot le plus rapide du jardin !", "🥈 Deuxième ! Une performance baveuse mais honorable.", "🥉 Troisième. Ta coquille est déçue.", "🍂 Dernier. Même la limace t'a battu."];
+    $("podium").style.display = "block";
+    $("podium").innerHTML = "<h2>" + titles[place - 1] + "</h2><p>Ton temps : <b>" + me.done.toFixed(2).replace(".", ",") + " s</b>" + (rec ? " · Nouveau record !" : "") + "</p><ol>" +
+      order.map(function (r) { return "<li>" + r.e + " " + r.n + "</li>"; }).join("") + "</ol>";
+    $("caster").innerHTML = "🎙️ Et c'est terminé ! " + (place === 1 ? "Quelle course <b>légendaire</b> !" : "On se revoit l'année prochaine. Ou dans 3 heures, à cette vitesse.");
+    $("start").style.display = ""; $("start").textContent = "🔁 Revanche";
+  }
+
+  $("start").addEventListener("click", function () {
+    reset();
+    $("podium").style.display = "none"; $("start").style.display = "none";
+    state = "count";
+    var n = 3; $("count").textContent = n;
+    var iv = setInterval(function () {
+      n--;
+      if (n > 0) $("count").textContent = n;
+      else if (n === 0) { $("count").textContent = "GO !"; state = "race"; t0 = lastT = performance.now(); nextEvent = t0 + 2000; $("caster").innerHTML = "🎙️ C'est parti ! Enfin… ils démarrent. Doucement."; raf = requestAnimationFrame(frame); }
+      else { $("count").textContent = ""; clearInterval(iv); }
+    }, 800);
+  });
+
+  window.addEventListener("resize", render);
+  reset();
+})();
+</script>
+</body>
+</html>

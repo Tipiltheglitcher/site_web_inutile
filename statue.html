@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Statue</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  body { background: #e9e4d8; overflow-x: hidden; }
+  .arena { position: relative; height: calc(100vh - 70px); min-height: 460px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .hud { position: absolute; top: 10px; left: 0; right: 0; text-align: center; pointer-events: none; padding: 0 16px; z-index: 3; }
+  .hud h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.6rem); }
+  .hud p { margin: 4px 0 0; color: var(--muted); }
+  .time { font-size: 2.4rem; font-weight: 800; margin-top: 6px; }
+  #zone { position: absolute; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #fff 60%, #d8d1bf 100%); border: 4px solid #1d1d1f; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 800; cursor: pointer; z-index: 2; }
+  #zone.live { border-color: #1fa55b; }
+  #zone.danger { border-color: var(--bad); }
+  #dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #1d1d1f; transform: translate(-50%, -50%); pointer-events: none; z-index: 4; display: none; }
+  .pest { position: absolute; font-size: 2.6rem; pointer-events: none; z-index: 5; transition: none; }
+  .shout { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; font-size: 1.3rem; background: #1d1d1f; color: #fff; padding: 8px 18px; border-radius: 99px; white-space: nowrap; z-index: 6; pointer-events: none; opacity: 0; transition: opacity .2s; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+  .shout.on { opacity: 1; }
+  .shake { animation: shake .35s linear; }
+  @keyframes shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-8px,4px); } 40% { transform: translate(7px,-5px); } 60% { transform: translate(-5px,-3px); } 80% { transform: translate(5px,5px); } }
+  .result { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(233,228,216,.96); z-index: 10; text-align: center; padding: 20px; }
+  .result.show { display: flex; }
+  .result .big { font-size: 4.5rem; }
+  .ranks { font-size: .9rem; color: var(--muted); margin-top: 12px; }
+</style>
+</head>
+<body class="statue-page">
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🗿</span></div>
+<div class="arena" id="arena">
+  <div class="hud"><h1>La Statue</h1><p id="hint">Maintiens le clic (ou le doigt) dans le cercle. Ne sors pas. Ne lâche pas.</p><div class="time" id="time">0,0 s</div></div>
+  <div id="zone">Appuie<br>et tiens</div>
+  <div id="dot"></div>
+  <div class="shout" id="shout"></div>
+  <div class="result" id="result"><div class="big" id="rEmo">🗿</div><h2 id="rTitle"></h2><p id="rText"></p><p><b>Record : <span id="best">0,0</span> s</b></p><button class="btn" id="again">Réessayer</button>
+    <div class="ranks">Moins de 10 s : pigeon nerveux · 10 s : mime débutant · 25 s : garde royal · 45 s : vraie statue · 60 s+ : tu es fait de marbre</div></div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var arena = $("arena"), zone = $("zone"), dot = $("dot");
+  var playing = false, t0 = 0, raf = 0, px = 0, py = 0, cx = 0, cy = 0, r = 0, best = 0, pests = [], nextPest = 0, nextShout = 0, pid = null;
+  try { best = +localStorage.getItem("statue-best") || 0; } catch (e) {}
+  var SHOUTS = ["Il y a une araignée sur ton épaule !", "Ton téléphone sonne !", "Regarde derrière toi !", "Attention, un pigeon !", "Qui a mangé mon yaourt ?!", "Ça gratte, hein ?", "Éternuement imminent…", "C'est l'heure du goûter !", "Tu as laissé le four allumé ?"];
+  var PESTS = ["🪰", "🐝", "🦟", "🐦", "🎈", "🦋", "🥏"];
+
+  function fmt(s) { return s.toFixed(1).replace(".", ","); }
+  $("best").textContent = fmt(best);
+
+  function layoutIdle() {
+    cx = arena.clientWidth / 2; cy = arena.clientHeight / 2 + 30; r = Math.min(110, arena.clientWidth / 3);
+    place();
+  }
+  function place() {
+    zone.style.left = cx + "px"; zone.style.top = cy + "px";
+    zone.style.width = zone.style.height = (r * 2) + "px";
+    zone.style.fontSize = Math.max(0.7, r / 90) + "rem";
+  }
+  function local(e) { var b = arena.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; }
+
+  zone.addEventListener("pointerdown", function (e) {
+    if (playing) return;
+    e.preventDefault();
+    pid = e.pointerId;
+    try { arena.setPointerCapture(e.pointerId); } catch (err) {}
+    var p = local(e); px = p.x; py = p.y;
+    playing = true; t0 = performance.now(); nextPest = t0 + 3000; nextShout = t0 + 2000;
+    zone.textContent = ""; zone.className = "live"; dot.style.display = "block";
+    raf = requestAnimationFrame(frame);
+  });
+  arena.addEventListener("pointermove", function (e) { if (playing && e.pointerId === pid) { var p = local(e); px = p.x; py = p.y; } });
+  function release(e) { if (playing && e.pointerId === pid) lose("Tu as lâché !"); }
+  arena.addEventListener("pointerup", release);
+  arena.addEventListener("pointercancel", release);
+  window.addEventListener("blur", function () { if (playing) lose("Tu as quitté la fenêtre !"); });
+
+  function frame(now) {
+    if (!playing) return;
+    var el = (now - t0) / 1000;
+    var W = arena.clientWidth, H = arena.clientHeight;
+    var baseR = Math.min(110, W / 3);
+    r = Math.max(22, baseR - el * 1.6);
+    // the circle starts drifting, slowly then faster
+    var amp = Math.min(W / 2 - r - 10, 10 + el * 3), ampY = Math.min(H / 2 - r - 70, 6 + el * 2);
+    cx = W / 2 + Math.sin(el * (0.4 + el / 120)) * amp;
+    cy = H / 2 + 30 + Math.sin(el * 0.7 + 1) * Math.max(0, ampY);
+    place();
+    dot.style.left = px + "px"; dot.style.top = py + "px";
+    $("time").textContent = fmt(el) + " s";
+
+    var d = Math.hypot(px - cx, py - cy);
+    zone.className = d > r * 0.75 ? "danger" : "live";
+    if (d > r) return lose("Tu es sorti du cercle !");
+
+    if (now > nextPest) { spawnPest(W, H); nextPest = now + Math.max(900, 3500 - el * 50); }
+    if (now > nextShout) { shout(SHOUTS[Math.floor(Math.random() * SHOUTS.length)]); nextShout = now + 3500 + Math.random() * 3000; if (el > 15 && Math.random() < .5) { arena.classList.remove("shake"); void arena.offsetWidth; arena.classList.add("shake"); } }
+    pests = pests.filter(function (p) {
+      var k = (now - p.born) / p.life;
+      if (k >= 1) { p.el.remove(); return false; }
+      p.el.style.left = (p.x0 + (p.x1 - p.x0) * k + Math.sin(k * 20) * 20) + "px";
+      p.el.style.top = (p.y0 + (p.y1 - p.y0) * k + Math.cos(k * 15) * 25) + "px";
+      return true;
+    });
+    raf = requestAnimationFrame(frame);
+  }
+
+  function spawnPest(W, H) {
+    var el = document.createElement("div"); el.className = "pest";
+    el.textContent = PESTS[Math.floor(Math.random() * PESTS.length)];
+    arena.appendChild(el);
+    var left = Math.random() < .5;
+    pests.push({ el: el, born: performance.now(), life: 2500 + Math.random() * 1500, x0: left ? -60 : W + 20, x1: left ? W + 20 : -60, y0: Math.random() * H, y1: Math.random() * H });
+  }
+  var shoutTimer = null;
+  function shout(t) { var s = $("shout"); s.textContent = t; s.classList.add("on"); clearTimeout(shoutTimer); shoutTimer = setTimeout(function () { s.classList.remove("on"); }, 1800); }
+
+  function lose(why) {
+    playing = false; cancelAnimationFrame(raf);
+    try { arena.releasePointerCapture(pid); } catch (e) {}
+    var el = (performance.now() - t0) / 1000;
+    pests.forEach(function (p) { p.el.remove(); }); pests = [];
+    $("shout").classList.remove("on"); dot.style.display = "none";
+    var rank = el >= 60 ? ["🏛️", "Tu es fait de marbre"] : el >= 45 ? ["🗿", "Vraie statue"] : el >= 25 ? ["💂", "Garde royal"] : el >= 10 ? ["🤡", "Mime débutant"] : ["🐦", "Pigeon nerveux"];
+    var rec = el > best;
+    if (rec) { best = el; try { localStorage.setItem("statue-best", best); } catch (e) {} $("best").textContent = fmt(best); }
+    $("rEmo").textContent = rank[0]; $("rTitle").textContent = rank[1];
+    $("rText").textContent = why + " Tu as tenu " + fmt(el) + " secondes." + (rec ? " 🏆 Nouveau record !" : "");
+    $("result").classList.add("show");
+  }
+
+  $("again").addEventListener("click", function () {
+    $("result").classList.remove("show"); zone.className = ""; zone.innerHTML = "Appuie<br>et tiens"; $("time").textContent = "0,0 s"; layoutIdle();
+  });
+  window.addEventListener("resize", function () { if (!playing) layoutIdle(); });
+  layoutIdle();
+})();
+</script>
+</body>
+</html>

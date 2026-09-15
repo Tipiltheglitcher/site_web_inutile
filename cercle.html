@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Cercle Parfait</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<style>
+  body { background: #111; color: #fff; overflow-x: hidden; }
+  .topbar a.back { background: #222; color: #fff; border-color: #333; }
+  .topbar a.back:hover { background: #333; }
+  .stage { position: relative; width: 100%; height: calc(100vh - 70px); min-height: 420px; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  .hud { position: absolute; left: 0; right: 0; top: 18px; text-align: center; pointer-events: none; padding: 0 16px; }
+  .hud h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.8rem); }
+  .hud p { margin: 6px 0 0; color: #aaa; }
+  .score { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+  .score .val { font-size: clamp(3rem, 12vw, 6rem); font-weight: 800; line-height: 1; }
+  .score .msg { font-size: 1.2rem; margin-top: 8px; color: #ddd; }
+  .best { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: #888; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">⭕</span></div>
+<div class="stage" id="stage">
+  <canvas id="cv"></canvas>
+  <div class="hud"><h1>Dessine un cercle parfait</h1><p>Maintiens le clic (ou ton doigt) et trace un cercle autour du point.</p></div>
+  <div class="score"><div class="val" id="val"></div><div class="msg" id="msg"></div></div>
+  <div class="best" id="best">Meilleur score : —</div>
+</div>
+<script>
+(function () {
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var stage = document.getElementById("stage");
+  var valEl = document.getElementById("val"), msgEl = document.getElementById("msg");
+  var W = 0, H = 0, dpr = 1, pts = [], drawing = false, best = 0, finished = false;
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    redraw();
+  }
+  function center() { return { x: W / 2, y: H / 2 }; }
+
+  function colorFor(score) {
+    // red (0) -> yellow (60) -> green (100)
+    var h = Math.max(0, Math.min(120, (score - 40) * 2));
+    return "hsl(" + h + ",90%,55%)";
+  }
+
+  function liveScore() {
+    if (pts.length < 3) return null;
+    var c = center(), sum = 0, rs = [];
+    for (var i = 0; i < pts.length; i++) { var r = Math.hypot(pts[i].x - c.x, pts[i].y - c.y); rs.push(r); sum += r; }
+    var mean = sum / rs.length, v = 0;
+    for (var j = 0; j < rs.length; j++) v += Math.abs(rs[j] - mean);
+    var dev = v / rs.length / mean;
+    return { score: Math.max(0, 100 - dev * 250), mean: mean };
+  }
+
+  function redraw(scoreColor) {
+    ctx.clearRect(0, 0, W, H);
+    var c = center();
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(c.x, c.y, 6, 0, Math.PI * 2); ctx.fill();
+    if (pts.length > 1) {
+      ctx.lineWidth = 8; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.strokeStyle = scoreColor || "#fff";
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.stroke();
+    }
+  }
+
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function showMsg(v, m, color) {
+    valEl.textContent = v; valEl.style.color = color || "#fff"; msgEl.textContent = m;
+  }
+
+  function fail(m) {
+    drawing = false; finished = true;
+    showMsg("✖", m, "#ff5252");
+  }
+
+  cv.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    pts = [pos(e)]; drawing = true; finished = false;
+    showMsg("", "");
+    redraw();
+  });
+
+  cv.addEventListener("pointermove", function (e) {
+    if (!drawing) return;
+    var p = pos(e), last = pts[pts.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < 2) return;
+    pts.push(p);
+    var c = center();
+    if (Math.hypot(p.x - c.x, p.y - c.y) < 25) { redraw("#ff5252"); return fail("Trop près du centre !"); }
+    var s = liveScore();
+    redraw(s ? colorFor(s.score) : "#fff");
+    if (s && pts.length > 10) showMsg(s.score.toFixed(1) + "%", "", colorFor(s.score));
+
+    // total angle travelled
+    var ang = sweep();
+    if (Math.abs(ang) >= Math.PI * 2) finish();
+  });
+
+  function sweep() {
+    var c = center(), total = 0;
+    for (var i = 1; i < pts.length; i++) {
+      var a1 = Math.atan2(pts[i - 1].y - c.y, pts[i - 1].x - c.x);
+      var a2 = Math.atan2(pts[i].y - c.y, pts[i].x - c.x);
+      var d = a2 - a1;
+      if (d > Math.PI) d -= Math.PI * 2;
+      if (d < -Math.PI) d += Math.PI * 2;
+      total += d;
+    }
+    return total;
+  }
+
+  function finish() {
+    drawing = false; finished = true;
+    var s = liveScore();
+    if (!s) return;
+    if (s.mean < 50) { redraw("#ff5252"); return fail("Trop petit ! Fais un vrai cercle."); }
+    var score = s.score;
+    redraw(colorFor(score));
+    var m;
+    if (score >= 97) m = "Tu es un compas humain. 🤯";
+    else if (score >= 92) m = "Presque parfait !";
+    else if (score >= 85) m = "Pas mal du tout.";
+    else if (score >= 70) m = "C'est… un cercle, on va dire.";
+    else if (score >= 50) m = "On dirait une patate.";
+    else m = "Qu'est-ce que c'est que ça ?";
+    if (score > best) { best = score; m += " Nouveau record !"; }
+    showMsg(score.toFixed(1) + "%", m, colorFor(score));
+    document.getElementById("best").textContent = "Meilleur score : " + best.toFixed(1) + "%";
+  }
+
+  function stop() {
+    if (!drawing) return;
+    drawing = false;
+    if (Math.abs(sweep()) < Math.PI * 2) fail("Termine ton cercle !");
+  }
+  cv.addEventListener("pointerup", stop);
+  cv.addEventListener("pointercancel", stop);
+
+  window.addEventListener("resize", resize);
+  resize();
+})();
+</script>
+</body>
+</html>
