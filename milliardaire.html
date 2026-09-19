@@ -3,134 +3,354 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dépense 100 milliards</title>
+<title>Dépense la fortune</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  .money {
+  .argent {
     position: sticky; top: 0; z-index: 10; background: linear-gradient(90deg,#1fa55b,#2ec27e);
-    color: #fff; text-align: center; font-size: clamp(1.5rem, 5vw, 2.6rem); font-weight: 800;
-    padding: 14px; border-radius: 0 0 18px 18px; box-shadow: 0 6px 20px rgba(0,0,0,.15);
+    color: #fff; text-align: center; font-size: clamp(1.3rem, 4.5vw, 2.3rem); font-weight: 800;
+    padding: 12px; border-radius: 0 0 18px 18px; box-shadow: 0 6px 20px rgba(0,0,0,.15);
   }
-  .money small { display: block; font-size: .9rem; font-weight: 600; opacity: .9; }
-  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
-  .item { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; text-align: center; }
-  .item .emo { font-size: 3rem; }
-  .item h3 { margin: 6px 0 2px; font-size: 1.05rem; }
-  .item .price { color: var(--good); font-weight: 700; margin-bottom: 12px; }
+  .argent.ruine { background: linear-gradient(90deg,#f08c00,#f59f00); }
+  .argent small { display: block; font-size: .85rem; font-weight: 600; opacity: .95; }
+
+  .objectifs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 8px; margin: 16px 0; }
+  .obj { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: .86rem; display: flex; gap: 8px; align-items: center; }
+  .obj.fait { border-color: var(--good); background: #eafbe7; }
+  html[data-theme="dark"] .obj.fait { background: #1e4a30; }
+  .obj .ic { font-size: 1.3rem; }
+  .obj b { display: block; }
+  .obj small { color: var(--muted); }
+
+  .articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; margin-top: 16px; }
+  .article { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 15px; text-align: center; }
+  .article.revenu { border-color: #f0c36d; }
+  .article .emo { font-size: 2.6rem; }
+  .article h3 { margin: 5px 0 2px; font-size: 1rem; }
+  .article .prix { color: var(--good); font-weight: 700; margin-bottom: 4px; font-size: .95rem; }
+  .article .rend { color: #b8860b; font-size: .78rem; font-weight: 700; margin-bottom: 8px; min-height: 1.1em; }
   .ctrl { display: flex; gap: 6px; align-items: center; }
-  .ctrl button { flex: 0 0 auto; padding: 10px 14px; }
-  .ctrl .sell { background: #e03131; } .ctrl .sell:hover { background: #c02525; }
-  .ctrl .buy { background: #1fa55b; } .ctrl .buy:hover { background: #178a4b; }
-  .ctrl input { flex: 1; min-width: 0; font: inherit; text-align: center; padding: 9px 4px; border: 1px solid var(--line); border-radius: 10px; }
-  .receipt { max-width: 460px; margin: 40px auto 0; background: #fff; border: 1px dashed #aaa; padding: 24px; font-family: Consolas, "Courier New", monospace; }
-  .receipt h2 { text-align: center; margin: 0 0 14px; }
-  .receipt .row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
-  .receipt .total { border-top: 1px dashed #aaa; margin-top: 10px; padding-top: 10px; font-weight: 700; }
-  .note { text-align: center; color: var(--muted); font-size: .9rem; margin-top: 10px; }
+  .ctrl button { flex: 0 0 auto; padding: 9px 13px; }
+  .ctrl .vendre { background: #e03131; } .ctrl .vendre:hover { background: #c02525; }
+  .ctrl .acheter { background: #1fa55b; } .ctrl .acheter:hover { background: #178a4b; }
+  .ctrl input { flex: 1; min-width: 0; font: inherit; text-align: center; padding: 8px 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: inherit; }
+
+  .ticket { max-width: 460px; margin: 34px auto 0; background: var(--card); border: 1px dashed #aaa; padding: 22px; font-family: Consolas, "Courier New", monospace; }
+  .ticket h2 { text-align: center; margin: 0 0 12px; font-size: 1.15rem; }
+  .ticket .l { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; font-size: .88rem; }
+  .ticket .total { border-top: 1px dashed #aaa; margin-top: 9px; padding-top: 9px; font-weight: 700; }
+  .note { text-align: center; color: var(--muted); font-size: .88rem; margin-top: 10px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
+  h3.t { margin: 0 0 12px; font-size: 1.05rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">💸</span></div>
-<div class="money" id="money">100 000 000 000 €<small id="pct">Tu as dépensé 0 % de ta fortune</small></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128184;</span></div>
+<div class="argent" id="argent">&mdash;<small id="pourcent">&nbsp;</small></div>
 <div class="wrap">
-  <h1 class="center">Dépense 100 milliards d'euros</h1>
-  <p class="sub center">Tu viens d'hériter d'une fortune absurde. Arriveras-tu à tout claquer ?</p>
-  <div class="items" id="items"></div>
-  <div class="receipt" id="receipt" style="display:none">
-    <h2>🧾 Ton ticket de caisse</h2>
-    <div id="lines"></div>
-    <div class="row total"><span>TOTAL</span><span id="total"></span></div>
-    <div class="center" style="margin-top:16px"><button class="btn alt" id="reset">Tout revendre</button></div>
+  <h1 class="center">D&eacute;pense la fortune</h1>
+  <p class="sub center">Tu viens d'h&eacute;riter d'une somme absurde. Arriveras-tu &agrave; tout claquer&nbsp;?</p>
+
+  <div id="difficulte"></div>
+  <div class="objectifs" id="objectifs"></div>
+
+  <div class="articles" id="articles"></div>
+
+  <div class="ticket" id="ticket" style="display:none">
+    <h2>&#129534; Ton ticket de caisse</h2>
+    <div id="lignes"></div>
+    <div class="l total"><span>TOTAL</span><span id="total"></span></div>
+    <div class="center" style="margin-top:14px"><button class="btn alt" id="toutRevendre">Tout revendre</button></div>
   </div>
-  <p class="note">Prix approximatifs et à peine sérieux.</p>
+  <p class="note" id="noteDiff"></p>
+
+  <div class="cols">
+    <div class="panel"><div id="succes"></div></div>
+    <div class="panel">
+      <h3 class="t">&#128202; Tes chiffres</h3>
+      <div id="stats"></div>
+    </div>
+  </div>
 </div>
+
 <script>
 (function () {
-  var START = 100000000000;
-  var ITEMS = [
-    ["🥐", "Croissant", 1.5], ["🍔", "Burger", 12], ["🩴", "Paire de tongs", 15],
+  var $ = function (id) { return document.getElementById(id); };
+
+  var ARTICLES = [
+    ["🥐", "Croissant", 1.2], ["🍔", "Burger", 12], ["🧦", "Paire de chaussettes", 6],
     ["📚", "Livre", 20], ["🎮", "Jeu vidéo", 70], ["🎧", "Casque audio", 300],
     ["🕹️", "Console de jeu", 500], ["📱", "Smartphone", 1200], ["💻", "Ordinateur portable", 2000],
-    ["🚲", "Vélo électrique", 2500], ["🐴", "Cheval", 8000], ["🚗", "Voiture citadine", 18000],
-    ["🥇", "Lingot d'or (1 kg)", 90000], ["🏎️", "Voiture de sport", 250000], ["🏡", "Maison", 350000],
-    ["🏙️", "Appartement à Paris", 1200000], ["🎨", "Tableau de maître", 5000000], ["🛥️", "Yacht", 8000000],
-    ["🏰", "Château", 15000000], ["🏝️", "Île privée", 30000000], ["🚀", "Lancement de fusée", 60000000],
-    ["✈️", "Jet privé", 65000000], ["🎬", "Film à gros budget", 200000000], ["🏢", "Gratte-ciel", 850000000],
-    ["⚽", "Club de foot", 1000000000], ["🏟️", "Stade", 1500000000], ["🛳️", "Paquebot de croisière", 2000000000]
+    ["🚲", "Vélo électrique", 2500], ["🐎", "Cheval", 8000], ["🚗", "Voiture citadine", 18000],
+    ["🥇", "Lingot d'or (1 kg)", 90000], ["🏎️", "Voiture de sport", 250000],
+    ["🏡", "Maison", 350000, 900], ["🏙️", "Appartement à Paris", 1200000, 3000],
+    ["🎨", "Tableau de maître", 5000000], ["🚤", "Yacht", 8000000],
+    ["🏰", "Château", 15000000, 25000], ["🏝️", "Île privée", 30000000],
+    ["🚀", "Lancement de fusée", 60000000], ["✈️", "Jet privé", 65000000],
+    ["🎬", "Film à gros budget", 200000000, 900000], ["🏢", "Gratte-ciel", 850000000, 4000000],
+    ["⚽", "Club de foot", 1000000000, 3000000], ["🏟️", "Stade", 1500000000, 5000000],
+    ["🛳️", "Paquebot de croisière", 2000000000, 6000000]
   ];
-  var qty = ITEMS.map(function () { return 0; });
-  var fmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
-  function euros(n) { return fmt.format(n) + " €"; }
 
-  function spent() {
-    var s = 0;
-    for (var i = 0; i < ITEMS.length; i++) s += qty[i] * ITEMS[i][2];
-    return s;
-  }
-  function left() { return START - spent(); }
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "tranquille", n: "Héritage", e: "💰",
+      d: "100 milliards, aucune contrainte. Dépense tranquillement.",
+      budget: 1e11, tva: 0, inflation: 0, mult: 1 },
+    { id: "normal", n: "Fortune taxée", e: "🎮",
+      d: "100 milliards, mais 20 % de TVA sur tout. Le fisc te remercie.",
+      budget: 1e11, tva: 0.2, inflation: 0, mult: 1.6 },
+    { id: "inflation", n: "Inflation", e: "🔥",
+      d: "10 milliards seulement, 20 % de TVA, et les prix montent jusqu'à +50 % à mesure que tu dépenses.",
+      budget: 1e10, tva: 0.2, inflation: 0.5, mult: 2.6 },
+    { id: "cauchemar", n: "Crise", e: "💀",
+      d: "1 milliard, 35 % de TVA, et les prix triplent quand la fortune fond. Bon courage pour finir à zéro.",
+      budget: 1e9, tva: 0.35, inflation: 2, mult: 4 }
+  ];
 
-  var grid = document.getElementById("items");
-  ITEMS.forEach(function (it, i) {
-    var el = document.createElement("div");
-    el.className = "item";
-    el.innerHTML = '<div class="emo">' + it[0] + "</div><h3>" + it[1] + '</h3><div class="price">' + euros(it[2]) +
-      '</div><div class="ctrl"><button class="btn sell">Vendre</button><input type="number" min="0" step="1" value="0" inputmode="numeric"><button class="btn buy">Acheter</button></div>';
-    var input = el.querySelector("input");
-    el.querySelector(".sell").addEventListener("click", function () { setQty(i, qty[i] - 1); });
-    el.querySelector(".buy").addEventListener("click", function () { setQty(i, qty[i] + 1); });
-    input.addEventListener("input", function () {
-      var v = parseInt(input.value, 10);
-      setQty(i, isNaN(v) ? 0 : v, true);
-    });
-    input.addEventListener("blur", function () { input.value = qty[i]; });
-    it.el = el;
-    grid.appendChild(el);
+  /* ------------------------------------------------------------------
+     Objectifs de la partie
+     ------------------------------------------------------------------ */
+  var OBJECTIFS = [
+    { id: "moitie", e: "💸", n: "Claquer la moitié", d: "Dépenser 50 % de la fortune.",
+      f: function (st) { return st.depense >= st.budget * 0.5; } },
+    { id: "tout", e: "🎯", n: "Ruiné", d: "Descendre sous 1 000 €.",
+      f: function (st) { return st.reste < 1000; } },
+    { id: "exact", e: "🧮", n: "Compte rond", d: "Descendre sous 1 €.",
+      f: function (st) { return st.reste < 1; } },
+    { id: "collection", e: "🗃️", n: "Collectionneur", d: "Posséder au moins un exemplaire de 20 articles.",
+      f: function (st) { return st.varietes >= 20; } },
+    { id: "flotte", e: "🚤", n: "Flotte personnelle", d: "Posséder 3 yachts.",
+      f: function (st) { return st.qte["Yacht"] >= 3; } },
+    { id: "croissants", e: "🥐", n: "Petit-déjeuner", d: "Acheter un million de croissants.",
+      f: function (st) { return st.qte["Croissant"] >= 1000000; } },
+    { id: "immobilier", e: "🏙️", n: "Promoteur", d: "Posséder 10 biens qui rapportent.",
+      f: function (st) { return st.rentiers >= 10; } },
+    { id: "sport", e: "⚽", n: "Président", d: "Acheter un club de foot et un stade.",
+      f: function (st) { return st.qte["Club de foot"] >= 1 && st.qte["Stade"] >= 1; } },
+    { id: "rendement", e: "📈", n: "Rentier", d: "Atteindre 10 millions d'euros de revenus annuels.",
+      f: function (st) { return st.revenu >= 1e7; } },
+    { id: "sobriete", e: "🧘", n: "Sobriété", d: "Descendre sous 1 000 € sans rien acheter à plus de 100 millions.",
+      f: function (st) { return st.reste < 1000 && !st.grosAchat; } }
+  ];
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premier", e: "🛒", n: "Premier achat", d: "Acheter quelque chose.", f: function (d) { return (d.achats || 0) >= 1; } },
+    { id: "ruine1", e: "💸", n: "Ruiné", d: "Tout dépenser en Héritage.", f: function (d) { return !!d.ruineTranquille; } },
+    { id: "ruine2", e: "🎮", n: "Ruiné avec TVA", d: "Tout dépenser en Fortune taxée.", f: function (d) { return !!d.ruineNormal; } },
+    { id: "ruine3", e: "🔥", n: "Ruiné malgré l'inflation", d: "Tout dépenser en Inflation.", f: function (d) { return !!d.ruineInflation; } },
+    { id: "ruine4", e: "💀", n: "Ruiné en pleine crise", d: "Tout dépenser en Crise.", f: function (d) { return !!d.ruineCauchemar; } },
+    { id: "exact", e: "🧮", n: "Au centime près", d: "Descendre sous 1 €.", f: function (d) { return !!d.exact; } },
+    { id: "objectifs5", e: "🏅", n: "Cinq objectifs", d: "Valider 5 objectifs en une partie.", f: function (d) { return (d.maxObjectifs || 0) >= 5; } },
+    { id: "objectifsTous", e: "🏆", n: "Tout coché", d: "Valider les 10 objectifs en une partie.", f: function (d) { return (d.maxObjectifs || 0) >= 10; } },
+    { id: "croissants", e: "🥐", n: "Boulanger", d: "Acheter un million de croissants.", f: function (d) { return !!d.croissants; } },
+    { id: "rentier", e: "📈", n: "Rentier", d: "Atteindre 10 millions de revenus annuels.", f: function (d) { return !!d.rentier; } },
+    { id: "sobriete", e: "🧘", n: "Sobriété", d: "Se ruiner sans rien acheter à plus de 100 millions.", f: function (d) { return !!d.sobriete; } },
+    { id: "gros", e: "🛳️", n: "Armateur", d: "Posséder 10 paquebots.", f: function (d) { return (d.maxPaquebots || 0) >= 10; } }
+  ];
+
+  var A = Arcade.init({
+    id: "milliardaire", nom: "Dépense la fortune", emoji: "💸",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { reinitialiser(); }
   });
+  var d = A.d;
 
-  function setQty(i, n, fromInput) {
-    n = Math.max(0, Math.floor(n));
-    var otherSpent = spent() - qty[i] * ITEMS[i][2];
-    var maxAffordable = Math.floor(Math.round((START - otherSpent) * 100) / Math.round(ITEMS[i][2] * 100));
-    if (n > maxAffordable) n = maxAffordable;
-    qty[i] = n;
-    var inp = ITEMS[i].el.querySelector("input");
-    if (!fromInput || (inp.value !== "" && parseInt(inp.value, 10) !== n)) inp.value = n;
-    render();
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var qte = [], fmtEuro = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+  var objFaits = {};
+  function euros(n) { return fmtEuro.format(n) + " €"; }
+
+  /* L'inflation suit la part de fortune deja depensee, pas le nombre d'articles :
+     sinon un million de croissants envoie les prix a l'infini. */
+  function prixUnitaire(i) {
+    var base = ARTICLES[i][2] * (1 + A.D.tva);
+    if (A.D.inflation) {
+      var part = Math.min(1, depense() / A.D.budget);
+      base *= 1 + A.D.inflation * part;
+    }
+    return Math.round(base * 100) / 100;
+  }
+  function totalArticles() { var t = 0; for (var i = 0; i < qte.length; i++) t += qte[i]; return t; }
+  function depense() {
+    var s = 0;
+    for (var i = 0; i < ARTICLES.length; i++) s += qte[i] * prixPaye[i];
+    return Math.round(s * 100) / 100;
+  }
+  var prixPaye = [];
+  function reste() { return Math.round((A.D.budget - depense()) * 100) / 100; }
+
+  function etat() {
+    var q = {}, varietes = 0, rentiers = 0, revenu = 0, gros = false;
+    ARTICLES.forEach(function (a, i) {
+      q[a[1]] = qte[i];
+      if (qte[i] > 0) { varietes++; if (a[3]) { rentiers += qte[i]; revenu += qte[i] * a[3]; } if (a[2] > 1e8) gros = true; }
+    });
+    return { qte: q, varietes: varietes, rentiers: rentiers, revenu: revenu, grosAchat: gros,
+             depense: depense(), reste: reste(), budget: A.D.budget };
   }
 
-  function render() {
-    var l = Math.round(left() * 100) / 100;
-    var moneyEl = document.getElementById("money");
-    moneyEl.firstChild.nodeValue = euros(l);
-    var pct = (spent() / START) * 100;
-    document.getElementById("pct").textContent = l < 1.5
-      ? "🎉 Bravo, tu es ruiné ! Mission accomplie."
-      : "Tu as dépensé " + (pct < 0.01 && pct > 0 ? pct.toFixed(6) : pct.toFixed(2)).replace(".", ",") + " % de ta fortune";
+  /* --- construction de la boutique --- */
+  var grille = $("articles");
+  function construire() {
+    grille.innerHTML = "";
+    ARTICLES.forEach(function (a, i) {
+      var el = document.createElement("div");
+      el.className = "article" + (a[3] ? " revenu" : "");
+      el.innerHTML = '<div class="emo">' + a[0] + "</div><h3>" + a[1] + '</h3><div class="prix"></div>' +
+        '<div class="rend">' + (a[3] ? "📈 " + euros(a[3]) + " / an" : "") + "</div>" +
+        '<div class="ctrl"><button class="btn vendre">Vendre</button><input type="number" min="0" step="1" value="0" inputmode="numeric"><button class="btn acheter">Acheter</button></div>';
+      var champ = el.querySelector("input");
+      el.querySelector(".vendre").addEventListener("click", function () { fixer(i, qte[i] - 1); });
+      el.querySelector(".acheter").addEventListener("click", function () { fixer(i, qte[i] + 1); });
+      champ.addEventListener("input", function () {
+        var v = parseInt(champ.value, 10);
+        fixer(i, isNaN(v) ? 0 : v, true);
+      });
+      champ.addEventListener("blur", function () { champ.value = qte[i]; });
+      a.el = el;
+      grille.appendChild(el);
+    });
+  }
 
-    ITEMS.forEach(function (it, i) {
-      it.el.querySelector(".buy").disabled = Math.round(it[2] * 100) > Math.round(l * 100);
-      it.el.querySelector(".sell").disabled = qty[i] === 0;
+  function fixer(i, n, depuisChamp) {
+    n = Math.max(0, Math.floor(n));
+    var avant = qte[i];
+    if (n > avant) {
+      /* achat : on n'achète que ce qu'on peut payer, au prix du moment */
+      var p = prixUnitaire(i);
+      var possible = Math.floor(reste() / p);
+      var achetes = Math.min(n - avant, possible);
+      if (achetes > 0) {
+        prixPaye[i] = (prixPaye[i] * avant + p * achetes) / (avant + achetes);
+        qte[i] = avant + achetes;
+        d.achats = (d.achats || 0) + achetes;
+        A.bip(420 + i * 8, 0.05, "sine", 0.03);
+      }
+    } else if (n < avant) {
+      qte[i] = n;
+      if (qte[i] === 0) prixPaye[i] = ARTICLES[i][2] * (1 + A.D.tva);
+      A.bip(240, 0.05, "sine", 0.03);
+    }
+    var champ = ARTICLES[i].el.querySelector("input");
+    if (!depuisChamp || (champ.value !== "" && parseInt(champ.value, 10) !== qte[i])) champ.value = qte[i];
+    afficher();
+  }
+
+  function afficher() {
+    var r = reste(), st = etat();
+    $("argent").firstChild.nodeValue = euros(r);
+    $("argent").classList.toggle("ruine", r < 1000);
+    var pct = (st.depense / A.D.budget) * 100;
+    $("pourcent").textContent = r < 1
+      ? "🎉 Ruiné au centime près. Mission accomplie."
+      : r < 1000
+        ? "🎉 Techniquement ruiné ! Il reste " + euros(r) + "."
+        : "Tu as dépensé " + (pct < 0.01 && pct > 0 ? pct.toFixed(6) : pct.toFixed(2)).replace(".", ",") +
+          " % · revenus : " + euros(st.revenu) + " / an";
+
+    ARTICLES.forEach(function (a, i) {
+      var p = prixUnitaire(i);
+      a.el.querySelector(".prix").textContent = euros(p);
+      a.el.querySelector(".acheter").disabled = p > r;
+      a.el.querySelector(".vendre").disabled = qte[i] === 0;
     });
 
-    var lines = "", any = false;
-    ITEMS.forEach(function (it, i) {
-      if (qty[i] > 0) {
-        any = true;
-        lines += '<div class="row"><span>' + it[0] + " " + it[1] + " × " + fmt.format(qty[i]) + "</span><span>" + euros(qty[i] * it[2]) + "</span></div>";
+    /* ticket */
+    var lignes = "", quelque = false;
+    ARTICLES.forEach(function (a, i) {
+      if (qte[i] > 0) {
+        quelque = true;
+        lignes += '<div class="l"><span>' + a[0] + " " + a[1] + " × " + fmtEuro.format(qte[i]) +
+          "</span><span>" + euros(qte[i] * prixPaye[i]) + "</span></div>";
       }
     });
-    document.getElementById("lines").innerHTML = lines;
-    document.getElementById("total").textContent = euros(spent());
-    document.getElementById("receipt").style.display = any ? "block" : "none";
+    $("lignes").innerHTML = lignes;
+    $("total").textContent = euros(st.depense);
+    $("ticket").style.display = quelque ? "block" : "none";
+
+    majObjectifs(st);
+    majSucces(st);
   }
 
-  document.getElementById("reset").addEventListener("click", function () {
-    for (var i = 0; i < qty.length; i++) { qty[i] = 0; ITEMS[i].el.querySelector("input").value = 0; }
-    render();
+  function majObjectifs(st) {
+    var h = "", faits = 0;
+    OBJECTIFS.forEach(function (o) {
+      var ok = o.f(st);
+      if (ok) { objFaits[o.id] = 1; }
+      if (objFaits[o.id]) faits++;
+      h += '<div class="obj' + (objFaits[o.id] ? " fait" : "") + '"><span class="ic">' +
+        (objFaits[o.id] ? "✔" : o.e) + '</span><span><b>' + o.n + "</b><small>" + o.d + "</small></span></div>";
+    });
+    $("objectifs").innerHTML = h;
+    if (faits > (d.maxObjectifs || 0)) d.maxObjectifs = faits;
+    return faits;
+  }
+
+  function majSucces(st) {
+    if (st.reste < 1000) {
+      if (A.D.id === "tranquille") d.ruineTranquille = 1;
+      if (A.D.id === "normal") d.ruineNormal = 1;
+      if (A.D.id === "inflation") d.ruineInflation = 1;
+      if (A.D.id === "cauchemar") d.ruineCauchemar = 1;
+      if (!st.grosAchat) d.sobriete = 1;
+      var score = Math.round((100000 - Math.min(100000, st.reste)) / 100 * A.D.mult + (d.maxObjectifs || 0) * 300 * A.D.mult);
+      A.record("score", score, false);
+      A.record("reste", Math.round(st.reste), true);
+    }
+    if (st.reste < 1) d.exact = 1;
+    if (st.qte["Croissant"] >= 1000000) d.croissants = 1;
+    if (st.revenu >= 1e7) d.rentier = 1;
+    if (st.qte["Paquebot de croisière"] > (d.maxPaquebots || 0)) d.maxPaquebots = st.qte["Paquebot de croisière"];
+    A.check();
+    if (A.majSucces) A.majSucces();
+    majStats();
+  }
+
+  function reinitialiser() {
+    qte = ARTICLES.map(function () { return 0; });
+    prixPaye = ARTICLES.map(function (a) { return a[2] * (1 + A.D.tva); });
+    objFaits = {};
+    construire();
+    $("noteDiff").textContent = A.D.e + " " + A.D.n + " : " + A.D.d + " Prix approximatifs et à peine sérieux.";
+    afficher();
+    A.sauver();
+  }
+
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Articles achetés (total)", A.nb(d.achats || 0));
+    ligne("Meilleur nombre d'objectifs", (d.maxObjectifs || 0) + " / " + OBJECTIFS.length);
+    ligne("Plus gros parc de paquebots", A.nb(d.maxPaquebots || 0));
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var s = A.meilleur("score", i), r = A.meilleur("reste", i);
+      ligne(df.e + " " + df.n, s != null ? A.nb(s) + " pts · reste " + euros(r || 0) : "jamais ruiné");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  $("toutRevendre").addEventListener("click", function () {
+    for (var i = 0; i < qte.length; i++) { qte[i] = 0; ARTICLES[i].el.querySelector("input").value = 0; }
+    prixPaye = ARTICLES.map(function (a) { return a[2] * (1 + A.D.tva); });
+    afficher();
   });
 
-  render();
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  reinitialiser();
 })();
 </script>
 </body>

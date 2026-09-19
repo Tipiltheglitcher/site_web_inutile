@@ -6,162 +6,393 @@
 <title>Négocie avec le Pigeon</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  .game { max-width: 680px; margin: 0 auto; }
-  .scene { text-align: center; font-size: 5rem; line-height: 1; margin: 10px 0; user-select: none; }
+  .game { max-width: 720px; margin: 0 auto; }
+  .scene { text-align: center; font-size: 4.2rem; line-height: 1; margin: 8px 0; user-select: none; }
   .scene .p { display: inline-block; transition: transform .3s; }
-  .scene .p.hop { animation: hop .4s ease; }
-  @keyframes hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-25px) rotate(-8deg); } }
-  .meters { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
-  .meter b { display: flex; justify-content: space-between; font-size: .9rem; }
-  .bar { height: 14px; background: #eee; border-radius: 99px; overflow: hidden; margin-top: 4px; }
-  .bar i { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
-  .say { background: #fff; border: 2px solid var(--ink); border-radius: 18px; padding: 16px 18px; font-size: 1.1rem; position: relative; margin: 14px 0 18px; min-height: 60px; }
-  .say:before { content: ""; position: absolute; top: -12px; left: 50%; border: 10px solid transparent; border-bottom-color: var(--ink); border-top: 0; transform: translateX(-50%); }
-  .narr { color: var(--muted); font-style: italic; margin-bottom: 8px; }
-  .choices { display: grid; gap: 10px; }
-  .choice { font: inherit; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
-  .choice:hover { background: #fff3d6; border-color: #f0c36d; }
-  .step { text-align: center; color: var(--muted); font-size: .9rem; }
-  .end { text-align: center; }
-  .end h2 { font-size: 1.8rem; margin: 6px 0; }
-  .endings { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
-  .endings span { font-size: 1.6rem; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: #eee; border-radius: 12px; opacity: .35; filter: grayscale(1); }
-  .endings span.on { opacity: 1; filter: none; background: #fdffb6; }
+  .scene .p.saut { animation: saut .4s ease; }
+  @keyframes saut { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-25px) rotate(-8deg); } }
+
+  .jauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+  @media (max-width: 560px) { .jauges { grid-template-columns: 1fr; } }
+  .jauge b { display: flex; justify-content: space-between; font-size: .85rem; }
+  .barre { height: 13px; background: #eee; border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  html[data-theme="dark"] .barre { background: #34343c; }
+  .barre i { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
+
+  .dit { background: var(--card); border: 2px solid var(--ink); border-radius: 18px; padding: 15px 18px; font-size: 1.05rem; position: relative; margin: 14px 0 16px; min-height: 58px; }
+  .dit:before { content: ""; position: absolute; top: -12px; left: 50%; border: 10px solid transparent; border-bottom-color: var(--ink); border-top: 0; transform: translateX(-50%); }
+  .narr { color: var(--muted); font-style: italic; margin-bottom: 6px; font-size: .95rem; }
+
+  .choix { display: grid; gap: 9px; }
+  .choix button { font: inherit; text-align: left; padding: 13px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); cursor: pointer; color: inherit; }
+  .choix button:hover { background: #fff3d6; border-color: #f0c36d; }
+  html[data-theme="dark"] .choix button:hover { background: #3a3220; border-color: #8a6d2d; }
+
+  .etape { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .88rem; margin-bottom: 6px; }
+  .chrono { height: 6px; background: #eee; border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+  html[data-theme="dark"] .chrono { background: #34343c; }
+  .chrono i { display: block; height: 100%; background: var(--accent); width: 100%; }
+
+  .fin { text-align: center; }
+  .fin h2 { font-size: 1.7rem; margin: 6px 0; }
+  .lignes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px,1fr)); gap: 8px; margin: 14px 0; }
+  .lignes div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .lignes b { display: block; font-size: 1.15rem; }
+  .lignes small { color: var(--muted); font-size: .74rem; }
+
+  .fins { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; margin: 12px 0; }
+  .fins span { font-size: 1.4rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #eee; border-radius: 12px; opacity: .35; filter: grayscale(1); cursor: help; }
+  .fins span.on { opacity: 1; filter: none; background: #fdffb6; }
+  html[data-theme="dark"] .fins span { background: #34343c; }
+  html[data-theme="dark"] .fins span.on { background: #55541f; }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🐦</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128038;</span></div>
 <div class="wrap game">
-  <h1 class="center">Négocie avec le Pigeon</h1>
-  <p class="sub center">Tu étais tranquille sur un banc. Un pigeon t'a volé ton sandwich jambon-beurre. Il est là, à deux mètres, et il te regarde.</p>
-  <div class="scene"><span class="p" id="pig">🐦</span> <span id="sand">🥪</span></div>
-  <div class="meters">
-    <div class="meter"><b><span>🤝 Confiance du pigeon</span><span id="cv"></span></b><div class="bar"><i id="cb" style="background:#1fa55b"></i></div></div>
-    <div class="meter"><b><span>🎩 Ta dignité</span><span id="dv"></span></b><div class="bar"><i id="db" style="background:#2b6fd6"></i></div></div>
+  <h1 class="center">N&eacute;gocie avec le Pigeon</h1>
+  <p class="sub center">Tu &eacute;tais tranquille sur un banc. Un pigeon t'a vol&eacute; ton sandwich jambon-beurre. Il te regarde.</p>
+
+  <div id="difficulte"></div>
+
+  <div class="scene"><span class="p" id="pigeon">&#128038;</span> <span id="sandwich">&#129386;</span></div>
+
+  <div class="jauges">
+    <div class="jauge"><b><span>&#129309; Confiance</span><span id="vConf"></span></b><div class="barre"><i id="bConf" style="background:#1fa55b"></i></div></div>
+    <div class="jauge"><b><span>&#127913; Ta dignit&eacute;</span><span id="vDig"></span></b><div class="barre"><i id="bDig" style="background:#2b6fd6"></i></div></div>
+    <div class="jauge"><b><span>&#9203; Patience du pigeon</span><span id="vPat"></span></b><div class="barre"><i id="bPat" style="background:#f59f00"></i></div></div>
   </div>
-  <div id="play">
-    <div class="step" id="step"></div>
-    <div class="say" id="say"></div>
-    <div class="choices" id="choices"></div>
+
+  <div id="jeu">
+    <div class="etape"><span id="etape"></span><span id="chronoTxt"></span></div>
+    <div class="chrono" id="chronoBox" style="display:none"><i id="chrono"></i></div>
+    <div class="dit" id="dit"></div>
+    <div class="choix" id="choix"></div>
   </div>
-  <div id="end" class="panel end" style="display:none"></div>
-  <p class="center" style="margin-top:20px;color:var(--muted)">Fins découvertes :</p>
-  <div class="endings" id="endings"></div>
+
+  <div id="fin" class="panel fin" style="display:none"></div>
+
+  <div class="panel" style="margin-top:18px">
+    <h3>&#128220; Fins d&eacute;couvertes <span id="finsCompte" style="color:var(--muted);font-weight:400;font-size:.85rem"></span></h3>
+    <div class="fins" id="fins"></div>
+  </div>
+  <div class="panel" style="margin-top:14px"><div id="succes"></div></div>
+  <div class="panel" style="margin-top:14px">
+    <h3>&#128202; Tes chiffres</h3>
+    <div id="stats"></div>
+  </div>
 </div>
+
 <script>
 (function () {
-  // Each round: the pigeon says something, you pick among 3 answers (shuffled from a pool)
-  var ROUNDS = [
-    { narr: "Le pigeon penche la tête. Il mâchouille lentement ton sandwich.", say: "Rou… rou ?",
-      c: [
-        ["Rendez-moi ce sandwich, monsieur.", "Il est surpris qu'on le vouvoie. Il apprécie.", 12, 0],
-        ["ROU ROU ROU ! (imiter le pigeon)", "Il te regarde comme on regarde un cousin décevant.", 8, -20],
-        ["Lui courir après en hurlant.", "Il s'envole sur la statue et te nargue de là-haut.", -20, -15],
-        ["Faire semblant de ne pas l'avoir vu.", "Il s'approche, vexé d'être ignoré.", 6, 5]
-      ] },
-    { narr: "Il pose une patte sur le sandwich, comme un avocat pose la main sur un dossier.", say: "Rou. (Traduction : qu'est-ce que tu proposes ?)",
-      c: [
-        ["Proposer une frite en échange.", "Il réfléchit. Une frite, c'est bien. Mais c'est pas un jambon-beurre.", 10, 0],
-        ["Lui expliquer que tu as eu une semaine difficile.", "Il hoche la tête. Lui aussi, il a eu une semaine difficile.", 15, -8],
-        ["Menacer d'appeler la police.", "Il sait très bien que la police ne viendra pas pour un pigeon.", -15, 0],
-        ["Lui offrir ta montre.", "Il ne sait pas lire l'heure. Il est confus mais intrigué.", 5, -10]
-      ] },
-    { narr: "Un deuxième pigeon arrive. Il a l'air d'être son cousin. Ou son avocat.", say: "Rou rou. (On est deux maintenant.)",
-      c: [
-        ["Saluer poliment le cousin.", "Le cousin est touché. On salue rarement les cousins.", 12, 0],
-        ["Chasser le cousin avec ton journal.", "Le cousin s'en va, mais la famille s'en souviendra.", -12, 5],
-        ["Proposer un partage équitable à trois.", "Ils se consultent du regard. C'est une offre sérieuse.", 14, -5],
-        ["Te mettre à genoux et supplier.", "Ils sont gênés pour toi. Très gênés.", 8, -25]
-      ] },
-    { narr: "Un enfant passe avec un paquet de chips. Le pigeon hésite.", say: "…rou ? (Les chips, c'est tentant.)",
-      c: [
-        ["Dire : « Les chips, c'est mauvais pour la santé. »", "Il te trouve un peu donneur de leçons, mais il reste.", 4, 5],
-        ["Lui montrer que ton sandwich est bien plus beau.", "Il regarde le sandwich. C'est vrai qu'il est beau.", 10, 0],
-        ["Laisser faire en espérant qu'il parte.", "Il reste, par pur esprit de contradiction.", -5, 10],
-        ["Voler les chips de l'enfant pour les lui offrir.", "L'enfant pleure. Le pigeon est impressionné, toi moins.", 18, -30]
-      ] },
-    { narr: "Le pigeon fait trois pas vers toi. C'est le moment de vérité.", say: "ROU. (Dernière offre.)",
-      c: [
-        ["Tendre la main, paume ouverte, en silence.", "Un moment de pure confiance entre deux êtres.", 15, 5],
-        ["Promettre de revenir demain avec du pain.", "Un pigeon n'oublie jamais une promesse.", 12, 0],
-        ["Lui dire que c'est lui le vrai patron du parc.", "Il gonfle ses plumes. Il le savait.", 16, -10],
-        ["Tenter de l'attraper d'un coup.", "Tu attrapes une plume. Juste une plume.", -25, -10]
-      ] }
-  ];
-  var ENDINGS = {
-    friend: ["🤝", "Meilleurs amis", "Le pigeon te rend le sandwich et s'installe sur ton épaule. Vous vous voyez tous les mardis maintenant."],
-    half: ["🥪", "Le partage", "Le pigeon coupe le sandwich en deux avec son bec. Tu récupères la moitié la moins bonne. C'est la vie."],
-    lost: ["🪶", "Défaite totale", "Le pigeon s'envole avec le sandwich. En partant, il laisse un souvenir blanc sur ta veste."],
-    gang: ["🕶️", "La mafia des pigeons", "Quinze pigeons arrivent. Ils prennent le sandwich, ton écharpe et ton ticket de métro."],
-    shame: ["🤡", "Sans dignité", "Tu as récupéré le sandwich… mais tout le parc t'a filmé. Tu es sur internet maintenant."],
-    boss: ["👑", "Roi du parc", "Le pigeon te rend le sandwich ET te nomme chef des pigeons. Tu as un nouveau travail."]
-  };
-  var found = {};
-  try { found = JSON.parse(localStorage.getItem("pigeon-endings") || "{}") || {}; } catch (e) {}
-
-  var trust, dignity, round;
   var $ = function (id) { return document.getElementById(id); };
-  function clamp(v) { return Math.max(0, Math.min(100, v)); }
 
-  function meters() {
-    $("cv").textContent = trust; $("cb").style.width = trust + "%";
-    $("dv").textContent = dignity; $("db").style.width = dignity + "%";
+  /* ------------------------------------------------------------------
+     Les scenes : [narration, replique, [choix, reaction, confiance, dignite, patience]]
+     ------------------------------------------------------------------ */
+  var SCENES = [
+    { n: "Le pigeon penche la tête. Il mâchouille lentement ton sandwich.", s: "Rou… rou ?",
+      c: [["Rendez-moi ce sandwich, monsieur.", "Il est surpris qu'on le vouvoie. Il apprécie.", 12, 0, 4],
+          ["ROU ROU ROU ! (imiter le pigeon)", "Il te regarde comme on regarde un cousin décevant.", 8, -20, 0],
+          ["Lui courir après en hurlant.", "Il s'envole sur la statue et te nargue de là-haut.", -20, -15, -12],
+          ["Faire semblant de ne pas l'avoir vu.", "Il s'approche, vexé d'être ignoré.", 6, 5, -4]] },
+    { n: "Il pose une patte sur le sandwich, comme un avocat pose la main sur un dossier.", s: "Rou. (Qu'est-ce que tu proposes ?)",
+      c: [["Proposer une frite en échange.", "Il réfléchit. Une frite, c'est bien. Mais c'est pas un jambon-beurre.", 10, 0, 0],
+          ["Expliquer que tu as eu une semaine difficile.", "Il hoche la tête. Lui aussi a eu une semaine difficile.", 15, -8, 3],
+          ["Menacer d'appeler la police.", "Il sait très bien que la police ne viendra pas pour un pigeon.", -15, 0, -10],
+          ["Lui offrir ta montre.", "Il ne sait pas lire l'heure. Il est confus mais intrigué.", 5, -10, -3]] },
+    { n: "Un deuxième pigeon arrive. Il a l'air d'être son cousin. Ou son avocat.", s: "Rou rou. (On est deux maintenant.)",
+      c: [["Saluer poliment le cousin.", "Le cousin est touché. On salue rarement les cousins.", 12, 0, 5],
+          ["Chasser le cousin avec ton journal.", "Le cousin s'en va, mais la famille s'en souviendra.", -12, 5, -10],
+          ["Proposer un partage équitable à trois.", "Ils se consultent du regard. C'est une offre sérieuse.", 14, -5, 4],
+          ["Te mettre à genoux et supplier.", "Ils sont gênés pour toi. Très gênés.", 8, -25, 0]] },
+    { n: "Un enfant passe avec un paquet de chips. Le pigeon hésite.", s: "…rou ? (Les chips, c'est tentant.)",
+      c: [["« Les chips, c'est mauvais pour la santé. »", "Il te trouve donneur de leçons, mais il reste.", 4, 5, -3],
+          ["Montrer que ton sandwich est bien plus beau.", "Il regarde le sandwich. C'est vrai qu'il est beau.", 10, 0, 2],
+          ["Laisser faire en espérant qu'il parte.", "Il reste, par pur esprit de contradiction.", -5, 10, -6],
+          ["Voler les chips de l'enfant pour les lui offrir.", "L'enfant pleure. Le pigeon est impressionné, toi moins.", 18, -30, 6]] },
+    { n: "Le pigeon s'installe confortablement. Il semble vouloir discuter de la pluie et du beau temps.", s: "Rourou rou. (Belle journée, non ?)",
+      c: [["Parler météo pendant dix minutes.", "Vous êtes d'accord : il fait un peu frais pour la saison.", 14, -5, 8],
+          ["Recentrer immédiatement sur le sandwich.", "Il soupire. Les humains sont toujours pressés.", -6, 8, -8],
+          ["Lui parler de tes problèmes de travail.", "Il écoute. Il trouve ton chef injuste, lui aussi.", 16, -12, 5],
+          ["Lui montrer des photos de vacances.", "Il aime beaucoup celle de la mer. Il n'a jamais vu la mer.", 11, -4, 6]] },
+    { n: "Il déchire un morceau de pain et le pose devant toi. Une offrande.", s: "Rou. (Tiens. Un bout.)",
+      c: [["Le manger avec gratitude.", "Le pacte du pain est scellé. C'est du sérieux chez les pigeons.", 20, -8, 10],
+          ["Refuser poliment, c'est son repas.", "Il est profondément touché par ta noblesse.", 16, 12, 8],
+          ["Le reprendre et réclamer le reste.", "Erreur diplomatique majeure.", -22, 0, -15],
+          ["Le mettre dans ta poche pour plus tard.", "Il trouve ça bizarre. Il a raison.", 2, -10, -2]] },
+    { n: "Une dame sur le banc d'en face vous observe. Elle a un sac de graines.", s: "Rou ! (Concurrence !)",
+      c: [["Faire signe à la dame de ne pas s'en mêler.", "Elle est vexée mais le pigeon apprécie ta loyauté.", 15, -6, 5],
+          ["Acheter les graines pour les lui offrir.", "Un geste coûteux mais efficace.", 22, -4, 10],
+          ["Partir t'asseoir à côté d'elle.", "Trahison. Le pigeon note tout.", -25, 4, -14],
+          ["Ne rien faire, voir ce qui se passe.", "Le pigeon apprécie ton sang-froid. Ou ton indifférence.", 3, 6, -4]] },
+    { n: "Il pose le sandwich, fait trois pas en arrière et te regarde fixement. C'est un test.", s: "…",
+      c: [["Ne pas bouger. Soutenir le regard.", "Dix secondes d'un duel silencieux. Tu tiens.", 18, 10, 6],
+          ["Se jeter sur le sandwich.", "Évidemment qu'il était plus rapide.", -28, -12, -18],
+          ["Détourner les yeux par respect.", "Chez les pigeons, c'est un signe de soumission. Il aime ça.", 12, -12, 8],
+          ["Lui faire un clin d'œil.", "Il ne sait pas comment interpréter ça. Personne ne sait.", 6, -2, 0]] },
+    { n: "Il se met à roucouler une mélodie. On dirait une chanson triste.", s: "Rou~ rou~ rouuu~",
+      c: [["Chanter avec lui.", "Un duo mémorable. Trois passants filment.", 20, -22, 12],
+          ["Applaudir poliment à la fin.", "Il s'incline. Il adore le public.", 14, 4, 8],
+          ["Lui dire que c'est faux.", "Ce n'était pas faux. C'était du pigeon.", -18, 6, -10],
+          ["Sortir ton téléphone et mettre de la musique.", "Il préfère sa version. Largement.", -8, 0, -6]] },
+    { n: "Le cousin revient avec trois autres pigeons. L'ambiance change.", s: "Rou rou rou. (On est cinq.)",
+      c: [["Rester calme et continuer la négociation.", "Le chef apprécie que tu ne paniques pas.", 12, 8, 4],
+          ["Offrir une tournée générale de miettes.", "Coûteux, mais tout le monde repart content.", 20, -8, 12],
+          ["Reculer lentement vers la sortie du parc.", "Ils te suivent. Ils sont plus rapides.", -14, -8, -12],
+          ["Désigner le cousin comme responsable de tout.", "Le cousin est exclu. Tu viens de créer une vendetta.", 6, -14, -5]] },
+    { n: "Il te tend le sandwich, puis le retire au dernier moment.", s: "Rou ! (Hé hé.)",
+      c: [["Rire de bon cœur.", "Il adore. L'humour, c'est la base d'une relation saine.", 18, -6, 10],
+          ["Rester impassible.", "Il trouve ça décevant. Il aime les réactions.", -4, 8, -4],
+          ["Faire la même blague avec ta bouteille d'eau.", "Il n'aime pas quand on lui rend la pareille.", -10, 4, -6],
+          ["Soupirer très fort.", "Il comprend qu'il est allé trop loin. Un peu.", 4, -4, 2]] },
+    { n: "Le pigeon fait trois pas vers toi. C'est le moment de vérité.", s: "ROU. (Dernière offre.)",
+      c: [["Tendre la main, paume ouverte, en silence.", "Un moment de pure confiance entre deux êtres.", 18, 5, 6],
+          ["Promettre de revenir demain avec du pain.", "Un pigeon n'oublie jamais une promesse.", 14, 0, 8],
+          ["Lui dire que c'est lui le vrai patron du parc.", "Il gonfle ses plumes. Il le savait.", 18, -12, 6],
+          ["Tenter de l'attraper d'un coup.", "Tu attrapes une plume. Juste une plume.", -28, -10, -20]] }
+  ];
+
+  var FINS = {
+    roi:      ["👑", "Roi du parc", "Le pigeon te rend le sandwich ET te nomme chef des pigeons. Tu as un nouveau travail, sans salaire."],
+    ami:      ["🤝", "Meilleurs amis", "Il te rend le sandwich et s'installe sur ton épaule. Vous vous voyez tous les mardis maintenant."],
+    partage:  ["🥪", "Le partage", "Il coupe le sandwich en deux avec son bec. Tu récupères la moitié la moins bonne. C'est la vie."],
+    honte:    ["🤡", "Sans dignité", "Tu as récupéré le sandwich… mais tout le parc t'a filmé. Tu es sur internet maintenant."],
+    perdu:    ["🪶", "Défaite totale", "Il s'envole avec le sandwich. En partant, il laisse un souvenir blanc sur ta veste."],
+    mafia:    ["🕶️", "La mafia des pigeons", "Quinze pigeons arrivent. Ils prennent le sandwich, ton écharpe et ton ticket de métro."],
+    impatient:["⏰", "Il en a eu assez", "Le pigeon a perdu patience bien avant la fin. Il est parti sans un mot. Enfin, sans un rou."],
+    chanteur: ["🎤", "Duo légendaire", "Vous avez fondé un groupe. Le sandwich, personne ne s'en souvient."],
+    moine:    ["🧘", "La voie du détachement", "Tu as gardé ta dignité intacte et tout perdu. Les sages diraient que tu as gagné."],
+    legende:  ["🌟", "La légende du banc", "Confiance totale, dignité intacte, patience préservée. On raconte encore ton histoire aux pigeonneaux."]
+  };
+  var ORDRE_FINS = ["legende", "roi", "ami", "chanteur", "partage", "moine", "honte", "perdu", "mafia", "impatient"];
+
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "tranquille", n: "Tranquille", e: "🧺",
+      d: "5 négociations, le pigeon est patient et tu as tout ton temps.",
+      tours: 5, patience: 100, usure: 3, chrono: 0, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮",
+      d: "7 négociations. Sa patience s'use, et 15 secondes par réponse.",
+      tours: 7, patience: 100, usure: 7, chrono: 15, mult: 1.6 },
+    { id: "presse", n: "Pigeon pressé", e: "🔥",
+      d: "9 négociations, patience courte, 9 secondes par réponse.",
+      tours: 9, patience: 85, usure: 11, chrono: 9, mult: 2.6 },
+    { id: "cauchemar", n: "Pigeon d'affaires", e: "💀",
+      d: "12 négociations, très peu de patience et 6 secondes par réponse.",
+      tours: 12, patience: 70, usure: 14, chrono: 6, mult: 4 }
+  ];
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premiere", e: "🐦", n: "Première négociation", d: "Terminer une partie.", f: function (d) { return (d.parties || 0) >= 1; } },
+    { id: "ami", e: "🤝", n: "Ami des bêtes", d: "Obtenir la fin « Meilleurs amis ».", f: function (d) { return !!(d.fins || {}).ami; } },
+    { id: "roi", e: "👑", n: "Couronné", d: "Obtenir la fin « Roi du parc ».", f: function (d) { return !!(d.fins || {}).roi; } },
+    { id: "legende", e: "🌟", n: "Légende vivante", d: "Obtenir la fin « La légende du banc ».", f: function (d) { return !!(d.fins || {}).legende; } },
+    { id: "cinq", e: "📜", n: "Conteur", d: "Découvrir 5 fins différentes.", f: function (d) { return Object.keys(d.fins || {}).length >= 5; } },
+    { id: "toutes", e: "📚", n: "Archiviste du parc", d: "Découvrir les 10 fins.", f: function (d) { return Object.keys(d.fins || {}).length >= 10; } },
+    { id: "dignite", e: "🎩", n: "Gentleman", d: "Finir avec 100 de dignité.", f: function (d) { return (d.maxDignite || 0) >= 100; } },
+    { id: "confiance", e: "💚", n: "Charmeur", d: "Finir avec 100 de confiance.", f: function (d) { return (d.maxConfiance || 0) >= 100; } },
+    { id: "presse", e: "🔥", n: "Négociateur rapide", d: "Terminer une partie en Pigeon pressé.", f: function (d) { return !!d.finiPresse; } },
+    { id: "cauchemar", e: "💀", n: "Diplomate aviaire", d: "Terminer une partie en Pigeon d'affaires.", f: function (d) { return !!d.finiCauchemar; } },
+    { id: "impatient", e: "⏰", n: "Trop lent", d: "Laisser le pigeon perdre patience.", f: function (d) { return !!(d.fins || {}).impatient; } },
+    { id: "dix", e: "🔁", n: "Habitué du banc", d: "Jouer 20 parties.", f: function (d) { return (d.parties || 0) >= 20; } }
+  ];
+
+  var A = Arcade.init({
+    id: "pigeon", nom: "Négocie avec le Pigeon", emoji: "🐦",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { demarrer(); }
+  });
+  var d = A.d;
+  d.fins = d.fins || {};
+  /* reprise des fins de l'ancienne version */
+  try {
+    var vieux = JSON.parse(localStorage.getItem("pigeon-endings") || "null");
+    if (vieux) {
+      var corresp = { friend: "ami", half: "partage", lost: "perdu", gang: "mafia", shame: "honte", boss: "roi" };
+      Object.keys(vieux).forEach(function (k) { if (corresp[k]) d.fins[corresp[k]] = 1; });
+      localStorage.removeItem("pigeon-endings");
+      A.sauver();
+    }
+  } catch (e) {}
+
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var conf, dign, pat, tour, ordre, chronoIv = null, chronoFin = 0, chante = false, calme = 0;
+
+  function borne(v) { return Math.max(0, Math.min(100, v)); }
+  function majJauges() {
+    $("vConf").textContent = Math.round(conf); $("bConf").style.width = conf + "%";
+    $("vDig").textContent = Math.round(dign); $("bDig").style.width = dign + "%";
+    $("vPat").textContent = Math.round(pat); $("bPat").style.width = pat + "%";
+    $("bPat").style.background = pat < 25 ? "var(--bad)" : pat < 50 ? "#f59f00" : "#1fa55b";
   }
-  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function melanger(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
 
-  function showRound(reaction) {
-    var r = ROUNDS[round];
-    $("step").textContent = "Négociation " + (round + 1) + " / " + ROUNDS.length;
-    $("say").innerHTML = (reaction ? '<div class="narr">' + reaction + "</div>" : "") + '<div class="narr">' + r.narr + "</div><b>🐦 " + r.say + "</b>";
-    var box = $("choices"); box.innerHTML = "";
-    shuffle(r.c).slice(0, 3).forEach(function (ch) {
+  function demarrer() {
+    conf = 30; dign = 70; pat = A.D.patience;
+    tour = 0; chante = false; calme = 0;
+    ordre = melanger(SCENES).slice(0, Math.min(A.D.tours, SCENES.length));
+    while (ordre.length < A.D.tours) ordre = ordre.concat(melanger(SCENES).slice(0, A.D.tours - ordre.length));
+    $("jeu").style.display = "block";
+    $("fin").style.display = "none";
+    $("sandwich").textContent = "🥪";
+    $("pigeon").textContent = "🐦";
+    majJauges(); afficherTour();
+    majFins(); majStats();
+    if (A.majSucces) A.majSucces();
+  }
+
+  function afficherTour(reaction) {
+    var s = ordre[tour];
+    $("etape").textContent = "Négociation " + (tour + 1) + " / " + A.D.tours;
+    $("dit").innerHTML = (reaction ? '<div class="narr">➜ ' + reaction + "</div>" : "") +
+      '<div class="narr">' + s.n + "</div><b>🐦 " + s.s + "</b>";
+    var box = $("choix"); box.innerHTML = "";
+    melanger(s.c).slice(0, 3).forEach(function (ch) {
       var b = document.createElement("button");
-      b.className = "choice"; b.textContent = ch[0];
-      b.addEventListener("click", function () { pick(ch); });
+      b.type = "button"; b.textContent = ch[0];
+      b.addEventListener("click", function () { choisir(ch); });
       box.appendChild(b);
     });
+    lancerChrono();
   }
 
-  function pick(ch) {
-    trust = clamp(trust + ch[2]); dignity = clamp(dignity + ch[3]);
-    meters();
-    var pig = $("pig"); pig.classList.remove("hop"); void pig.offsetWidth; pig.classList.add("hop");
-    round++;
-    if (round >= ROUNDS.length) finish(ch[1]); else showRound("➜ " + ch[1]);
+  function lancerChrono() {
+    clearInterval(chronoIv);
+    if (!A.D.chrono) { $("chronoBox").style.display = "none"; $("chronoTxt").textContent = ""; return; }
+    $("chronoBox").style.display = "block";
+    chronoFin = performance.now() + A.D.chrono * 1000;
+    chronoIv = setInterval(function () {
+      var reste = (chronoFin - performance.now()) / 1000;
+      $("chrono").style.width = Math.max(0, reste / A.D.chrono * 100) + "%";
+      $("chrono").style.background = reste < A.D.chrono * 0.3 ? "var(--bad)" : "var(--accent)";
+      $("chronoTxt").textContent = Math.max(0, Math.ceil(reste)) + " s";
+      if (reste <= 0) {
+        clearInterval(chronoIv);
+        pat = borne(pat - 20); conf = borne(conf - 8);
+        A.bip(170, 0.2, "sawtooth", 0.05);
+        majJauges();
+        if (pat <= 0) return terminer("Tu as trop hésité.");
+        tour++;
+        if (tour >= A.D.tours) return terminer("Tu n'as rien répondu.");
+        afficherTour("Tu es resté·e muet·te. Le pigeon soupire.");
+      }
+    }, 100);
   }
 
-  function finish(last) {
-    var key;
-    if (trust >= 80 && dignity >= 60) key = "boss";
-    else if (trust >= 65 && dignity < 25) key = "shame";
-    else if (trust >= 65) key = "friend";
-    else if (trust >= 40) key = "half";
-    else if (trust < 20) key = "gang";
-    else key = "lost";
-    var e = ENDINGS[key];
-    found[key] = true;
-    try { localStorage.setItem("pigeon-endings", JSON.stringify(found)); } catch (err) {}
-    $("play").style.display = "none";
-    $("sand").textContent = (key === "friend" || key === "boss" || key === "shame") ? "🥪" : (key === "half" ? "🍞" : "💨");
-    $("end").style.display = "block";
-    $("end").innerHTML = '<div class="narr">➜ ' + last + '</div><div style="font-size:4rem">' + e[0] + "</div><h2>" + e[1] + "</h2><p>" + e[2] + '</p><button class="btn" id="again">Recommencer</button>';
-    $("again").addEventListener("click", start);
-    renderEndings();
+  function choisir(ch) {
+    clearInterval(chronoIv);
+    conf = borne(conf + ch[2]);
+    dign = borne(dign + ch[3]);
+    pat = borne(pat + (ch[4] || 0) - A.D.usure);
+    if (ch[0].indexOf("Chanter") === 0) chante = true;
+    if (ch[2] >= 0 && ch[3] >= 0) calme++;
+    majJauges();
+    var p = $("pigeon");
+    p.classList.remove("saut"); void p.offsetWidth; p.classList.add("saut");
+    A.bip(ch[2] >= 10 ? 660 : ch[2] >= 0 ? 480 : 240, 0.08, "sine", 0.035);
+
+    if (pat <= 0) return terminer(ch[1]);
+    tour++;
+    if (tour >= A.D.tours) terminer(ch[1]);
+    else afficherTour(ch[1]);
   }
 
-  function renderEndings() {
+  function terminer(derniere) {
+    clearInterval(chronoIv);
+    var cle;
+    if (pat <= 0) cle = "impatient";
+    else if (conf >= 90 && dign >= 90) cle = "legende";
+    else if (chante && conf >= 60) cle = "chanteur";
+    else if (conf >= 80 && dign >= 55) cle = "roi";
+    else if (conf >= 65 && dign < 25) cle = "honte";
+    else if (conf >= 65) cle = "ami";
+    else if (conf >= 40) cle = "partage";
+    else if (dign >= 85) cle = "moine";
+    else if (conf < 20) cle = "mafia";
+    else cle = "perdu";
+
+    var f = FINS[cle];
+    var nouvelle = !d.fins[cle];
+    d.fins[cle] = 1;
+    d.parties = (d.parties || 0) + 1;
+    if (dign > (d.maxDignite || 0)) d.maxDignite = dign;
+    if (conf > (d.maxConfiance || 0)) d.maxConfiance = conf;
+    if (A.D.id === "presse") d.finiPresse = 1;
+    if (A.D.id === "cauchemar") d.finiCauchemar = 1;
+
+    var score = Math.round((conf + dign + pat) * 4 * A.D.mult + (nouvelle ? 500 : 0));
+    var recS = A.record("score", score, false);
+    var recC = A.record("confiance", Math.round(conf), false);
+    A.sauver(); A.check();
+
+    $("jeu").style.display = "none";
+    $("sandwich").textContent = (cle === "ami" || cle === "roi" || cle === "honte" || cle === "legende") ? "🥪" :
+      (cle === "partage" ? "🍞" : "💨");
+    $("pigeon").textContent = cle === "mafia" ? "🕶️" : cle === "impatient" ? "💨" : "🐦";
+
+    var cartes = "";
+    function carte(v, l) { cartes += "<div><b>" + v + "</b><small>" + l + "</small></div>"; }
+    carte(Math.round(conf), "confiance finale");
+    carte(Math.round(dign), "dignité finale");
+    carte(Math.round(pat), "patience restante");
+    carte(A.nb(score), "points");
+    $("fin").style.display = "block";
+    $("fin").innerHTML = '<div class="narr">➜ ' + derniere + '</div><div style="font-size:3.4rem">' + f[0] +
+      "</div><h2>" + f[1] + "</h2><p>" + f[2] + "</p>" +
+      (nouvelle ? '<p style="color:var(--good);font-weight:700">✨ Nouvelle fin découverte ! +500 points</p>' : "") +
+      (recS ? '<p style="color:var(--good);font-weight:700">🏆 Nouveau record de points !</p>' : "") +
+      '<div class="lignes">' + cartes + '</div>' +
+      '<button class="btn" id="rejouer">Recommencer</button>';
+    $("rejouer").addEventListener("click", demarrer);
+    if (nouvelle || recS) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.18]]);
+    majFins(); majStats();
+    if (A.majSucces) A.majSucces();
+  }
+
+  function majFins() {
     var h = "";
-    Object.keys(ENDINGS).forEach(function (k) { h += '<span class="' + (found[k] ? "on" : "") + '" title="' + (found[k] ? ENDINGS[k][1] : "???") + '">' + ENDINGS[k][0] + "</span>"; });
-    $("endings").innerHTML = h + '<div style="width:100%;text-align:center;color:#6b6b70;font-size:.9rem">' + Object.keys(found).length + " / " + Object.keys(ENDINGS).length + "</div>";
+    ORDRE_FINS.forEach(function (k) {
+      var on = !!d.fins[k];
+      h += '<span class="' + (on ? "on" : "") + '" title="' + (on ? FINS[k][1] + " — " + FINS[k][2] : "Fin non découverte") + '">' +
+        (on ? FINS[k][0] : "🔒") + "</span>";
+    });
+    $("fins").innerHTML = h;
+    $("finsCompte").textContent = Object.keys(d.fins).length + " / " + ORDRE_FINS.length;
+  }
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Parties jouées", A.nb(d.parties || 0));
+    ligne("Fins découvertes", Object.keys(d.fins).length + " / " + ORDRE_FINS.length);
+    ligne("Meilleure confiance", A.nb(d.maxConfiance || 0));
+    ligne("Meilleure dignité", A.nb(d.maxDignite || 0));
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var s = A.meilleur("score", i);
+      ligne(df.e + " " + df.n, s != null ? A.nb(s) + " pts" : "jamais joué");
+    });
+    $("stats").innerHTML = l.join("");
   }
 
-  function start() {
-    trust = 30; dignity = 70; round = 0;
-    $("play").style.display = "block"; $("end").style.display = "none"; $("sand").textContent = "🥪";
-    meters(); showRound(); renderEndings();
-  }
-  start();
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  demarrer();
 })();
 </script>
 </body>

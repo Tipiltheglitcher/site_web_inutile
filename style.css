@@ -132,3 +132,67 @@ html[data-theme="dark"] .statue-page #zone.live { border-color: #3ddc84; } html[
 html[data-theme="dark"] .statue-page #dot { background: #f1f1f3; }
 html[data-theme="dark"] .statue-page .result { background: rgba(27,26,23,.96); }
 html[data-theme="dark"] .statue-page .shout { background: #f1f1f3; color: #16161a; }
+
+/* ===========================================================================
+   Composants communs (arcade.js)
+   =========================================================================== */
+
+/* Bouton son, pose dans la barre du haut */
+.ar-sound {
+  font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer;
+  width: 40px; height: 40px; border-radius: 999px;
+  background: var(--card); border: 1px solid var(--line); color: inherit;
+}
+.ar-sound:hover { background: #f3efe6; }
+.ar-sound.off { opacity: .55; }
+
+/* Choix de la difficulte */
+.ar-diffs { margin: 0 0 18px; }
+.ar-diff-ligne { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.ar-diff {
+  font: inherit; font-weight: 700; font-size: .88rem; cursor: pointer;
+  padding: 8px 16px; border-radius: 14px; min-width: 96px;
+  background: var(--card); border: 2px solid var(--line); color: inherit;
+  transition: transform .1s, border-color .15s;
+}
+.ar-diff span { display: block; font-size: 1.5rem; line-height: 1.2; }
+.ar-diff:hover { transform: translateY(-2px); }
+.ar-diff.on { border-color: var(--accent); background: #fff3ee; }
+.ar-diff-info { text-align: center; color: var(--muted); font-size: .86rem; margin-top: 8px; min-height: 1.4em; }
+
+/* Succes */
+.ar-succes-titre { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.ar-succes-titre span { color: var(--muted); font-size: .86rem; }
+.ar-badges { display: flex; flex-wrap: wrap; gap: 7px; }
+.ar-badge {
+  font-size: 1.4rem; width: 44px; height: 44px; border-radius: 12px; cursor: help;
+  display: flex; align-items: center; justify-content: center;
+  background: #eee; filter: grayscale(1); opacity: .4;
+}
+.ar-badge.on { background: #fdffb6; filter: none; opacity: 1; }
+
+/* Notifications */
+.ar-toasts { position: fixed; left: 16px; bottom: 16px; z-index: 1100; display: flex; flex-direction: column; gap: 8px; max-width: 290px; }
+.ar-toast {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px;
+  font-size: .88rem; box-shadow: 0 8px 24px rgba(0,0,0,.18); animation: ar-in .3s ease-out;
+}
+.ar-toast b { display: block; }
+@keyframes ar-in { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+
+/* Fenetres */
+.ar-over { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.ar-modal {
+  background: var(--card); color: var(--ink); border-radius: 18px; padding: 26px;
+  max-width: 470px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+.ar-modal h2 { margin: 0 0 10px; }
+.ar-modal p { margin: 0 0 16px; }
+.ar-modal .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* Mode sombre */
+html[data-theme="dark"] .ar-sound:hover { background: #2c2c34; }
+html[data-theme="dark"] .ar-diff { background: var(--card); }
+html[data-theme="dark"] .ar-diff.on { background: #43281f; border-color: var(--accent); }
+html[data-theme="dark"] .ar-badge { background: #34343c; }
+html[data-theme="dark"] .ar-badge.on { background: #55541f; }

@@ -6,6 +6,7 @@
 <title>Le Bouton Inutile</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
   body { transition: background .6s; }
   body.disco { animation: disco 2s linear infinite; }
@@ -90,7 +91,16 @@
                 background: var(--card); color: inherit; cursor: pointer; }
   .amt button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
   .amt button.sell.on { background: var(--bad); border-color: var(--bad); color: #fff; }
-  .shopNote { font-size: .78rem; color: var(--muted); margin: 0 0 12px; }
+  .shopNote { font-size: .78rem; color: var(--muted); margin: 0 0 10px; }
+  .shopCount { font-size: .78rem; color: var(--muted); font-weight: 700; }
+  /* la liste est longue : on la fait defiler plutot que d'etirer la page */
+  #shop { max-height: min(58vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding-right: 5px; scrollbar-width: thin; }
+  #shop::-webkit-scrollbar { width: 9px; }
+  #shop::-webkit-scrollbar-track { background: transparent; }
+  #shop::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+  #shop::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  .colShop { position: sticky; top: 12px; }
+  @media (max-width: 780px) { #shop { max-height: none; overflow-y: visible; padding-right: 0; } .colShop { position: static; } }
 
   /* ---------- Succes ---------- */
   .badges { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -233,7 +243,7 @@
     <div class="colShop">
       <div class="panel">
         <div class="shopHead">
-          <h3>&#128722; B&acirc;timents</h3>
+          <h3>&#128722; B&acirc;timents <span class="shopCount" id="shopCount"></span></h3>
           <div class="amt" id="amtBox">
             <button type="button" data-a="1" class="on">&times;1</button>
             <button type="button" data-a="10">&times;10</button>
@@ -331,7 +341,27 @@
     { id: "trou",      e: "🕳️", n: "Trou noir à clics",    cost: 2.6e16, cps: 2.1e10,
       t: ["Disque d'accrétion", "Horizon élargi", "Singularité", "Trou de ver", "Univers aspiré"] },
     { id: "ia",        e: "🤖", n: "IA qui clique pour toi",          cost: 3.1e17, cps: 1.5e11,
-      t: ["Entraînement intensif", "Plus de paramètres", "Auto-amélioration", "Conscience de soi", "Singularité"] }
+      t: ["Entraînement intensif", "Plus de paramètres", "Auto-amélioration", "Conscience de soi", "Singularité"] },
+    { id: "cerveau",   e: "🧠", n: "Cerveau en bocal",                  cost: 7.1e18, cps: 1.1e12,
+      t: ["Bocal plus grand", "Deuxième hémisphère", "Réseau de bocaux", "Pensée parallèle", "Conscience collective"] },
+    { id: "volcan",    e: "🌋", n: "Volcan à clics",                   cost: 1.2e20, cps: 8.5e12,
+      t: ["Cheminée élargie", "Lave enrichie", "Éruption permanente", "Supervolcan", "Cœur de magma"] },
+    { id: "satellite", e: "🛰️", n: "Satellite cliqueur",           cost: 2.6e21, cps: 6.4e13,
+      t: ["Panneaux solaires", "Orbite basse", "Constellation", "Réseau mondial", "Sphère de Dyson"] },
+    { id: "galaxie",   e: "🌌", n: "Galaxie privée",                   cost: 5.6e22, cps: 5.1e14,
+      t: ["Bras spiral", "Étoiles supplémentaires", "Amas galactique", "Superamas", "Toile cosmique"] },
+    { id: "anneau",    e: "🪐", n: "Anneau planétaire",                cost: 1.3e24, cps: 4.3e15,
+      t: ["Anneau dense", "Deuxième anneau", "Anneau habité", "Méga-structure", "Anneau parfait"] },
+    { id: "oeil",      e: "🧿", n: "Œil qui voit tout",               cost: 3.2e25, cps: 3.8e16,
+      t: ["Paupière entraînée", "Vision nocturne", "Regard perçant", "Omniscience", "Il te voit cliquer"] },
+    { id: "cube",      e: "🕋", n: "Cube cosmique",                     cost: 7.4e26, cps: 3.5e17,
+      t: ["Arête stabilisée", "Quatrième dimension", "Tesseract", "Hypercube", "Cube absolu"] },
+    { id: "virus",     e: "🦠", n: "Virus du clic",                     cost: 1.9e28, cps: 3.2e18,
+      t: ["Mutation utile", "Contagion", "Pandémie de clics", "Souche parfaite", "Symbiose"] },
+    { id: "coeur",     e: "🫀", n: "Cœur de l'univers",                cost: 4.9e29, cps: 3.1e19,
+      t: ["Battement régulier", "Double circulation", "Pouls cosmique", "Systole éternelle", "Il bat pour toi"] },
+    { id: "infini",    e: "♾️", n: "Machine à infini",               cost: 1.3e31, cps: 3.0e20,
+      t: ["Boucle courte", "Récursion", "Division par zéro", "Paradoxe résolu", "Infini plus un"] }
   ];
   var BI = {};
   BUILD.forEach(function (b, i) { b.i = i; BI[b.id] = b; });
@@ -955,11 +985,13 @@
   }
 
   function renderShop() {
+    var debloques = 0;
     BUILD.forEach(function (b) {
       var owned = S.b[b.id] || 0;
       var unlocked = owned > 0 || S.clicks >= b.cost * 0.35 || S.allTime >= b.cost * 0.6;
       b.el.classList.toggle("hide", !unlocked);
       if (!unlocked) return;
+      debloques++;
       var k = amtFor(b);
       b.nameEl.textContent = b.n + (owned ? "  ×" + N0.format(owned) : "");
       b.subEl.textContent = fmt(b.cps * bMult[b.i] * globalM) + "/s chacun" +
@@ -980,6 +1012,7 @@
         b.el.classList.toggle("can", ok);
       }
     });
+    $("shopCount").textContent = debloques + " / " + BUILD.length;
   }
 
   var upgKey = null, ownKey = null;
@@ -1369,6 +1402,21 @@
   renderTop(); renderShop(); renderUpg(); renderAch(); renderPrestige(); renderStats(); renderSaveTab(); renderSound();
   $("ticker").textContent = "📰 " + NEWS[0][1];
   save();
+
+  /* On publie un petit resume dans le profil commun, pour que la page
+     d'accueil puisse l'afficher. La vraie sauvegarde du jeu reste la sienne. */
+  function majResume() {
+    if (!window.Arcade) return;
+    try {
+      Arcade.profil().g.boutonInutile = {
+        resume: { clics: Math.floor(S.allTime), succes: achCount(), prestiges: S.prestiges, cps: Math.floor(cps) }
+      };
+      Arcade.sauver();
+    } catch (e) {}
+  }
+  majResume();
+  setInterval(majResume, 60000);
+  window.addEventListener("beforeunload", majResume);
 
   /* le son se declenche au premier clic reel (politique des navigateurs) */
   $("big").addEventListener("click", function once() { soundOn = true; $("big").removeEventListener("click", once); });

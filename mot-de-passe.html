@@ -6,127 +6,401 @@
 <title>Le Mot de Passe</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  .game { max-width: 640px; margin: 0 auto; }
+  .game { max-width: 680px; margin: 0 auto; }
   label { font-weight: 700; display: block; margin-bottom: 8px; }
   textarea {
-    width: 100%; font: inherit; font-size: 1.3rem; padding: 14px 16px; border-radius: 14px;
-    border: 2px solid var(--line); background: #fff; resize: vertical; min-height: 64px;
+    width: 100%; font: inherit; font-size: 1.25rem; padding: 13px 15px; border-radius: 14px;
+    border: 2px solid var(--line); background: var(--card); color: inherit; resize: vertical; min-height: 64px;
     word-break: break-all;
   }
   textarea:focus { outline: none; border-color: var(--ink); }
-  .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: .9rem; margin: 6px 2px 18px; }
-  .rule { border-radius: 14px; margin-bottom: 12px; overflow: hidden; border: 2px solid; }
-  .rule .head { padding: 6px 14px; font-weight: 700; font-size: .9rem; }
-  .rule .body { padding: 12px 14px; background: #fff; }
-  .rule.ok { border-color: #8bd6a8; } .rule.ok .head { background: #c9f0d6; color: #11623a; }
-  .rule.ko { border-color: #f0a0a0; } .rule.ko .head { background: #fbd0d0; color: #8a1c1c; }
-  .hex { display: inline-block; width: 90px; height: 40px; border-radius: 8px; vertical-align: middle; border: 1px solid #0002; margin-top: 6px; }
-  .win { text-align: center; padding: 30px; background: #c9f0d6; border-radius: 18px; font-size: 1.3rem; font-weight: 700; margin-bottom: 18px; display: none; }
-  @keyframes pop { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: .88rem; margin: 6px 2px 10px; flex-wrap: wrap; gap: 6px; }
+
+  .chrono { height: 8px; background: #eee; border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  html[data-theme="dark"] .chrono { background: #34343c; }
+  .chrono i { display: block; height: 100%; background: var(--good); width: 100%; transition: width .2s linear; }
+
+  .outils { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .outils button { font: inherit; font-size: .82rem; font-weight: 700; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: inherit; cursor: pointer; }
+  .outils button:hover { background: #f3efe6; }
+  html[data-theme="dark"] .outils button:hover { background: #2c2c34; }
+
+  .regle { border-radius: 14px; margin-bottom: 10px; overflow: hidden; border: 2px solid; animation: apparait .25s ease-out; }
+  @keyframes apparait { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  .regle .tete { padding: 5px 13px; font-weight: 700; font-size: .86rem; }
+  .regle .corps { padding: 11px 13px; background: var(--card); }
+  .regle.ok { border-color: #8bd6a8; } .regle.ok .tete { background: #c9f0d6; color: #11623a; }
+  .regle.ko { border-color: #f0a0a0; } .regle.ko .tete { background: #fbd0d0; color: #8a1c1c; }
+  html[data-theme="dark"] .regle.ok .tete { background: #1e4a30; color: #9ee6b8; }
+  html[data-theme="dark"] .regle.ok { border-color: #2f6e48; }
+  html[data-theme="dark"] .regle.ko .tete { background: #5a2020; color: #ffb3b3; }
+  html[data-theme="dark"] .regle.ko { border-color: #8a3030; }
+
+  .hex { display: inline-block; width: 84px; height: 34px; border-radius: 8px; vertical-align: middle; border: 1px solid #0002; }
+  .captcha { display: inline-block; font-family: ui-monospace, Consolas, monospace; font-size: 1.5rem; font-weight: 800; letter-spacing: 6px;
+             background: repeating-linear-gradient(45deg, #ddd 0 6px, #eee 6px 12px); color: #1d1d1f; padding: 5px 14px; border-radius: 8px;
+             transform: skewX(-8deg); }
+  .oeuf { font-size: 2rem; }
+
+  .gagne { text-align: center; padding: 26px; background: #c9f0d6; border-radius: 18px; font-size: 1.15rem; font-weight: 700; margin-bottom: 18px; display: none; color: #11623a; }
+  html[data-theme="dark"] .gagne { background: #1e4a30; color: #9ee6b8; }
+  .lignes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px,1fr)); gap: 8px; margin: 14px 0; }
+  .lignes div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; color: var(--ink); }
+  .lignes b { display: block; font-size: 1.15rem; }
+  .lignes small { color: var(--muted); font-size: .74rem; font-weight: 400; }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🔐</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128272;</span></div>
 <div class="wrap game">
   <h1>Le Mot de Passe</h1>
-  <p class="sub">Choisis un mot de passe qui respecte toutes les règles. Elles apparaissent une par une…</p>
-  <div id="win" class="win">🎉 Bravo ! Ton mot de passe est parfait.<br>(Personne ne pourra jamais le retenir, toi compris.)<br><br><button class="btn" onclick="resetGame()">Rejouer</button></div>
+  <p class="sub">Choisis un mot de passe qui respecte toutes les r&egrave;gles. Elles apparaissent une par une&hellip;</p>
+
+  <div id="difficulte"></div>
+
+  <div id="gagne" class="gagne"></div>
+
+  <div class="chrono" id="chronoBox" style="display:none"><i id="chrono"></i></div>
+
   <label for="pw">Ton mot de passe</label>
-  <textarea id="pw" spellcheck="false" autocomplete="off" placeholder="Tape ici…"></textarea>
-  <div class="meta"><span id="count">0 caractère</span><span id="progress">Règle 0 / 0</span></div>
-  <div id="rules"></div>
+  <textarea id="pw" spellcheck="false" autocomplete="off" placeholder="Tape ici&hellip;"></textarea>
+  <div class="meta">
+    <span id="compte">0 caract&egrave;re</span>
+    <span id="chronoTxt"></span>
+    <span id="avancement">R&egrave;gle 0 / 0</span>
+  </div>
+
+  <div class="outils" id="outils">
+    <button type="button" id="btnReset">&#128260; Recommencer</button>
+  </div>
+
+  <div id="regles"></div>
+
+  <div class="panel" style="margin-top:20px"><div id="succes"></div></div>
+  <div class="panel" style="margin-top:14px">
+    <h3>&#128202; Tes chiffres</h3>
+    <div id="stats"></div>
+  </div>
 </div>
+
 <script>
 (function () {
-  var MONTHS = ["janvier","fevrier","février","mars","avril","mai","juin","juillet","aout","août","septembre","octobre","novembre","decembre","décembre"];
-  var PLANETS = ["mercure","venus","vénus","terre","mars","jupiter","saturne","uranus","neptune"];
-  var hexColor = "";
+  var $ = function (id) { return document.getElementById(id); };
 
-  function randomHex() {
-    var letters = "abcdef", s = "";
-    for (var i = 0; i < 6; i++) s += letters[Math.floor(Math.random() * 6)];
+  var MOIS = ["janvier", "fevrier", "février", "mars", "avril", "mai", "juin", "juillet",
+    "aout", "août", "septembre", "octobre", "novembre", "decembre", "décembre"];
+  var PLANETES = ["mercure", "venus", "vénus", "terre", "mars", "jupiter", "saturne", "uranus", "neptune"];
+  var ANIMAUX = ["chat", "chien", "vache", "poule", "lapin", "souris", "cheval", "canard", "mouton"];
+  var COULEURS = ["rouge", "bleu", "vert", "jaune", "noir", "blanc", "rose", "orange", "violet", "gris"];
+  var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  var ROMAIN = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+
+  var hexa = "", captcha = "", oeufEclos = false, oeufDepuis = 0;
+
+  function nouveauHexa() {
+    var l = "abcdef", s = "";
+    for (var i = 0; i < 6; i++) s += l[Math.floor(Math.random() * 6)];
     return s;
   }
-  function digitSum(p) {
+  function nouveauCaptcha() {
+    var l = "abcdefghijkmnpqrstuvwxyz", s = "";
+    for (var i = 0; i < 4; i++) s += l[Math.floor(Math.random() * l.length)];
+    return s;
+  }
+  function sommeChiffres(p) {
     var s = 0, m = p.match(/[0-9]/g) || [];
     for (var i = 0; i < m.length; i++) s += +m[i];
     return s;
   }
-  function isPrime(n) {
+  function estPremier(n) {
     if (n < 2) return false;
     for (var i = 2; i * i <= n; i++) if (n % i === 0) return false;
     return true;
   }
-  function has(list, p) {
-    var low = p.toLowerCase();
-    for (var i = 0; i < list.length; i++) if (low.indexOf(list[i]) !== -1) return true;
+  function contient(liste, p) {
+    var bas = p.toLowerCase();
+    for (var i = 0; i < liste.length; i++) if (bas.indexOf(liste[i]) !== -1) return true;
     return false;
   }
-  function len(p) { return Array.from(p).length; }
+  function longueur(p) { return Array.from(p).length; }
+  function produitRomain(p) {
+    var m = p.match(/[IVXLCDM]/g);
+    if (!m) return 0;
+    var prod = 1;
+    for (var i = 0; i < m.length; i++) prod *= ROMAIN[m[i]];
+    return prod;
+  }
+  function voyelles(p) { return (p.toLowerCase().match(/[aeiouyàâéèêëîïôöùûü]/g) || []).length; }
+  function consonnes(p) { return (p.toLowerCase().match(/[bcdfghjklmnpqrstvwxzç]/g) || []).length; }
 
-  var RULES = [
-    { t: "Ton mot de passe doit contenir au moins 5 caractères.", f: function (p) { return len(p) >= 5; } },
+  /* ------------------------------------------------------------------
+     Les regles, dans l'ordre d'apparition
+     ------------------------------------------------------------------ */
+  var REGLES = [
+    { t: "Ton mot de passe doit contenir au moins 5 caractères.", f: function (p) { return longueur(p) >= 5; } },
     { t: "Ton mot de passe doit contenir un chiffre.", f: function (p) { return /[0-9]/.test(p); } },
     { t: "Ton mot de passe doit contenir une majuscule.", f: function (p) { return /[A-ZÀ-Ý]/.test(p); } },
     { t: "Ton mot de passe doit contenir un caractère spécial (!, ?, @, #…).", f: function (p) { return /[^A-Za-z0-9À-ÿ\s]/.test(p); } },
-    { t: "Ton mot de passe doit contenir un mois de l'année.", f: function (p) { return has(MONTHS, p); } },
+    { t: "Ton mot de passe doit contenir un mois de l'année.", f: function (p) { return contient(MOIS, p); } },
     { t: "Ton mot de passe doit contenir le résultat de 7 × 8.", f: function (p) { return p.indexOf("56") !== -1; } },
     { t: "Ton mot de passe doit contenir un chiffre romain en majuscule (I, V, X, L, C, D ou M).", f: function (p) { return /[IVXLCDM]/.test(p); } },
-    { t: "Ton mot de passe doit contenir un truc à manger bien français : baguette, croissant ou fromage.", f: function (p) { return has(["baguette","croissant","fromage"], p); } },
-    { t: "Ton mot de passe doit contenir le nom d'une planète du système solaire.", f: function (p) { return has(PLANETS, p); } },
+    { t: "Ton mot de passe doit contenir un truc à manger bien français : baguette, croissant ou fromage.", f: function (p) { return contient(["baguette", "croissant", "fromage"], p); } },
+    { t: "Ton mot de passe doit contenir le nom d'une planète du système solaire.", f: function (p) { return contient(PLANETES, p); } },
     { t: "Ton mot de passe doit contenir l'année en cours.", f: function (p) { return p.indexOf(String(new Date().getFullYear())) !== -1; } },
-    { t: "La somme des chiffres de ton mot de passe doit faire exactement 25.", f: function (p) { return digitSum(p) === 25; }, extra: function (p) { return "Somme actuelle : <b>" + digitSum(p) + "</b>"; } },
     { t: "Ton mot de passe doit contenir le mot « poulet ». Pourquoi ? Parce que.", f: function (p) { return p.toLowerCase().indexOf("poulet") !== -1; } },
-    { t: "Ton mot de passe doit contenir le code de cette couleur (sans le #) :", f: function (p) { return p.toLowerCase().indexOf(hexColor) !== -1; }, extra: function () { return '<span class="hex" style="background:#' + hexColor + '"></span> <button class="btn alt" style="padding:6px 12px;margin-left:8px" onclick="newHex()">🔄 Autre couleur</button><br><small style="color:#6b6b70">Indice : ce code n\'utilise que les lettres a à f.</small>'; } },
+    { t: "Ton mot de passe doit contenir le code de cette couleur (sans le #) :",
+      f: function (p) { return p.toLowerCase().indexOf(hexa) !== -1; },
+      extra: function () { return '<span class="hex" style="background:#' + hexa + '"></span> <button type="button" class="petit" data-act="hexa">🔄 Autre couleur</button><br><small style="color:var(--muted)">Ce code n\'utilise que les lettres a à f.</small>'; } },
     { t: "Ton mot de passe ne doit pas contenir d'espace. Les espaces, c'est pour les faibles.", f: function (p) { return !/\s/.test(p); } },
-    { t: "Le nombre de caractères de ton mot de passe doit être un nombre premier.", f: function (p) { return isPrime(len(p)); }, extra: function (p) { return "Longueur actuelle : <b>" + len(p) + "</b>"; } },
+    { t: "Ton mot de passe doit contenir le jour de la semaine d'aujourd'hui.",
+      f: function (p) { return p.toLowerCase().indexOf(JOURS[new Date().getDay()]) !== -1; } },
+    { t: "Ton mot de passe doit contenir un animal de la ferme ou de la maison.", f: function (p) { return contient(ANIMAUX, p); },
+      extra: function () { return '<small style="color:var(--muted)">chat, chien, vache, poule, lapin, souris, cheval, canard, mouton</small>'; } },
+    { t: "Ton mot de passe doit contenir une couleur, écrite en toutes lettres.", f: function (p) { return contient(COULEURS, p); },
+      extra: function () { return '<small style="color:var(--muted)">rouge, bleu, vert, jaune, noir, blanc, rose, orange, violet, gris</small>'; } },
+    { t: "Ton mot de passe doit contenir deux fois la même lettre à la suite.", f: function (p) { return /([A-Za-zÀ-ÿ])\1/.test(p); } },
+    { t: "Ton mot de passe doit contenir ce code de vérification :",
+      f: function (p) { return p.toLowerCase().indexOf(captcha) !== -1; },
+      extra: function () { return '<span class="captcha">' + captcha + '</span> <button type="button" class="petit" data-act="captcha">🔄 Autre code</button>'; } },
+    { t: "Les chiffres romains de ton mot de passe doivent se multiplier pour faire exactement 50.",
+      f: function (p) { return produitRomain(p) === 50; },
+      extra: function (p) { return "Produit actuel : <b>" + produitRomain(p) + "</b> · <small style=\"color:var(--muted)\">I=1 V=5 X=10 L=50 C=100 D=500 M=1000</small>"; } },
+    { t: "Ton mot de passe doit contenir le mot « motdepasse ». C'est très sécurisé.", f: function (p) { return p.toLowerCase().indexOf("motdepasse") !== -1; } },
+    { t: "Ton mot de passe doit contenir un œuf. Prends-en soin.",
+      f: function (p) { return oeufEclos ? p.indexOf("🐣") !== -1 : p.indexOf("🥚") !== -1; },
+      extra: function () {
+        return '<span class="oeuf">' + (oeufEclos ? "🐣" : "🥚") + "</span> " +
+          (oeufEclos ? "L'œuf a éclos ! Remplace-le par le poussin." : "Il éclora tout seul, laisse-le mijoter.") +
+          ' <button type="button" class="petit" data-act="oeuf">➕ Insérer</button>';
+      } },
+    { t: "La somme des chiffres de ton mot de passe doit faire exactement 25.",
+      f: function (p) { return sommeChiffres(p) === 25; },
+      extra: function (p) { return "Somme actuelle : <b>" + sommeChiffres(p) + "</b>"; } },
+    { t: "Ton mot de passe doit contenir autant de voyelles que de consonnes.",
+      f: function (p) { return voyelles(p) === consonnes(p); },
+      extra: function (p) { return "Voyelles : <b>" + voyelles(p) + "</b> · consonnes : <b>" + consonnes(p) + "</b>"; } },
+    { t: "Le nombre de caractères de ton mot de passe doit être un nombre premier.",
+      f: function (p) { return estPremier(longueur(p)); },
+      extra: function (p) { return "Longueur actuelle : <b>" + longueur(p) + "</b>"; } },
     { t: "Ton mot de passe doit se terminer par un point d'exclamation !", f: function (p) { return /!$/.test(p); } }
   ];
 
-  var input = document.getElementById("pw");
-  var box = document.getElementById("rules");
-  var revealed = 0;
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "gentil", n: "Gentil", e: "😌", d: "Les 10 premières règles. Pas de chrono.", regles: 10, chrono: 0, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮", d: "16 règles, toujours sans chrono. Ça se complique.", regles: 16, chrono: 0, mult: 1.6 },
+    { id: "penible", n: "Pénible", e: "🔥", d: "21 règles, dont l'œuf, et 7 minutes au total.", regles: 21, chrono: 420, mult: 2.6 },
+    { id: "cauchemar", n: "Cauchemar", e: "💀", d: "Les 25 règles et 6 minutes. Personne n'y arrive du premier coup.", regles: 25, chrono: 360, mult: 4 }
+  ];
 
-  function check() {
-    var p = input.value;
-    var n = len(p);
-    document.getElementById("count").textContent = n + (n > 1 ? " caractères" : " caractère");
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "dix", e: "🔓", n: "Dix règles", d: "Valider 10 règles en même temps.", f: function (d) { return (d.maxRegles || 0) >= 10; } },
+    { id: "quinze", e: "🔐", n: "Quinze règles", d: "Valider 15 règles en même temps.", f: function (d) { return (d.maxRegles || 0) >= 15; } },
+    { id: "vingt", e: "🗝️", n: "Vingt règles", d: "Valider 20 règles en même temps.", f: function (d) { return (d.maxRegles || 0) >= 20; } },
+    { id: "gagneGentil", e: "😌", n: "Échauffement", d: "Gagner en Gentil.", f: function (d) { return !!d.gagneGentil; } },
+    { id: "gagneNormal", e: "🎮", n: "Mot de passe correct", d: "Gagner en Normal.", f: function (d) { return !!d.gagneNormal; } },
+    { id: "gagnePenible", e: "🔥", n: "Administrateur", d: "Gagner en Pénible.", f: function (d) { return !!d.gagnePenible; } },
+    { id: "gagneCauchemar", e: "💀", n: "Ingénieur sécurité", d: "Gagner en Cauchemar.", f: function (d) { return !!d.gagneCauchemar; } },
+    { id: "oeuf", e: "🐣", n: "Éleveur", d: "Faire éclore l'œuf.", f: function (d) { return !!d.oeufEclos; } },
+    { id: "meurtre", e: "💀", n: "Monstre", d: "Perdre l'œuf après l'avoir eu.", f: function (d) { return !!d.oeufPerdu; } },
+    { id: "long", e: "📏", n: "Roman-fleuve", d: "Écrire un mot de passe de 120 caractères.", f: function (d) { return (d.maxLongueur || 0) >= 120; } },
+    { id: "rapide", e: "⚡", n: "Rapide", d: "Gagner en moins de 3 minutes.", f: function (d) { return (d.meilleurTemps || 9999) < 180; } },
+    { id: "essais", e: "🔁", n: "Entêté", d: "Recommencer 20 fois.", f: function (d) { return (d.essais || 0) >= 20; } }
+  ];
 
-    if (p.length > 0 && revealed === 0) revealed = 1;
-    // Reveal next rules as long as all revealed ones pass
-    while (revealed > 0 && revealed < RULES.length) {
-      var allOk = true;
-      for (var i = 0; i < revealed; i++) if (!RULES[i].f(p)) { allOk = false; break; }
-      if (!allOk) break;
-      revealed++;
+  var A = Arcade.init({
+    id: "motdepasse", nom: "Le Mot de Passe", emoji: "🔐",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { recommencer(); }
+  });
+  var d = A.d;
+
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var champ = $("pw"), boite = $("regles");
+  var revelees = 0, gagne = false, t0 = 0, chronoIv = null, restant = 0, avaitOeuf = false;
+
+  function nbRegles() { return Math.min(A.D.regles, REGLES.length); }
+
+  function recommencer() {
+    champ.value = "";
+    revelees = 0; gagne = false; oeufEclos = false; oeufDepuis = 0; avaitOeuf = false;
+    hexa = nouveauHexa(); captcha = nouveauCaptcha();
+    d.essais = (d.essais || 0) + 1;
+    $("gagne").style.display = "none";
+    clearInterval(chronoIv);
+    if (A.D.chrono) {
+      restant = A.D.chrono;
+      $("chronoBox").style.display = "block";
+      t0 = performance.now();
+      chronoIv = setInterval(tickChrono, 200);
+    } else {
+      $("chronoBox").style.display = "none";
+      $("chronoTxt").textContent = "";
+      t0 = performance.now();
+    }
+    A.sauver();
+    verifier();
+    champ.focus();
+  }
+
+  function tickChrono() {
+    restant = A.D.chrono - (performance.now() - t0) / 1000;
+    $("chrono").style.width = Math.max(0, restant / A.D.chrono * 100) + "%";
+    $("chrono").style.background = restant < A.D.chrono * 0.2 ? "var(--bad)" : restant < A.D.chrono * 0.5 ? "#f59f00" : "var(--good)";
+    $("chronoTxt").textContent = "⏱️ " + Math.max(0, Math.floor(restant / 60)) + " min " + Math.max(0, Math.floor(restant % 60)) + " s";
+    if (restant <= 0 && !gagne) {
+      clearInterval(chronoIv);
+      champ.disabled = true;
+      A.bip(140, 0.4, "sawtooth", 0.06);
+      A.modal("⏰ Temps écoulé",
+        "Tu as validé <b>" + compterValidees() + " règles sur " + nbRegles() + "</b>.<br>Le coffre reste fermé.",
+        [{ t: "Recommencer", c: "btn", go: function () { champ.disabled = false; recommencer(); } }]);
+    }
+  }
+
+  function compterValidees() {
+    var p = champ.value, n = 0;
+    for (var i = 0; i < revelees; i++) if (REGLES[i].f(p)) n++;
+    return n;
+  }
+
+  function verifier() {
+    var p = champ.value, n = longueur(p);
+    $("compte").textContent = n + (n > 1 ? " caractères" : " caractère");
+    if (n > (d.maxLongueur || 0)) d.maxLongueur = n;
+
+    /* l'oeuf eclot 25 secondes apres son apparition */
+    var indexOeuf = -1;
+    for (var q = 0; q < REGLES.length; q++) if (REGLES[q].t.indexOf("œuf") !== -1) indexOeuf = q;
+    if (revelees > indexOeuf && indexOeuf >= 0) {
+      if (!oeufDepuis) oeufDepuis = performance.now();
+      if (!oeufEclos && performance.now() - oeufDepuis > 25000) {
+        oeufEclos = true; d.oeufEclos = 1;
+        A.toast("🐣", "Ça a éclos !", "Remplace l'œuf par le poussin.");
+        A.bip(880, 0.15, "triangle", 0.05);
+      }
+      var aOeuf = p.indexOf("🥚") !== -1 || p.indexOf("🐣") !== -1;
+      if (avaitOeuf && !aOeuf) { d.oeufPerdu = 1; A.toast("💀", "Tu l'as perdu", "L'œuf n'est plus là."); }
+      avaitOeuf = aOeuf;
+    }
+
+    if (p.length > 0 && revelees === 0) revelees = 1;
+    /* on dévoile la suivante tant que toutes les précédentes passent */
+    while (revelees > 0 && revelees < nbRegles()) {
+      var toutes = true;
+      for (var i = 0; i < revelees; i++) if (!REGLES[i].f(p)) { toutes = false; break; }
+      if (!toutes) break;
+      revelees++;
     }
 
     var items = [];
-    for (var j = 0; j < revealed; j++) items.push({ i: j, ok: RULES[j].f(p) });
-    // failing rules first, then newest first
+    for (var j = 0; j < revelees; j++) items.push({ i: j, ok: REGLES[j].f(p) });
     items.sort(function (a, b) { if (a.ok !== b.ok) return a.ok ? 1 : -1; return b.i - a.i; });
 
     var html = "";
     items.forEach(function (it) {
-      var r = RULES[it.i];
-      html += '<div class="rule ' + (it.ok ? "ok" : "ko") + '"><div class="head">' + (it.ok ? "✔" : "✖") + " Règle " + (it.i + 1) + '</div><div class="body">' + r.t + (r.extra ? "<div style='margin-top:6px'>" + r.extra(p) + "</div>" : "") + "</div></div>";
+      var r = REGLES[it.i];
+      html += '<div class="regle ' + (it.ok ? "ok" : "ko") + '"><div class="tete">' + (it.ok ? "✔" : "✖") +
+        " Règle " + (it.i + 1) + '</div><div class="corps">' + r.t +
+        (r.extra ? "<div style='margin-top:6px'>" + r.extra(p) + "</div>" : "") + "</div></div>";
     });
-    box.innerHTML = html;
+    boite.innerHTML = html;
+    Array.prototype.forEach.call(boite.querySelectorAll(".petit"), function (b) {
+      b.className = "btn alt"; b.style.padding = "5px 11px"; b.style.fontSize = ".82rem";
+    });
 
-    var passed = items.filter(function (x) { return x.ok; }).length;
-    document.getElementById("progress").textContent = "Règle " + passed + " / " + RULES.length;
-    var won = revealed === RULES.length && passed === RULES.length;
-    document.getElementById("win").style.display = won ? "block" : "none";
+    var validees = items.filter(function (x) { return x.ok; }).length;
+    if (validees > (d.maxRegles || 0)) d.maxRegles = validees;
+    $("avancement").textContent = "Règle " + validees + " / " + nbRegles();
+
+    var fini = revelees === nbRegles() && validees === nbRegles();
+    if (fini && !gagne) victoire(p);
   }
 
-  window.newHex = function () { hexColor = randomHex(); check(); };
-  window.resetGame = function () { input.value = ""; revealed = 0; hexColor = randomHex(); check(); input.focus(); };
+  function victoire(p) {
+    gagne = true;
+    clearInterval(chronoIv);
+    var t = (performance.now() - t0) / 1000;
+    var score = Math.round(nbRegles() * 150 * A.D.mult + (A.D.chrono ? Math.max(0, restant) * 5 * A.D.mult : 0));
+    if (A.D.id === "gentil") d.gagneGentil = 1;
+    if (A.D.id === "normal") d.gagneNormal = 1;
+    if (A.D.id === "penible") d.gagnePenible = 1;
+    if (A.D.id === "cauchemar") d.gagneCauchemar = 1;
+    d.victoires = (d.victoires || 0) + 1;
+    if (!d.meilleurTemps || t < d.meilleurTemps) d.meilleurTemps = t;
+    var recT = A.record("temps", Math.round(t), true);
+    var recS = A.record("score", score, false);
+    A.sauver(); A.check();
+    A.melodie([[660, 0.1], [880, 0.1], [1100, 0.1], [1320, 0.22]]);
 
-  hexColor = randomHex();
-  input.addEventListener("input", check);
-  input.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
-  check();
+    var cartes = "";
+    function carte(v, l) { cartes += "<div><b>" + v + "</b><small>" + l + "</small></div>"; }
+    carte(nbRegles(), "règles respectées");
+    carte(A.secondes(t), "temps");
+    carte(longueur(p), "caractères");
+    carte(A.nb(score), "points");
+    $("gagne").style.display = "block";
+    $("gagne").innerHTML = "🎉 Bravo ! Ton mot de passe est parfait.<br>" +
+      "<span style=\"font-weight:400;font-size:.95rem\">(Personne ne pourra jamais le retenir, toi compris.)</span>" +
+      (recT ? "<br>🏆 Nouveau record de temps !" : "") +
+      '<div class="lignes">' + cartes + "</div>";
+    majStats();
+    if (A.majSucces) A.majSucces();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function inserer(txt) {
+    var deb = champ.selectionStart, fin = champ.selectionEnd;
+    champ.value = champ.value.slice(0, deb) + txt + champ.value.slice(fin);
+    champ.selectionStart = champ.selectionEnd = deb + txt.length;
+    champ.focus();
+    verifier();
+  }
+
+  boite.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    if (b.dataset.act === "hexa") { hexa = nouveauHexa(); verifier(); }
+    if (b.dataset.act === "captcha") { captcha = nouveauCaptcha(); verifier(); }
+    if (b.dataset.act === "oeuf") inserer(oeufEclos ? "🐣" : "🥚");
+  });
+
+  champ.addEventListener("input", verifier);
+  champ.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
+  $("btnReset").addEventListener("click", recommencer);
+  setInterval(function () { if (!gagne && revelees > 0) verifier(); }, 1000);
+
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Victoires", A.nb(d.victoires || 0));
+    ligne("Tentatives", A.nb(d.essais || 0));
+    ligne("Meilleur nombre de règles", A.nb(d.maxRegles || 0));
+    ligne("Mot de passe le plus long", A.nb(d.maxLongueur || 0) + " caractères");
+    ligne("Victoire la plus rapide", d.meilleurTemps ? A.secondes(d.meilleurTemps) : "—");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var t = A.meilleur("temps", i), s = A.meilleur("score", i);
+      ligne(df.e + " " + df.n, t != null ? A.secondes(t) + " · " + A.nb(s || 0) + " pts" : "jamais gagné");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  hexa = nouveauHexa(); captcha = nouveauCaptcha();
+  verifier(); majStats();
 })();
 </script>
 </body>

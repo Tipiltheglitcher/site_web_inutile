@@ -6,136 +6,398 @@
 <title>Le Dîner de Zorg</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
   body { background: #14162b; color: #fff; }
+  html[data-theme="dark"] body { background: #0e1020; }
   .topbar a.back { background: #23264a; color: #fff; border-color: #34386a; }
-  .game { max-width: 720px; margin: 0 auto; }
+  .topbar a.back:hover { background: #30346a; }
+  .ar-sound { background: #23264a; color: #fff; border-color: #34386a; }
+  .ar-sound:hover { background: #30346a; }
+  .game { max-width: 780px; margin: 0 auto; }
   .sub { color: #aab; }
-  .zorg { text-align: center; font-size: 5rem; line-height: 1; }
-  .zorg.eat { animation: chew .25s 4 alternate; }
+  .panel { background: #1c1f3d; border-color: #34386a; color: #fff; }
+  .ar-diff { background: #23264a; color: #fff; border-color: #34386a; }
+  .ar-diff.on { background: #3a2f66; border-color: #6c63ff; }
+  .ar-diff-info { color: #aab; }
+  .ar-badge { background: #23264a; }
+  .ar-badge.on { background: #4a4520; }
+
+  .menu { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .plat { flex: 1; min-width: 140px; background: #1c1f3d; border: 2px solid #34386a; border-radius: 14px; padding: 8px 10px; text-align: center; font-size: .85rem; }
+  .plat.en-cours { border-color: #6c63ff; background: #262a55; }
+  .plat.fait { border-color: #2f9e44; }
+  .plat b { display: block; font-size: 1.5rem; line-height: 1.3; }
+  .plat small { color: #aab; }
+
+  .zorg { text-align: center; font-size: 4.6rem; line-height: 1; }
+  .zorg.mange { animation: chew .25s 4 alternate; }
   @keyframes chew { to { transform: scaleY(.85) scaleX(1.08); } }
-  .talk { background: #23264a; border: 2px solid #6c63ff; border-radius: 16px; padding: 12px 16px; text-align: center; margin: 10px auto 18px; max-width: 520px; font-weight: 600; min-height: 50px; }
-  .plate { display: flex; gap: 10px; justify-content: center; align-items: center; background: radial-gradient(#fff 55%, #dfe3f0 56%, #fff 62%, #c9cde0 63%); border-radius: 50%; width: 320px; height: 320px; margin: 0 auto; max-width: 100%; aspect-ratio: 1; flex-wrap: wrap; align-content: center; padding: 60px; }
-  @media (max-width: 400px) { .plate { width: 260px; height: 260px; padding: 45px; } }
-  .slot { width: 64px; height: 64px; border-radius: 16px; border: 3px dashed #b8bdd6; display: flex; align-items: center; justify-content: center; font-size: 2.3rem; cursor: pointer; background: #fff; }
-  .slot.filled { border-style: solid; border-color: #6c63ff; }
-  .slot .n { position: absolute; }
-  .pantry { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
-  .ing { font: inherit; color: #fff; background: #23264a; border: 1px solid #34386a; border-radius: 14px; padding: 10px 4px; cursor: pointer; font-size: .85rem; }
-  .ing span { display: block; font-size: 2rem; }
+  .talk { background: #23264a; border: 2px solid #6c63ff; border-radius: 16px; padding: 12px 16px; text-align: center; margin: 10px auto 14px; max-width: 540px; font-weight: 600; min-height: 50px; }
+
+  .assiette { display: flex; gap: 8px; justify-content: center; align-items: center; background: radial-gradient(#fff 55%, #dfe3f0 56%, #fff 62%, #c9cde0 63%); border-radius: 50%; width: 320px; height: 320px; margin: 0 auto; max-width: 100%; aspect-ratio: 1; flex-wrap: wrap; align-content: center; padding: 56px; }
+  @media (max-width: 420px) { .assiette { width: 270px; height: 270px; padding: 42px; } }
+  .case { width: 58px; height: 58px; border-radius: 14px; border: 3px dashed #b8bdd6; display: flex; align-items: center; justify-content: center; font-size: 2.1rem; cursor: pointer; background: #fff; }
+  .case.remplie { border-style: solid; border-color: #6c63ff; }
+
+  .garde-manger { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0; }
+  @media (max-width: 520px) { .garde-manger { grid-template-columns: repeat(3, 1fr); } }
+  .ing { font: inherit; color: #fff; background: #23264a; border: 1px solid #34386a; border-radius: 14px; padding: 9px 4px; cursor: pointer; font-size: .8rem; }
+  .ing span { display: block; font-size: 1.9rem; }
   .ing:hover:not(:disabled) { background: #30346a; }
   .ing:disabled { opacity: .3; cursor: not-allowed; }
-  .row { display: flex; gap: 10px; justify-content: center; }
-  .btn.serve { background: #6c63ff; } .btn.serve:hover { background: #5a52e0; }
+
+  .rangee { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn.servir { background: #6c63ff; color: #fff; } .btn.servir:hover { background: #5a52e0; }
   .btn.alt { background: transparent; color: #fff; border-color: #34386a; }
   .btn.alt:hover { background: #23264a; }
-  .hist { margin-top: 24px; }
-  .h { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #1c1f3d; border-radius: 12px; padding: 8px 14px; margin-bottom: 6px; }
-  .h .dish { font-size: 1.6rem; letter-spacing: 4px; }
-  .h .fb { font-size: 1.1rem; letter-spacing: 2px; }
-  .legend { color: #aab; font-size: .9rem; text-align: center; margin-top: 8px; }
-  .tries { text-align: center; color: #aab; margin-bottom: 8px; }
+  .legende { color: #aab; font-size: .88rem; text-align: center; margin-top: 8px; }
+  .essais { text-align: center; color: #aab; margin-bottom: 8px; font-weight: 700; }
+  .histo { margin-top: 20px; }
+  .h { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #1c1f3d; border-radius: 12px; padding: 7px 14px; margin-bottom: 6px; }
+  .h .plat-txt { font-size: 1.5rem; letter-spacing: 3px; }
+  .h .fb { font-size: 1rem; letter-spacing: 2px; }
+  .h .num { color: #8a8fb5; font-size: .85rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">👽</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128125;</span></div>
 <div class="wrap game">
-  <h1 class="center">Le Dîner de Zorg</h1>
-  <p class="sub center">Zorg, ambassadeur de la planète Gloub, vient dîner. Il veut <b>4 ingrédients précis, dans un ordre précis</b>. Tu as 8 essais avant qu'il ne déclare la guerre à la Terre.</p>
-  <div class="zorg" id="zorg">👽</div>
-  <div class="talk" id="talk">« Humain. Nourris-moi. »</div>
-  <div class="tries" id="tries"></div>
-  <div class="plate" id="plate"></div>
-  <p class="legend">Clique sur un ingrédient pour le poser. Clique sur l'assiette pour l'enlever.</p>
-  <div class="pantry" id="pantry"></div>
-  <div class="row"><button class="btn alt" id="clear">Vider l'assiette</button><button class="btn serve" id="serve" disabled>Servir à Zorg 🍽️</button></div>
-  <div class="legend">🟢 bon ingrédient au bon endroit · 🟡 bon ingrédient mal placé · ❌ ingrédient qu'il déteste</div>
-  <div class="hist" id="hist"></div>
+  <h1 class="center">Le D&icirc;ner de Zorg</h1>
+  <p class="sub center">Zorg, ambassadeur de la plan&egrave;te Gloub, vient d&icirc;ner. Il veut un <b>menu complet</b>, et chaque plat est une combinaison pr&eacute;cise.</p>
+
+  <div id="difficulte"></div>
+
+  <div class="menu" id="menu"></div>
+
+  <div class="zorg" id="zorg">&#128125;</div>
+  <div class="talk" id="talk">&laquo;&nbsp;Humain. Nourris-moi.&nbsp;&raquo;</div>
+  <div class="essais" id="essais"></div>
+
+  <div class="assiette" id="assiette"></div>
+  <p class="legende">Clique sur un ingr&eacute;dient pour le poser. Clique sur l'assiette pour l'enlever.</p>
+
+  <div class="garde-manger" id="garde"></div>
+  <div class="rangee">
+    <button class="btn alt" id="vider">Vider l'assiette</button>
+    <button class="btn servir" id="servir" disabled>Servir &agrave; Zorg &#127869;&#65039;</button>
+  </div>
+  <div class="legende">&#128994; bon ingr&eacute;dient au bon endroit &middot; &#128993; bon ingr&eacute;dient mal plac&eacute; &middot; &#10060; il d&eacute;teste</div>
+
+  <div class="histo" id="histo"></div>
+
+  <div class="panel" style="margin-top:22px"><div id="succes"></div></div>
+  <div class="panel" style="margin-top:14px">
+    <b>&#128202; Tes chiffres</b>
+    <div id="stats" style="margin-top:10px"></div>
+  </div>
 </div>
+
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var ING = [["🍌","Banane"],["🧀","Fromage"],["🌶️","Piment"],["🐟","Sardine"],["🍫","Chocolat"],["🥒","Cornichon"],["🍕","Pizza"],["🦗","Criquet"]];
-  var MAX = 8;
-  var secret, plate, history, over;
 
-  var REACT = [
-    ["😖", ["« Beurk. Sur Gloub, on donne ça aux prisonniers. »", "« Tu essaies de m'empoisonner, humain ? »", "« Mes trois estomacs protestent. »"]],
-    ["😐", ["« Mmh. Il y a une vague idée. Très vague. »", "« C'est… mangeable. Pour un humain. »", "« Mon antenne gauche frémit un peu. »"]],
-    ["🙂", ["« Intéressant. Continue, petit cuisinier. »", "« Ça sent presque la maison. »", "« Pas mal, pour une espèce sans tentacules. »"]],
-    ["😋", ["« OH. On y est presque ! »", "« Mes antennes dansent ! »", "« Encore un petit effort et je n'envahis pas ta planète. »"]]
+  var ING = [
+    ["🍌", "Banane"], ["🧀", "Fromage"], ["🌶️", "Piment"],
+    ["🐟", "Sardine"], ["🍫", "Chocolat"], ["🥒", "Cornichon"],
+    ["🍕", "Pizza"], ["🦗", "Criquet"], ["🧄", "Ail"],
+    ["🍩", "Beignet"], ["🦑", "Poulpe"], ["🌰", "Cacahuète"]
   ];
 
-  var pantry = $("pantry");
-  ING.forEach(function (it, i) {
-    var b = document.createElement("button"); b.className = "ing";
-    b.innerHTML = "<span>" + it[0] + "</span>" + it[1];
-    b.addEventListener("click", function () { add(i); });
-    it.btn = b; pantry.appendChild(b);
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "apero", n: "Apéritif", e: "🥛",
+      d: "6 ingrédients, 3 par plat, 10 essais. Pas de répétition.",
+      ing: 6, cases: 3, essais: 10, repet: false, plats: 2, mult: 1 },
+    { id: "normal", n: "Menu normal", e: "🍽️",
+      d: "8 ingrédients, 4 par plat, 8 essais. Pas de répétition.",
+      ing: 8, cases: 4, essais: 8, repet: false, plats: 3, mult: 1.6 },
+    { id: "gastro", n: "Gastronomique", e: "🔥",
+      d: "10 ingrédients, 4 par plat, 6 essais, et un ingrédient peut revenir deux fois.",
+      ing: 10, cases: 4, essais: 6, repet: true, plats: 3, mult: 2.6 },
+    { id: "cauchemar", n: "Banquet d'État", e: "💀",
+      d: "12 ingrédients, 5 par plat, 6 essais, répétitions autorisées. Bon courage.",
+      ing: 12, cases: 5, essais: 6, repet: true, plats: 3, mult: 4.5 }
+  ];
+  var NOMS_PLATS = ["Entrée", "Plat principal", "Dessert"];
+  var EMO_PLATS = ["🥗", "🍲", "🍰"];
+
+  var REACT = [
+    ["😖", ["« Beurk. Sur Gloub, on donne ça aux prisonniers. »",
+      "« Tu essaies de m'empoisonner, humain ? »", "« Mes trois estomacs protestent. »"]],
+    ["😐", ["« Mmh. Il y a une vague idée. Très vague. »",
+      "« C'est… mangeable. Pour un humain. »", "« Mon antenne gauche frémit un peu. »"]],
+    ["🙂", ["« Intéressant. Continue, petit cuisinier. »",
+      "« Ça sent presque la maison. »", "« Pas mal, pour une espèce sans tentacules. »"]],
+    ["😋", ["« OH. On y est presque ! »", "« Mes antennes dansent ! »",
+      "« Encore un petit effort et je n'envahis pas ta planète. »"]]
+  ];
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premier", e: "🍽️", n: "Premier plat", d: "Réussir un plat.", f: function (d) { return (d.plats || 0) >= 1; } },
+    { id: "menu", e: "👨‍🍳", n: "Menu complet", d: "Terminer un menu entier.", f: function (d) { return (d.menus || 0) >= 1; } },
+    { id: "gastro", e: "🔥", n: "Chef étoilé", d: "Terminer un menu gastronomique.", f: function (d) { return !!d.finiGastro; } },
+    { id: "banquet", e: "💀", n: "Diplomate", d: "Terminer un banquet d'État.", f: function (d) { return !!d.finiBanquet; } },
+    { id: "troisessais", e: "🎯", n: "Flèche", d: "Trouver un plat en 3 essais ou moins.", f: function (d) { return (d.meilleurEssais || 99) <= 3; } },
+    { id: "unessai", e: "🔮", n: "Voyant", d: "Trouver un plat du premier coup.", f: function (d) { return (d.meilleurEssais || 99) <= 1; } },
+    { id: "sansrate", e: "✨", n: "Sans faute", d: "Un menu entier sans jamais dépasser 4 essais par plat.", f: function (d) { return !!d.menuNet; } },
+    { id: "guerre", e: "👾", n: "Casus belli", d: "Provoquer une invasion. Félicitations.", f: function (d) { return (d.echecs || 0) >= 1; } },
+    { id: "dix", e: "💪", n: "Cuisinier confirmé", d: "Réussir 10 plats.", f: function (d) { return (d.plats || 0) >= 10; } },
+    { id: "cinquante", e: "🏆", n: "Cuisinier intergalactique", d: "Réussir 50 plats.", f: function (d) { return (d.plats || 0) >= 50; } },
+    { id: "rapide", e: "⚡", n: "Service rapide", d: "Terminer un menu en moins de 2 minutes.", f: function (d) { return (d.meilleurTemps || 9999) < 120; } },
+    { id: "toutes", e: "👑", n: "Ambassadeur", d: "Terminer un menu dans les quatre difficultés.",
+      f: function (d) { return d.finiApero && d.finiNormal && d.finiGastro && d.finiBanquet; } }
+  ];
+
+  var A = Arcade.init({
+    id: "zorg", nom: "Le Dîner de Zorg", emoji: "👽",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { nouveauMenu(); }
   });
+  var d = A.d;
 
-  function add(i) {
-    if (over || plate.indexOf(i) !== -1) return;
-    var free = plate.indexOf(-1);
-    if (free === -1) return;
-    plate[free] = i; render();
-  }
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var secret = [], assiette = [], histo = [], platCourant = 0, fini = false,
+      t0 = 0, essaisPlat = [], menuNet = true;
 
-  function render() {
-    var h = "";
-    plate.forEach(function (v, i) { h += '<div class="slot' + (v >= 0 ? " filled" : "") + '" data-i="' + i + '">' + (v >= 0 ? ING[v][0] : '<small style="color:#b8bdd6;font-size:1rem">' + (i + 1) + "</small>") + "</div>"; });
-    $("plate").innerHTML = h;
-    ING.forEach(function (it, i) { it.btn.disabled = over || plate.indexOf(i) !== -1 || plate.indexOf(-1) === -1; });
-    $("serve").disabled = over || plate.indexOf(-1) !== -1;
-    $("tries").textContent = "Essai " + Math.min(history.length + 1, MAX) + " / " + MAX;
-    var hh = "";
-    history.forEach(function (g, n) {
-      hh += '<div class="h"><span style="color:#aab">#' + (n + 1) + '</span><span class="dish">' + g.dish.map(function (x) { return ING[x][0]; }).join("") + '</span><span class="fb">' + "🟢".repeat(g.good) + "🟡".repeat(g.mis) + "❌".repeat(4 - g.good - g.mis) + "</span></div>";
-    });
-    $("hist").innerHTML = hh;
-  }
-
-  $("plate").addEventListener("click", function (e) {
-    var s = e.target.closest(".slot");
-    if (!s || over) return;
-    plate[+s.dataset.i] = -1; render();
-  });
-  $("clear").addEventListener("click", function () { if (over) { start(); return; } plate = [-1, -1, -1, -1]; render(); });
-
-  $("serve").addEventListener("click", function () {
-    if (over || plate.indexOf(-1) !== -1) return;
-    var good = 0, mis = 0;
-    plate.forEach(function (v, i) { if (secret[i] === v) good++; else if (secret.indexOf(v) !== -1) mis++; });
-    history.push({ dish: plate.slice(), good: good, mis: mis });
-    var z = $("zorg"); z.classList.remove("eat"); void z.offsetWidth; z.classList.add("eat");
-    if (good === 4) {
-      over = true;
-      z.textContent = "🥰";
-      $("talk").textContent = "« DÉLICIEUX ! Gloub et la Terre sont désormais amies. Tu as trouvé en " + history.length + " essai" + (history.length > 1 ? "s" : "") + ". »";
-      $("clear").textContent = "Nouveau dîner";
-    } else if (history.length >= MAX) {
-      over = true;
-      z.textContent = "👾";
-      $("talk").textContent = "« ÇA SUFFIT. J'envahis ta planète. » Le plat parfait était : " + secret.map(function (x) { return ING[x][0]; }).join(" ");
-      $("clear").textContent = "Nouveau dîner";
+  function tirerSecret() {
+    var D = A.D, s = [], dispo = [];
+    for (var i = 0; i < D.ing; i++) dispo.push(i);
+    if (D.repet) {
+      for (var j = 0; j < D.cases; j++) s.push(dispo[Math.floor(Math.random() * dispo.length)]);
     } else {
-      var score = good * 2 + mis, lvl = score >= 6 ? 3 : score >= 4 ? 2 : score >= 2 ? 1 : 0;
-      var r = REACT[lvl];
-      z.textContent = r[0];
-      $("talk").textContent = r[1][Math.floor(Math.random() * r[1].length)];
+      for (var k = dispo.length - 1; k > 0; k--) {
+        var m = Math.floor(Math.random() * (k + 1)), t = dispo[k]; dispo[k] = dispo[m]; dispo[m] = t;
+      }
+      s = dispo.slice(0, D.cases);
     }
-    plate = [-1, -1, -1, -1];
-    render();
+    return s;
+  }
+
+  /* comptage facon mastermind : gere correctement les doublons */
+  function juger(essai) {
+    var bons = 0, n = essai.length;
+    var restSecret = {}, restEssai = {};
+    for (var i = 0; i < n; i++) {
+      if (essai[i] === secret[i]) bons++;
+      else {
+        restSecret[secret[i]] = (restSecret[secret[i]] || 0) + 1;
+        restEssai[essai[i]] = (restEssai[essai[i]] || 0) + 1;
+      }
+    }
+    var malPlaces = 0;
+    for (var k in restEssai) {
+      if (restSecret[k]) malPlaces += Math.min(restEssai[k], restSecret[k]);
+    }
+    return { bons: bons, mal: malPlaces };
+  }
+
+  function nouveauMenu() {
+    platCourant = 0; fini = false; menuNet = true; essaisPlat = [];
+    t0 = performance.now();
+    construireGarde();
+    nouveauPlat();
+    $("zorg").textContent = "👽";
+    dire("« Humain. Nourris-moi. Trois fois. »");
+    $("vider").textContent = "Vider l'assiette";
+  }
+  function nouveauPlat() {
+    secret = tirerSecret();
+    assiette = []; for (var i = 0; i < A.D.cases; i++) assiette.push(-1);
+    histo = [];
+    afficher();
+  }
+
+  function dire(t) { $("talk").textContent = t; }
+
+  function construireGarde() {
+    var g = $("garde"); g.innerHTML = "";
+    for (var i = 0; i < A.D.ing; i++) {
+      (function (i) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "ing";
+        b.innerHTML = "<span>" + ING[i][0] + "</span>" + ING[i][1];
+        b.addEventListener("click", function () { poser(i); });
+        ING[i].btn = b;
+        g.appendChild(b);
+      })(i);
+    }
+  }
+
+  function poser(i) {
+    if (fini) return;
+    if (!A.D.repet && assiette.indexOf(i) !== -1) return;
+    var libre = assiette.indexOf(-1);
+    if (libre === -1) return;
+    assiette[libre] = i;
+    A.bip(420 + i * 30, 0.06, "sine", 0.035);
+    afficher();
+  }
+
+  $("assiette").addEventListener("click", function (e) {
+    var c = e.target.closest(".case");
+    if (!c || fini) return;
+    assiette[+c.dataset.i] = -1;
+    afficher();
+  });
+  $("vider").addEventListener("click", function () {
+    if (fini) { nouveauMenu(); return; }
+    for (var i = 0; i < assiette.length; i++) assiette[i] = -1;
+    afficher();
   });
 
-  function start() {
-    var pool = [0, 1, 2, 3, 4, 5, 6, 7];
-    for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
-    secret = pool.slice(0, 4); plate = [-1, -1, -1, -1]; history = []; over = false;
-    $("zorg").textContent = "👽"; $("talk").textContent = "« Humain. Nourris-moi. »"; $("clear").textContent = "Vider l'assiette";
-    render();
+  $("servir").addEventListener("click", function () {
+    if (fini || assiette.indexOf(-1) !== -1) return;
+    var r = juger(assiette);
+    histo.push({ plat: assiette.slice(), bons: r.bons, mal: r.mal });
+    var z = $("zorg");
+    z.classList.remove("mange"); void z.offsetWidth; z.classList.add("mange");
+
+    if (r.bons === A.D.cases) {
+      platReussi();
+    } else if (histo.length >= A.D.essais) {
+      perdu();
+    } else {
+      var note = r.bons * 2 + r.mal, niv = note >= A.D.cases * 1.6 ? 3 : note >= A.D.cases ? 2 : note >= 2 ? 1 : 0;
+      var re = REACT[niv];
+      z.textContent = re[0];
+      dire(re[1][Math.floor(Math.random() * re[1].length)]);
+      A.bip(240 + niv * 110, 0.1, "square", 0.04);
+      for (var i = 0; i < assiette.length; i++) assiette[i] = -1;
+      afficher();
+    }
+  });
+
+  function platReussi() {
+    var n = histo.length;
+    essaisPlat.push(n);
+    d.plats = (d.plats || 0) + 1;
+    if (!d.meilleurEssais || n < d.meilleurEssais) d.meilleurEssais = n;
+    if (n > 4) menuNet = false;
+    A.melodie([[660, 0.09], [880, 0.09], [1100, 0.16]]);
+    $("zorg").textContent = "😍";
+    platCourant++;
+    A.check(); A.sauver();
+
+    if (platCourant >= A.D.plats) return menuReussi();
+    dire("« " + NOMS_PLATS[platCourant - 1].toUpperCase() + " validée en " + n + " essai" + (n > 1 ? "s" : "") +
+      " ! Maintenant, le " + NOMS_PLATS[platCourant].toLowerCase() + ". »");
+    setTimeout(function () { nouveauPlat(); $("zorg").textContent = "👽"; }, 900);
+    afficher();
   }
-  start();
+
+  function menuReussi() {
+    fini = true;
+    var t = (performance.now() - t0) / 1000;
+    var totalEssais = essaisPlat.reduce(function (a, b) { return a + b; }, 0);
+    var score = Math.round((A.D.plats * A.D.essais - totalEssais + 1) * 120 * A.D.mult + Math.max(0, 300 - t) * A.D.mult);
+
+    d.menus = (d.menus || 0) + 1;
+    if (menuNet) d.menuNet = 1;
+    if (!d.meilleurTemps || t < d.meilleurTemps) d.meilleurTemps = t;
+    if (A.D.id === "apero") d.finiApero = 1;
+    if (A.D.id === "normal") d.finiNormal = 1;
+    if (A.D.id === "gastro") d.finiGastro = 1;
+    if (A.D.id === "cauchemar") d.finiBanquet = 1;
+    var recE = A.record("essais", totalEssais, true);
+    var recS = A.record("score", score, false);
+    A.sauver(); A.check();
+
+    $("zorg").textContent = "🥰";
+    dire("« MENU PARFAIT ! Gloub et la Terre sont désormais ami(e)s. »");
+    $("vider").textContent = "Nouveau dîner";
+    afficher();
+    A.modal("🥰 Menu réussi !",
+      "Zorg est repu. " + A.D.plats + " plats en <b>" + totalEssais + " essais</b> et " +
+      A.secondes(t) + ".<br>Score : <b>" + A.nb(score) + "</b>" +
+      (recE ? "<br>🏆 <b>Nouveau record d'essais !</b>" : "") +
+      (recS ? "<br>🏆 <b>Nouveau record de points !</b>" : ""),
+      [{ t: "Nouveau dîner", c: "btn", go: nouveauMenu }, { t: "Rester là", c: "btn alt" }]);
+  }
+
+  function perdu() {
+    fini = true;
+    d.echecs = (d.echecs || 0) + 1;
+    A.sauver(); A.check();
+    $("zorg").textContent = "👾";
+    dire("« ÇA SUFFIT. J'envahis ta planète. » Le bon plat était : " +
+      secret.map(function (x) { return ING[x][0]; }).join(" "));
+    A.bip(120, 0.4, "sawtooth", 0.06);
+    $("vider").textContent = "Nouveau dîner";
+    afficher();
+  }
+
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function afficher() {
+    /* menu */
+    var m = "";
+    for (var p = 0; p < A.D.plats; p++) {
+      var cls = p < platCourant ? " fait" : (p === platCourant && !fini ? " en-cours" : "");
+      m += '<div class="plat' + cls + '"><b>' + (p < platCourant ? "✔" : EMO_PLATS[p]) + "</b>" +
+        NOMS_PLATS[p] + "<small>" + (p < platCourant ? essaisPlat[p] + " essai" + (essaisPlat[p] > 1 ? "s" : "") :
+        (p === platCourant ? "en cours" : "à venir")) + "</small></div>";
+    }
+    $("menu").innerHTML = m;
+
+    /* assiette */
+    var h = "";
+    assiette.forEach(function (v, i) {
+      h += '<div class="case' + (v >= 0 ? " remplie" : "") + '" data-i="' + i + '">' +
+        (v >= 0 ? ING[v][0] : '<small style="color:#b8bdd6;font-size:.95rem">' + (i + 1) + "</small>") + "</div>";
+    });
+    $("assiette").innerHTML = h;
+
+    /* garde-manger */
+    for (var i = 0; i < A.D.ing; i++) {
+      if (!ING[i].btn) continue;
+      ING[i].btn.disabled = fini || assiette.indexOf(-1) === -1 || (!A.D.repet && assiette.indexOf(i) !== -1);
+    }
+    $("servir").disabled = fini || assiette.indexOf(-1) !== -1;
+    $("essais").textContent = fini ? "Dîner terminé" :
+      NOMS_PLATS[platCourant] + " · essai " + Math.min(histo.length + 1, A.D.essais) + " / " + A.D.essais;
+
+    /* historique */
+    var hh = "";
+    histo.forEach(function (g, n) {
+      hh += '<div class="h"><span class="num">#' + (n + 1) + '</span><span class="plat-txt">' +
+        g.plat.map(function (x) { return ING[x][0]; }).join("") + '</span><span class="fb">' +
+        "🟢".repeat(g.bons) + "🟡".repeat(g.mal) +
+        "❌".repeat(A.D.cases - g.bons - g.mal) + "</span></div>";
+    });
+    $("histo").innerHTML = hh;
+    majStats();
+    if (A.majSucces) A.majSucces();
+  }
+
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Menus terminés", A.nb(d.menus || 0));
+    ligne("Plats réussis", A.nb(d.plats || 0));
+    ligne("Invasions provoquées", A.nb(d.echecs || 0));
+    ligne("Meilleur plat", d.meilleurEssais ? d.meilleurEssais + " essai(s)" : "—");
+    ligne("Menu le plus rapide", d.meilleurTemps ? A.secondes(d.meilleurTemps) : "—");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var e = A.meilleur("essais", i), s = A.meilleur("score", i);
+      ligne(df.e + " " + df.n, e != null ? e + " essais · " + A.nb(s || 0) + " pts" : "jamais fini");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  nouveauMenu();
 })();
 </script>
 </body>

@@ -6,6 +6,7 @@
 <title>La Fessée Légendaire</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
   .game { max-width: 1000px; margin: 0 auto; }
   .stage {
@@ -58,6 +59,13 @@
   .btn.small { padding: 7px 12px; font-size: .88rem; border-radius: 10px; }
   .field.preset select { font-weight: 700; }
   .bar2 { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+  .defi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; }
+  .defi.actif { border-color: var(--accent); }
+  .defiHaut { display: flex; justify-content: space-between; font-weight: 700; font-size: .92rem; margin-bottom: 6px; gap: 10px; flex-wrap: wrap; }
+  .defiBarre { height: 10px; background: #eee; border-radius: 99px; overflow: hidden; }
+  html[data-theme="dark"] .defiBarre { background: #34343c; }
+  .defiBarre i { display: block; height: 100%; width: 0; background: var(--good); border-radius: 99px; transition: width .12s linear; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
@@ -65,6 +73,16 @@
 <div class="wrap game">
   <h1 class="center">La Fessée Légendaire</h1>
   <p class="sub center">Crée deux personnages, habille-les comme tu veux, choisis l'arme… et que la fessée commence. (Aucun personnage n'a été blessé. C'est du dessin animé.)</p>
+
+  <div id="difficulte"></div>
+
+  <div class="defi" id="defi">
+    <div class="defiHaut">
+      <span id="defiTitre">Défi&nbsp;: 30 fessées en 20 secondes</span>
+      <span id="defiChrono">20,0 s</span>
+    </div>
+    <div class="defiBarre"><i id="defiJauge"></i></div>
+  </div>
 
   <div class="stage" id="stage">
     <div class="char" id="att"><div class="tag" id="tagA"></div><div id="svgA"></div></div>
@@ -81,12 +99,21 @@
   <div class="bar2">
     <button class="btn alt" id="swap">🔄 Inverser les rôles</button>
     <button class="btn alt" id="rnd">🎲 Tout au hasard</button>
+    <button class="btn" id="lancerDefi">⏱️ Lancer le défi</button>
     <button class="btn alt" id="reset">🧹 Remettre le compteur à zéro</button>
   </div>
 
   <div class="editors">
     <div class="panel editor" id="edA"></div>
     <div class="panel editor" id="edB"></div>
+  </div>
+
+  <div class="editors" style="margin-top:18px">
+    <div class="panel"><div id="succes"></div></div>
+    <div class="panel">
+      <h3 style="margin:0 0 12px;font-size:1.05rem">📊 Tes chiffres</h3>
+      <div id="stats"></div>
+    </div>
   </div>
 </div>
 <script>
@@ -123,11 +150,53 @@
   ];
   var KEYS = ["name", "skin", "hair", "hairC", "hat", "hatC", "top", "topC", "bottom", "bottomC", "shoes", "acc", "weapon"];
   var saved = [];
-  try { saved = JSON.parse(localStorage.getItem("fessee-presets") || "[]"); if (!Array.isArray(saved)) saved = []; } catch (e) { saved = []; }
   function applyPreset(i, p) { KEYS.forEach(function (k) { if (p[k] != null) chars[i][k] = p[k]; }); }
 
   var attacker = 0, count = 0, combo = 0, lastHit = 0, hatGone = false, audio = null;
-  try { count = +localStorage.getItem("fessee-count") || 0; } catch (e) {}
+
+  /* ---------- Socle commun : difficulte, succes, profil sauvegarde ---------- */
+  var DIFFS = [
+    { id: "echauffement", n: "Échauffement", e: "🤚", d: "30 fessées en 20 secondes. Tranquille.", but: 30, duree: 20, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮", d: "60 fessées en 20 secondes. Il faut un bon rythme.", but: 60, duree: 20, mult: 1.6 },
+    { id: "sportif", n: "Sportif", e: "🔥", d: "100 fessées en 20 secondes. Ton index va comprendre.", but: 100, duree: 20, mult: 2.6 },
+    { id: "legendaire", n: "Légendaire", e: "💀", d: "150 fessées en 20 secondes. Personne n'y arrive proprement.", but: 150, duree: 20, mult: 4 }
+  ];
+  var SUCCES = [
+    { id: "premiere", e: "🖐️", n: "Première fessée", d: "Donner une fessée.", f: function (d) { return (d.fessees || 0) >= 1; } },
+    { id: "cent", e: "💯", n: "Centenaire", d: "100 fessées au total.", f: function (d) { return (d.fessees || 0) >= 100; } },
+    { id: "mille", e: "👑", n: "Légende", d: "1 000 fessées au total.", f: function (d) { return (d.fessees || 0) >= 1000; } },
+    { id: "dixmille", e: "🌋", n: "Phénomène", d: "10 000 fessées au total.", f: function (d) { return (d.fessees || 0) >= 10000; } },
+    { id: "combo10", e: "⚡", n: "Combo × 10", d: "Enchaîner 10 fessées rapides.", f: function (d) { return (d.combo || 0) >= 10; } },
+    { id: "combo25", e: "🌪️", n: "Combo × 25", d: "Enchaîner 25 fessées rapides.", f: function (d) { return (d.combo || 0) >= 25; } },
+    { id: "defi1", e: "🤚", n: "Échauffé", d: "Réussir le défi Échauffement.", f: function (d) { return !!d.defiEchauffement; } },
+    { id: "defi2", e: "🎮", n: "En rythme", d: "Réussir le défi Normal.", f: function (d) { return !!d.defiNormal; } },
+    { id: "defi3", e: "🔥", n: "Sportif de haut niveau", d: "Réussir le défi Sportif.", f: function (d) { return !!d.defiSportif; } },
+    { id: "defi4", e: "💀", n: "Légendaire", d: "Réussir le défi Légendaire.", f: function (d) { return !!d.defiLegendaire; } },
+    { id: "armes", e: "🗡️", n: "Armurier", d: "Frapper avec les six armes.", f: function (d) { return Object.keys(d.armes || {}).length >= 6; } },
+    { id: "perso", e: "💾", n: "Créateur", d: "Sauvegarder un personnage à toi.", f: function (d) { return (d.persos || []).length >= 1; } }
+  ];
+  var A = Arcade.init({
+    id: "fessee", nom: "La Fessée Légendaire", emoji: "🍑",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { arreterDefi(); majDefi(); }
+  });
+  var d = A.d;
+  d.armes = d.armes || {};
+  if (d.fessees == null) {
+    var vieuxCompte = 0;
+    try { vieuxCompte = +localStorage.getItem("fessee-count") || 0; } catch (e) {}
+    d.fessees = vieuxCompte;
+  }
+  count = d.fessees;
+
+  /* les persos sauvegardes vivent maintenant dans le profil commun */
+  saved = Array.isArray(d.persos) ? d.persos : [];
+  if (!saved.length) {
+    try {
+      var anciens = JSON.parse(localStorage.getItem("fessee-presets") || "[]");
+      if (Array.isArray(anciens) && anciens.length) { saved = anciens; d.persos = saved; A.sauver(); }
+    } catch (e) {}
+  }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (m) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]; }); }
   function darker(hex, k) {
@@ -267,14 +336,14 @@
       var same = -1; saved.forEach(function (p, n) { if (p.name === copy.name) same = n; });
       if (same >= 0) saved[same] = copy; else saved.push(copy);
       if (saved.length > 30) saved.shift();
-      try { localStorage.setItem("fessee-presets", JSON.stringify(saved)); } catch (e) {}
+      d.persos = saved; A.sauver(); A.check();
       renderEditor(0); renderEditor(1);
       $("comment").textContent = "💾 « " + (copy.name || "Sans nom") + " » est sauvegardé dans « Mes persos ».";
     });
     del.addEventListener("click", function () {
       var v = ed.querySelector("[data-preset]").value; if (!v || v[0] !== "s") return;
       var gone = saved.splice(+v.slice(1), 1)[0];
-      try { localStorage.setItem("fessee-presets", JSON.stringify(saved)); } catch (e) {}
+      d.persos = saved; A.sauver();
       renderEditor(0); renderEditor(1);
       $("comment").textContent = "🗑️ « " + ((gone && gone.name) || "Sans nom") + " » a été supprimé.";
     });
@@ -331,7 +400,11 @@
     combo = now - lastHit < 600 ? combo + 1 : 1;
     lastHit = now;
     count++;
-    try { localStorage.setItem("fessee-count", count); } catch (e) {}
+    d.fessees = count;
+    if (combo > (d.combo || 0)) d.combo = combo;
+    d.armes[chars[attacker].weapon] = 1;
+    if (defiEnCours) { defiFaites++; majDefi(); }
+    A.check();
     $("count").textContent = count.toLocaleString("fr-FR");
     $("combo").textContent = combo >= 3 ? "COMBO ×" + combo : "";
 
@@ -374,7 +447,7 @@
     if ((e.code === "Space" || e.key === " ") && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); if (!e.repeat) spank(); }
   });
   $("swap").addEventListener("click", function () { attacker = 1 - attacker; renderAll(); $("comment").textContent = fill("Retournement de situation ! {A} prend sa revanche."); });
-  $("reset").addEventListener("click", function () { count = 0; combo = 0; try { localStorage.setItem("fessee-count", 0); } catch (e) {} $("count").textContent = "0"; $("combo").textContent = ""; $("comment").textContent = "Compteur remis à zéro. Les fesses sont neuves."; });
+  $("reset").addEventListener("click", function () { count = 0; combo = 0; d.fessees = 0; A.sauver(); $("count").textContent = "0"; $("combo").textContent = ""; $("comment").textContent = "Compteur remis à zéro. Les fesses sont neuves."; });
   $("rnd").addEventListener("click", function () {
     function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
     function rc() { return "#" + ("00000" + Math.floor(Math.random() * 0xffffff).toString(16)).slice(-6); }
@@ -387,6 +460,87 @@
     renderAll();
   });
 
+  /* ---------- Le défi chronométré ---------- */
+  var defiEnCours = false, defiFaites = 0, defiFin = 0, defiIv = null;
+
+  function majDefi() {
+    var D = A.D;
+    $("defiTitre").textContent = defiEnCours
+      ? "Défi " + D.n + " : " + defiFaites + " / " + D.but + " fessées"
+      : "Défi " + D.e + " " + D.n + " : " + D.but + " fessées en " + D.duree + " secondes";
+    $("defiJauge").style.width = Math.min(100, defiFaites / D.but * 100) + "%";
+    $("defi").classList.toggle("actif", defiEnCours);
+    if (!defiEnCours) {
+      var rec = A.meilleur("fessees");
+      $("defiChrono").textContent = rec != null ? "record : " + rec + " fessées" : D.duree + ",0 s";
+    }
+  }
+
+  function arreterDefi() {
+    defiEnCours = false;
+    clearInterval(defiIv);
+    $("lancerDefi").textContent = "⏱️ Lancer le défi";
+    $("defiJauge").style.background = "var(--good)";
+  }
+
+  function lancerDefi() {
+    if (defiEnCours) { arreterDefi(); majDefi(); return; }
+    defiEnCours = true; defiFaites = 0;
+    defiFin = performance.now() + A.D.duree * 1000;
+    $("lancerDefi").textContent = "✖ Abandonner";
+    $("comment").textContent = "⏱️ C'est parti ! " + A.D.but + " fessées, " + A.D.duree + " secondes.";
+    majDefi();
+    clearInterval(defiIv);
+    defiIv = setInterval(function () {
+      var reste = (defiFin - performance.now()) / 1000;
+      $("defiChrono").textContent = Math.max(0, reste).toFixed(1).replace(".", ",") + " s";
+      $("defiJauge").style.background = defiFaites >= A.D.but ? "var(--good)" : reste < A.D.duree * 0.25 ? "var(--bad)" : "#f59f00";
+      if (reste <= 0) finDefi();
+    }, 80);
+  }
+
+  function finDefi() {
+    var D = A.D, reussi = defiFaites >= D.but, faites = defiFaites;
+    arreterDefi();
+    if (reussi) {
+      if (D.id === "echauffement") d.defiEchauffement = 1;
+      if (D.id === "normal") d.defiNormal = 1;
+      if (D.id === "sportif") d.defiSportif = 1;
+      if (D.id === "legendaire") d.defiLegendaire = 1;
+    }
+    d.defis = (d.defis || 0) + 1;
+    var rec = A.record("fessees", faites, false);
+    A.record("score", Math.round(faites * 10 * D.mult + (reussi ? 500 * D.mult : 0)), false);
+    A.sauver(); A.check();
+    majDefi(); majStats();
+    if (A.majSucces) A.majSucces();
+    A.modal(reussi ? "🏆 Défi réussi !" : "⏰ Temps écoulé",
+      "Tu as donné <b>" + faites + " fessées</b> en " + D.duree + " secondes (objectif : " + D.but + ")." +
+      (rec ? "<br>🏆 <b>Nouveau record sur cette difficulté !</b>" : ""),
+      [{ t: "Recommencer", c: "btn", go: lancerDefi }, { t: "Retour au calme", c: "btn alt" }]);
+  }
+
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Fessées au total", A.nb(d.fessees || 0));
+    ligne("Meilleur combo", A.nb(d.combo || 0));
+    ligne("Défis tentés", A.nb(d.defis || 0));
+    ligne("Armes utilisées", Object.keys(d.armes || {}).length + " / 6");
+    ligne("Persos sauvegardés", (d.persos || []).length);
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var f = A.meilleur("fessees", i);
+      ligne(df.e + " " + df.n, f != null ? f + " fessées" : "jamais tenté");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  $("lancerDefi").addEventListener("click", lancerDefi);
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  majDefi(); majStats();
   $("count").textContent = count.toLocaleString("fr-FR");
   renderAll();
 })();

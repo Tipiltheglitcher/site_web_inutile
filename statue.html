@@ -6,136 +6,399 @@
 <title>La Statue</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
   body { background: #e9e4d8; overflow-x: hidden; }
-  .arena { position: relative; height: calc(100vh - 70px); min-height: 460px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
-  .hud { position: absolute; top: 10px; left: 0; right: 0; text-align: center; pointer-events: none; padding: 0 16px; z-index: 3; }
-  .hud h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.6rem); }
-  .hud p { margin: 4px 0 0; color: var(--muted); }
-  .time { font-size: 2.4rem; font-weight: 800; margin-top: 6px; }
+  .arena { position: relative; height: calc(100vh - 70px); min-height: 480px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .hud { position: absolute; top: 8px; left: 0; right: 0; text-align: center; pointer-events: none; padding: 0 16px; z-index: 3; }
+  .hud h1 { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2.4rem); }
+  .hud p { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+  .time { font-size: 2.6rem; font-weight: 800; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .time small { display: block; font-size: .85rem; font-weight: 700; color: var(--muted); }
+  .paliers { display: flex; gap: 5px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+  .palier { font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: #0001; color: var(--muted); }
+  .palier.on { background: #1fa55b; color: #fff; }
+
   #zone { position: absolute; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #fff 60%, #d8d1bf 100%); border: 4px solid #1d1d1f; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 800; cursor: pointer; z-index: 2; }
   #zone.live { border-color: #1fa55b; }
   #zone.danger { border-color: var(--bad); }
+  #zone.miroir { border-style: dashed; border-color: #7048e8; }
   #dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #1d1d1f; transform: translate(-50%, -50%); pointer-events: none; z-index: 4; display: none; }
-  .pest { position: absolute; font-size: 2.6rem; pointer-events: none; z-index: 5; transition: none; }
-  .shout { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; font-size: 1.3rem; background: #1d1d1f; color: #fff; padding: 8px 18px; border-radius: 99px; white-space: nowrap; z-index: 6; pointer-events: none; opacity: 0; transition: opacity .2s; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+  .pest { position: absolute; font-size: 2.6rem; pointer-events: none; z-index: 5; }
+  .shout { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; font-size: 1.25rem; background: #1d1d1f; color: #fff; padding: 8px 18px; border-radius: 99px; white-space: nowrap; z-index: 6; pointer-events: none; opacity: 0; transition: opacity .2s; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
   .shout.on { opacity: 1; }
+  .flash { position: absolute; left: 50%; top: 32%; transform: translateX(-50%); font-weight: 800; font-size: 1.6rem; color: #1fa55b; pointer-events: none; z-index: 7; animation: mont 1.1s ease-out forwards; white-space: nowrap; }
+  @keyframes mont { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -60px); } }
   .shake { animation: shake .35s linear; }
   @keyframes shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-8px,4px); } 40% { transform: translate(7px,-5px); } 60% { transform: translate(-5px,-3px); } 80% { transform: translate(5px,5px); } }
-  .result { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(233,228,216,.96); z-index: 10; text-align: center; padding: 20px; }
+
+  .result { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(233,228,216,.97); z-index: 10; text-align: center; padding: 20px; overflow-y: auto; }
   .result.show { display: flex; }
-  .result .big { font-size: 4.5rem; }
-  .ranks { font-size: .9rem; color: var(--muted); margin-top: 12px; }
+  .result .big { font-size: 3.6rem; }
+  .result h2 { margin: 4px 0 6px; }
+  .result .panneau { max-width: 620px; width: 100%; }
+  .lignes { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 8px; margin: 14px 0; }
+  .lignes div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .lignes b { display: block; font-size: 1.2rem; }
+  .lignes small { color: var(--muted); font-size: .75rem; }
+  .ranks { font-size: .85rem; color: var(--muted); margin-top: 10px; }
 </style>
 </head>
 <body class="statue-page">
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🗿</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128511;</span></div>
 <div class="arena" id="arena">
-  <div class="hud"><h1>La Statue</h1><p id="hint">Maintiens le clic (ou le doigt) dans le cercle. Ne sors pas. Ne lâche pas.</p><div class="time" id="time">0,0 s</div></div>
+  <div class="hud">
+    <h1>La Statue</h1>
+    <p id="hint">Maintiens le clic (ou le doigt) dans le cercle. Ne sors pas. Ne l&acirc;che pas.</p>
+    <div class="time" id="time">0,0 s<small id="sousTime">&nbsp;</small></div>
+    <div class="paliers" id="paliers"></div>
+  </div>
   <div id="zone">Appuie<br>et tiens</div>
   <div id="dot"></div>
   <div class="shout" id="shout"></div>
-  <div class="result" id="result"><div class="big" id="rEmo">🗿</div><h2 id="rTitle"></h2><p id="rText"></p><p><b>Record : <span id="best">0,0</span> s</b></p><button class="btn" id="again">Réessayer</button>
-    <div class="ranks">Moins de 10 s : pigeon nerveux · 10 s : mime débutant · 25 s : garde royal · 45 s : vraie statue · 60 s+ : tu es fait de marbre</div></div>
+
+  <div class="result show" id="result">
+    <div class="panneau">
+      <div class="big" id="rEmo">&#128511;</div>
+      <h2 id="rTitle">Tiendras-tu&nbsp;?</h2>
+      <p id="rText">Choisis ta difficult&eacute;, puis appuie dans le cercle et ne bouge plus.</p>
+      <div id="difficulte"></div>
+      <div class="lignes" id="rLignes"></div>
+      <button class="btn" id="again">Devenir une statue</button>
+      <div class="ranks" id="ranks"></div>
+      <div class="panel" style="margin-top:16px;text-align:left"><div id="succes"></div></div>
+    </div>
+  </div>
 </div>
+
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var arena = $("arena"), zone = $("zone"), dot = $("dot");
-  var playing = false, t0 = 0, raf = 0, px = 0, py = 0, cx = 0, cy = 0, r = 0, best = 0, pests = [], nextPest = 0, nextShout = 0, pid = null;
-  try { best = +localStorage.getItem("statue-best") || 0; } catch (e) {}
-  var SHOUTS = ["Il y a une araignée sur ton épaule !", "Ton téléphone sonne !", "Regarde derrière toi !", "Attention, un pigeon !", "Qui a mangé mon yaourt ?!", "Ça gratte, hein ?", "Éternuement imminent…", "C'est l'heure du goûter !", "Tu as laissé le four allumé ?"];
-  var PESTS = ["🪰", "🐝", "🦟", "🐦", "🎈", "🦋", "🥏"];
+
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "calme", n: "Calme", e: "😌",
+      d: "Le cercle rétrécit lentement et dérive à peine. Pour s'échauffer.",
+      retrait: 0.9, deriveA: 2.0, deriveV: 0.35, rMin: 34, pestes: 4200, cris: 5000,
+      saut: 0, miroir: 0, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮",
+      d: "Il rétrécit, il dérive, et des insectes viennent te distraire.",
+      retrait: 1.5, deriveA: 3.2, deriveV: 0.45, rMin: 26, pestes: 3200, cris: 3800,
+      saut: 0, miroir: 0, mult: 1.6 },
+    { id: "agite", n: "Agité", e: "🔥",
+      d: "Plus rapide, et le cercle se téléporte parfois. Tu as une demi-seconde pour suivre.",
+      retrait: 2.1, deriveA: 4.2, deriveV: 0.6, rMin: 22, pestes: 2400, cris: 3000,
+      saut: 11000, miroir: 0, mult: 2.5 },
+    { id: "cauchemar", n: "Cauchemar", e: "💀",
+      d: "Téléportations fréquentes et, de temps en temps, le cercle part à l'envers.",
+      retrait: 2.7, deriveA: 5.4, deriveV: 0.8, rMin: 18, pestes: 1700, cris: 2400,
+      saut: 7000, miroir: 9000, mult: 4 }
+  ];
+
+  var PALIERS = [
+    [10, "🤡", "Mime débutant", 100],
+    [20, "💂", "Garde royal", 250],
+    [30, "🗿", "Statue de jardin", 500],
+    [45, "🏛️", "Statue de musée", 1000],
+    [60, "🧊", "Bloc de marbre", 2000],
+    [90, "🌋", "Monument national", 4000],
+    [120, "👽", "Tu n'es plus humain", 8000]
+  ];
+  function rang(s) {
+    var r = ["🐦", "Pigeon nerveux"];
+    PALIERS.forEach(function (p) { if (s >= p[0]) r = [p[1], p[2]]; });
+    return r;
+  }
+
+  var SHOUTS = ["Il y a une araignée sur ton épaule !", "Ton téléphone sonne !",
+    "Regarde derrière toi !", "Attention, un pigeon !", "Qui a mangé mon yaourt ?!",
+    "Ça gratte, hein ?", "Éternuement imminent…", "C'est l'heure du goûter !",
+    "Tu as laissé le four allumé ?", "Quelqu'un a sonné à la porte !",
+    "Ta jambe s'endort, non ?", "Il paraît que tu clignes des yeux."];
+  var PESTS = ["🪰", "🐝", "🦟", "🐦", "🎈", "🦋", "🥏", "🍂"];
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "dix", e: "🤡", n: "Mime débutant", d: "Tenir 10 secondes.", f: function (d) { return (d.record || 0) >= 10; } },
+    { id: "trente", e: "🗿", n: "Statue de jardin", d: "Tenir 30 secondes.", f: function (d) { return (d.record || 0) >= 30; } },
+    { id: "soixante", e: "🧊", n: "Bloc de marbre", d: "Tenir 60 secondes.", f: function (d) { return (d.record || 0) >= 60; } },
+    { id: "nonante", e: "🌋", n: "Monument national", d: "Tenir 90 secondes.", f: function (d) { return (d.record || 0) >= 90; } },
+    { id: "cent20", e: "👽", n: "Plus tout à fait humain", d: "Tenir 120 secondes.", f: function (d) { return (d.record || 0) >= 120; } },
+    { id: "agite", e: "🔥", n: "Sang-froid", d: "Tenir 30 secondes en Agité.", f: function (d) { return (d.recAgite || 0) >= 30; } },
+    { id: "cauchemar", e: "💀", n: "Marbre pur", d: "Tenir 30 secondes en Cauchemar.", f: function (d) { return (d.recCauchemar || 0) >= 30; } },
+    { id: "sauts", e: "🧭", n: "Bon suiveur", d: "Rattraper 25 téléportations.", f: function (d) { return (d.sauts || 0) >= 25; } },
+    { id: "miroir", e: "🪞", n: "Sens dessus dessous", d: "Survivre à 5 passages en mode miroir.", f: function (d) { return (d.miroirs || 0) >= 5; } },
+    { id: "insectes", e: "🪰", n: "Ami des bêtes", d: "Ignorer 100 insectes.", f: function (d) { return (d.pestes || 0) >= 100; } },
+    { id: "essais", e: "🔁", n: "Têtu", d: "Faire 25 tentatives.", f: function (d) { return (d.essais || 0) >= 25; } },
+    { id: "cumul", e: "⏳", n: "Immobile une heure", d: "Cumuler 30 minutes d'immobilité.", f: function (d) { return (d.cumul || 0) >= 1800; } }
+  ];
+
+  var A = Arcade.init({
+    id: "statue", nom: "La Statue", emoji: "🗿",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { majResultats(); }
+  });
+  var d = A.d;
+
+  /* reprise de l'ancien record, s'il existe */
+  if (d.record == null) {
+    var vieux = 0;
+    try { vieux = +localStorage.getItem("statue-best") || 0; } catch (e) {}
+    if (vieux > 0) { d.record = vieux; A.record("temps", vieux, false); A.sauver(); }
+  }
+
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var enCours = false, t0 = 0, raf = 0, px = 0, py = 0, cx = 0, cy = 0, r = 0,
+      pestes = [], prochPeste = 0, prochCri = 0, prochSaut = 0, prochMiroir = 0,
+      pid = null, grace = 0, miroirJusqua = 0, paliersAtteints = 0,
+      nbSauts = 0, nbMiroirs = 0, nbPestes = 0, bonus = 0,
+      sautDx = 0, sautDy = 0, miroirActif = false;
 
   function fmt(s) { return s.toFixed(1).replace(".", ","); }
-  $("best").textContent = fmt(best);
+  function local(e) { var b = arena.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; }
+  function baseR() { return Math.min(115, arena.clientWidth / 3); }
 
-  function layoutIdle() {
-    cx = arena.clientWidth / 2; cy = arena.clientHeight / 2 + 30; r = Math.min(110, arena.clientWidth / 3);
-    place();
-  }
-  function place() {
+  function placer() {
     zone.style.left = cx + "px"; zone.style.top = cy + "px";
     zone.style.width = zone.style.height = (r * 2) + "px";
-    zone.style.fontSize = Math.max(0.7, r / 90) + "rem";
+    zone.style.fontSize = Math.max(0.65, r / 95) + "rem";
   }
-  function local(e) { var b = arena.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; }
+  function reposer() {
+    cx = arena.clientWidth / 2; cy = arena.clientHeight / 2 + 40; r = baseR();
+    placer();
+  }
+
+  function flash(txt, couleur) {
+    var f = document.createElement("div");
+    f.className = "flash"; f.textContent = txt;
+    if (couleur) f.style.color = couleur;
+    arena.appendChild(f);
+    setTimeout(function () { f.remove(); }, 1100);
+  }
+  var criTimer = null;
+  function crier(t) {
+    var s = $("shout"); s.textContent = t; s.classList.add("on");
+    clearTimeout(criTimer);
+    criTimer = setTimeout(function () { s.classList.remove("on"); }, 1900);
+  }
 
   zone.addEventListener("pointerdown", function (e) {
-    if (playing) return;
+    if (enCours) return;
     e.preventDefault();
     pid = e.pointerId;
     try { arena.setPointerCapture(e.pointerId); } catch (err) {}
     var p = local(e); px = p.x; py = p.y;
-    playing = true; t0 = performance.now(); nextPest = t0 + 3000; nextShout = t0 + 2000;
-    zone.textContent = ""; zone.className = "live"; dot.style.display = "block";
-    raf = requestAnimationFrame(frame);
+    demarrer();
   });
-  arena.addEventListener("pointermove", function (e) { if (playing && e.pointerId === pid) { var p = local(e); px = p.x; py = p.y; } });
-  function release(e) { if (playing && e.pointerId === pid) lose("Tu as lâché !"); }
-  arena.addEventListener("pointerup", release);
-  arena.addEventListener("pointercancel", release);
-  window.addEventListener("blur", function () { if (playing) lose("Tu as quitté la fenêtre !"); });
+  arena.addEventListener("pointermove", function (e) {
+    if (enCours && e.pointerId === pid) { var p = local(e); px = p.x; py = p.y; }
+  });
+  function lacher(e) { if (enCours && e.pointerId === pid) perdu("Tu as lâché !"); }
+  arena.addEventListener("pointerup", lacher);
+  arena.addEventListener("pointercancel", lacher);
+  window.addEventListener("blur", function () { if (enCours) perdu("Tu as quitté la fenêtre !"); });
+
+  function demarrer() {
+    var D = A.D, now = performance.now();
+    enCours = true; t0 = now;
+    prochPeste = now + 2500; prochCri = now + 2000;
+    prochSaut = D.saut ? now + D.saut : Infinity;
+    prochMiroir = D.miroir ? now + D.miroir : Infinity;
+    grace = 0; miroirJusqua = 0; paliersAtteints = 0;
+    nbSauts = 0; nbMiroirs = 0; nbPestes = 0; bonus = 0;
+    sautDx = 0; sautDy = 0; miroirActif = false;
+    zone.textContent = ""; zone.className = "live";
+    dot.style.display = "block";
+    $("sousTime").innerHTML = "&nbsp;";
+    majPaliers(0);
+    raf = requestAnimationFrame(frame);
+  }
 
   function frame(now) {
-    if (!playing) return;
+    if (!enCours) return;
+    var D = A.D;
     var el = (now - t0) / 1000;
     var W = arena.clientWidth, H = arena.clientHeight;
-    var baseR = Math.min(110, W / 3);
-    r = Math.max(22, baseR - el * 1.6);
-    // the circle starts drifting, slowly then faster
-    var amp = Math.min(W / 2 - r - 10, 10 + el * 3), ampY = Math.min(H / 2 - r - 70, 6 + el * 2);
-    cx = W / 2 + Math.sin(el * (0.4 + el / 120)) * amp;
-    cy = H / 2 + 30 + Math.sin(el * 0.7 + 1) * Math.max(0, ampY);
-    place();
+
+    r = Math.max(D.rMin, baseR() - el * D.retrait);
+
+    /* derive : le cercle se balade de plus en plus large */
+    var miroir = now < miroirJusqua;
+    /* l'entree ET la sortie du mode miroir font sauter le cercle d'un coup :
+       on accorde le meme sursis que pour une teleportation, sinon c'est
+       une mort instantanee impossible a anticiper */
+    if (miroir !== miroirActif) { miroirActif = miroir; grace = Math.max(grace, now + 520); }
+    var sens = miroir ? -1 : 1;
+    var ampX = Math.min(W / 2 - r - 10, 10 + el * D.deriveA);
+    var ampY = Math.min(H / 2 - r - 80, 6 + el * D.deriveA * 0.7);
+    cx = W / 2 + sens * Math.sin(el * (D.deriveV + el / 140)) * ampX + (sautDx || 0);
+    cy = H / 2 + 40 + sens * Math.sin(el * (D.deriveV * 1.6) + 1) * Math.max(0, ampY) + (sautDy || 0);
+    cx = Math.max(r + 6, Math.min(W - r - 6, cx));
+    cy = Math.max(r + 70, Math.min(H - r - 6, cy));
+    placer();
+
     dot.style.left = px + "px"; dot.style.top = py + "px";
-    $("time").textContent = fmt(el) + " s";
+    $("time").firstChild.nodeValue = fmt(el) + " s";
 
-    var d = Math.hypot(px - cx, py - cy);
-    zone.className = d > r * 0.75 ? "danger" : "live";
-    if (d > r) return lose("Tu es sorti du cercle !");
+    /* paliers */
+    while (paliersAtteints < PALIERS.length && el >= PALIERS[paliersAtteints][0]) {
+      var p = PALIERS[paliersAtteints];
+      bonus += p[3];
+      flash(p[1] + " " + p[2] + "  +" + p[3]);
+      A.bip(660 + paliersAtteints * 90, 0.12, "triangle", 0.05);
+      paliersAtteints++;
+      majPaliers(el);
+    }
 
-    if (now > nextPest) { spawnPest(W, H); nextPest = now + Math.max(900, 3500 - el * 50); }
-    if (now > nextShout) { shout(SHOUTS[Math.floor(Math.random() * SHOUTS.length)]); nextShout = now + 3500 + Math.random() * 3000; if (el > 15 && Math.random() < .5) { arena.classList.remove("shake"); void arena.offsetWidth; arena.classList.add("shake"); } }
-    pests = pests.filter(function (p) {
-      var k = (now - p.born) / p.life;
-      if (k >= 1) { p.el.remove(); return false; }
-      p.el.style.left = (p.x0 + (p.x1 - p.x0) * k + Math.sin(k * 20) * 20) + "px";
-      p.el.style.top = (p.y0 + (p.y1 - p.y0) * k + Math.cos(k * 15) * 25) + "px";
+    var dist = Math.hypot(px - cx, py - cy);
+    zone.className = (miroir ? "miroir" : "") + (dist > r * 0.72 ? " danger" : " live");
+    if (dist > r) {
+      if (now > grace) return perdu("Tu es sorti du cercle !");
+    }
+
+    /* teleportation */
+    if (now > prochSaut) {
+      var ang = Math.random() * Math.PI * 2, saut = 90 + Math.random() * 140;
+      sautDx = (sautDx || 0) + Math.cos(ang) * saut;
+      sautDy = (sautDy || 0) + Math.sin(ang) * saut;
+      grace = now + 520;
+      nbSauts++; d.sauts = (d.sauts || 0) + 1;
+      flash("🧭 Suis le cercle !", "#7048e8");
+      A.bip(330, 0.14, "sawtooth", 0.05);
+      prochSaut = now + D.saut * (0.7 + Math.random() * 0.6);
+    }
+    /* mode miroir */
+    if (now > prochMiroir) {
+      miroirJusqua = now + 3200;
+      nbMiroirs++; d.miroirs = (d.miroirs || 0) + 1;
+      flash("🪞 Miroir !", "#7048e8");
+      A.bip(200, 0.2, "sine", 0.05);
+      prochMiroir = now + D.miroir * (0.8 + Math.random() * 0.7);
+    }
+
+    if (now > prochPeste) {
+      pondrePeste(W, H);
+      nbPestes++; d.pestes = (d.pestes || 0) + 1;
+      prochPeste = now + Math.max(700, D.pestes - el * 45);
+    }
+    if (now > prochCri) {
+      crier(SHOUTS[Math.floor(Math.random() * SHOUTS.length)]);
+      prochCri = now + D.cris + Math.random() * 2500;
+      if (el > 12 && Math.random() < 0.5) {
+        arena.classList.remove("shake"); void arena.offsetWidth; arena.classList.add("shake");
+      }
+    }
+
+    pestes = pestes.filter(function (pp) {
+      var k = (now - pp.born) / pp.life;
+      if (k >= 1) { pp.el.remove(); return false; }
+      pp.el.style.left = (pp.x0 + (pp.x1 - pp.x0) * k + Math.sin(k * 20) * 22) + "px";
+      pp.el.style.top = (pp.y0 + (pp.y1 - pp.y0) * k + Math.cos(k * 15) * 26) + "px";
       return true;
     });
     raf = requestAnimationFrame(frame);
   }
 
-  function spawnPest(W, H) {
-    var el = document.createElement("div"); el.className = "pest";
+  function pondrePeste(W, H) {
+    var el = document.createElement("div");
+    el.className = "pest";
     el.textContent = PESTS[Math.floor(Math.random() * PESTS.length)];
     arena.appendChild(el);
-    var left = Math.random() < .5;
-    pests.push({ el: el, born: performance.now(), life: 2500 + Math.random() * 1500, x0: left ? -60 : W + 20, x1: left ? W + 20 : -60, y0: Math.random() * H, y1: Math.random() * H });
+    var gauche = Math.random() < 0.5;
+    pestes.push({ el: el, born: performance.now(), life: 2300 + Math.random() * 1500,
+      x0: gauche ? -60 : W + 20, x1: gauche ? W + 20 : -60,
+      y0: Math.random() * H, y1: Math.random() * H });
   }
-  var shoutTimer = null;
-  function shout(t) { var s = $("shout"); s.textContent = t; s.classList.add("on"); clearTimeout(shoutTimer); shoutTimer = setTimeout(function () { s.classList.remove("on"); }, 1800); }
 
-  function lose(why) {
-    playing = false; cancelAnimationFrame(raf);
+  function perdu(pourquoi) {
+    enCours = false;
+    cancelAnimationFrame(raf);
     try { arena.releasePointerCapture(pid); } catch (e) {}
     var el = (performance.now() - t0) / 1000;
-    pests.forEach(function (p) { p.el.remove(); }); pests = [];
+    pestes.forEach(function (p) { p.el.remove(); }); pestes = [];
+    sautDx = sautDy = 0; grace = 0; miroirJusqua = 0;
     $("shout").classList.remove("on"); dot.style.display = "none";
-    var rank = el >= 60 ? ["🏛️", "Tu es fait de marbre"] : el >= 45 ? ["🗿", "Vraie statue"] : el >= 25 ? ["💂", "Garde royal"] : el >= 10 ? ["🤡", "Mime débutant"] : ["🐦", "Pigeon nerveux"];
-    var rec = el > best;
-    if (rec) { best = el; try { localStorage.setItem("statue-best", best); } catch (e) {} $("best").textContent = fmt(best); }
-    $("rEmo").textContent = rank[0]; $("rTitle").textContent = rank[1];
-    $("rText").textContent = why + " Tu as tenu " + fmt(el) + " secondes." + (rec ? " 🏆 Nouveau record !" : "");
+    zone.className = "";
+
+    var score = Math.round(el * 10 * A.D.mult) + bonus;
+    d.essais = (d.essais || 0) + 1;
+    d.cumul = (d.cumul || 0) + el;
+    if (el > (d.record || 0)) d.record = el;
+    if (A.D.id === "agite" && el > (d.recAgite || 0)) d.recAgite = el;
+    if (A.D.id === "cauchemar" && el > (d.recCauchemar || 0)) d.recCauchemar = el;
+    var recT = A.record("temps", el, false);
+    var recS = A.record("score", score, false);
+    A.sauver(); A.check();
+
+    var rg = rang(el);
+    $("rEmo").textContent = rg[0];
+    $("rTitle").textContent = rg[1];
+    $("rText").textContent = pourquoi + " Tu as tenu " + fmt(el) + " secondes." +
+      (recT ? " 🏆 Nouveau record !" : "");
+    if (recT) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.2]]);
+    else A.bip(180, 0.25, "sawtooth", 0.05);
+
+    $("again").textContent = "Réessayer";
+    majResultats({ temps: el, score: score, sauts: nbSauts, miroirs: nbMiroirs, pestes: nbPestes, bonus: bonus });
     $("result").classList.add("show");
   }
 
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function majPaliers(el) {
+    var h = "";
+    PALIERS.forEach(function (p) {
+      h += '<span class="palier' + (el >= p[0] ? " on" : "") + '">' + p[1] + " " + p[0] + "s</span>";
+    });
+    $("paliers").innerHTML = h;
+  }
+
+  function majResultats(partie) {
+    var box = $("rLignes"); box.innerHTML = "";
+    function carte(v, l) {
+      var e = document.createElement("div");
+      var b = document.createElement("b"); b.textContent = v;
+      var s = document.createElement("small"); s.textContent = l;
+      e.appendChild(b); e.appendChild(s); box.appendChild(e);
+    }
+    if (partie) {
+      carte(fmt(partie.temps) + " s", "cette tentative");
+      carte(A.nb(partie.score), "points");
+      if (partie.bonus) carte("+" + A.nb(partie.bonus), "bonus de paliers");
+      if (partie.sauts) carte(A.nb(partie.sauts), "téléportations suivies");
+    }
+    var rt = A.meilleur("temps"), rs = A.meilleur("score");
+    carte(rt ? fmt(rt) + " s" : "—", "record en " + A.D.n);
+    carte(rs ? A.nb(rs) : "—", "meilleurs points en " + A.D.n);
+    carte(A.nb(d.essais || 0), "tentatives");
+    carte(A.secondes(d.cumul || 0), "immobilité cumulée");
+
+    $("ranks").textContent = PALIERS.map(function (p) { return p[0] + " s : " + p[2]; }).join("  ·  ");
+    if (A.majSucces) A.majSucces();
+  }
+
   $("again").addEventListener("click", function () {
-    $("result").classList.remove("show"); zone.className = ""; zone.innerHTML = "Appuie<br>et tiens"; $("time").textContent = "0,0 s"; layoutIdle();
+    $("result").classList.remove("show");
+    zone.className = ""; zone.innerHTML = "Appuie<br>et tiens";
+    $("time").firstChild.nodeValue = "0,0 s";
+    majPaliers(0);
+    reposer();
   });
-  window.addEventListener("resize", function () { if (!playing) layoutIdle(); });
-  layoutIdle();
+  window.addEventListener("resize", function () { if (!enCours) reposer(); });
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  majPaliers(0);
+  majResultats();
+  reposer();
 })();
 </script>
 </body>

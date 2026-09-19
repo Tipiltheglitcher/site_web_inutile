@@ -6,155 +6,402 @@
 <title>Le Cercle Parfait</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  body { background: #111; color: #fff; overflow-x: hidden; }
-  .topbar a.back { background: #222; color: #fff; border-color: #333; }
-  .topbar a.back:hover { background: #333; }
-  .stage { position: relative; width: 100%; height: calc(100vh - 70px); min-height: 420px; }
-  canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-  .hud { position: absolute; left: 0; right: 0; top: 18px; text-align: center; pointer-events: none; padding: 0 16px; }
-  .hud h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.8rem); }
-  .hud p { margin: 6px 0 0; color: #aaa; }
-  .score { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
-  .score .val { font-size: clamp(3rem, 12vw, 6rem); font-weight: 800; line-height: 1; }
-  .score .msg { font-size: 1.2rem; margin-top: 8px; color: #ddd; }
-  .best { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: #888; pointer-events: none; }
+  .game { max-width: 980px; margin: 0 auto; }
+  .chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 9px; margin-bottom: 14px; }
+  .chiffre { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; text-align: center; }
+  .chiffre b { display: block; font-size: 1.4rem; line-height: 1.2; }
+  .chiffre small { color: var(--muted); font-size: .76rem; }
+
+  .stage { position: relative; background: #121218; border-radius: 22px; overflow: hidden; height: 58vh; min-height: 380px; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; display: block; }
+  .consigne { position: absolute; left: 0; right: 0; top: 14px; text-align: center; pointer-events: none; color: #9a9aa8; font-size: .95rem; padding: 0 16px; }
+  .valeur { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+  .valeur .v { font-size: clamp(2.4rem, 9vw, 4.6rem); font-weight: 800; line-height: 1; color: #fff; }
+  .valeur .m { font-size: 1.05rem; margin-top: 6px; color: #cfcfda; max-width: 24ch; }
+  .jauge { position: absolute; left: 20px; right: 20px; bottom: 16px; height: 8px; background: #ffffff22; border-radius: 99px; overflow: hidden; }
+  .jauge i { display: block; height: 100%; background: #ffd43b; width: 100%; }
+  .tours { position: absolute; left: 0; right: 0; bottom: 30px; text-align: center; display: flex; gap: 6px; justify-content: center; }
+  .tour { width: 46px; padding: 3px 0; border-radius: 8px; background: #ffffff18; color: #cfcfda; font-size: .78rem; font-weight: 800; text-align: center; }
+  .tour.ok { background: #1fa55b; color: #fff; }
+  .tour.ko { background: #b02525; color: #fff; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .bareme div { display: flex; justify-content: space-between; padding: 6px 10px; border-radius: 9px; font-size: .93rem; }
+  .bareme div.me { background: #fdffb6; font-weight: 700; }
+  html[data-theme="dark"] .bareme div.me { background: #55541f; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">⭕</span></div>
-<div class="stage" id="stage">
-  <canvas id="cv"></canvas>
-  <div class="hud"><h1>Dessine un cercle parfait</h1><p>Maintiens le clic (ou ton doigt) et trace un cercle autour du point.</p></div>
-  <div class="score"><div class="val" id="val"></div><div class="msg" id="msg"></div></div>
-  <div class="best" id="best">Meilleur score : —</div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#11093;</span></div>
+<div class="wrap game">
+  <h1 class="center">Le Cercle Parfait</h1>
+  <p class="sub center">Maintiens le clic et trace un cercle complet autour du point. Cinq essais par manche.</p>
+
+  <div id="difficulte"></div>
+
+  <div class="chiffres">
+    <div class="chiffre"><b id="cTour">1 / 5</b><small>cercle</small></div>
+    <div class="chiffre"><b id="cDernier">&mdash;</b><small>dernier score</small></div>
+    <div class="chiffre"><b id="cMoy">&mdash;</b><small>moyenne de la manche</small></div>
+    <div class="chiffre"><b id="cPoints">0</b><small>points</small></div>
+    <div class="chiffre"><b id="cRecord">&mdash;</b><small>record (cette difficult&eacute;)</small></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="consigne" id="consigne">Maintiens le clic et tourne autour du point blanc.</div>
+    <div class="valeur"><div class="v" id="val"></div><div class="m" id="msg"></div></div>
+    <div class="tours" id="tours"></div>
+    <div class="jauge" id="jaugeBox" style="display:none"><i id="jauge"></i></div>
+  </div>
+
+  <div class="cols">
+    <div class="panel bareme">
+      <h3>&#128207; Bar&egrave;me</h3>
+      <div id="bareme"></div>
+      <p class="note" style="color:var(--muted);font-size:.85rem;margin:10px 0 0" id="regles"></p>
+    </div>
+    <div class="panel">
+      <div id="succes"></div>
+      <h3 style="margin-top:18px">&#128202; Tes chiffres</h3>
+      <div id="stats"></div>
+    </div>
+  </div>
 </div>
+
 <script>
 (function () {
-  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
-  var stage = document.getElementById("stage");
-  var valEl = document.getElementById("val"), msgEl = document.getElementById("msg");
-  var W = 0, H = 0, dpr = 1, pts = [], drawing = false, best = 0, finished = false;
+  var $ = function (id) { return document.getElementById(id); };
 
-  function resize() {
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "tranquille", n: "Tranquille", e: "✏️",
+      d: "Notation indulgente, tout le temps que tu veux, le point ne bouge pas.",
+      severite: 230, limite: 0, bouge: 0, trace: true, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮",
+      d: "Notation sérieuse et 8 secondes pour boucler le cercle.",
+      severite: 300, limite: 8, bouge: 0, trace: true, mult: 1.5 },
+    { id: "difficile", n: "Difficile", e: "🔥",
+      d: "6 secondes, notation sévère, et le point central se déplace pendant que tu dessines.",
+      severite: 380, limite: 6, bouge: 26, trace: true, mult: 2.5 },
+    { id: "aveugle", n: "À l'aveugle", e: "💀",
+      d: "Pareil, mais ton trait est invisible. Bonne chance.",
+      severite: 380, limite: 6, bouge: 20, trace: false, mult: 4 }
+  ];
+
+  var BAREME = [
+    [99.5, "🤯", "Compas humain"],
+    [97, "🎯", "Quasi parfait"],
+    [93, "⭕", "Très beau cercle"],
+    [87, "👌", "Cercle honnête"],
+    [75, "🥚", "C'est un ovale"],
+    [55, "🥔", "C'est une patate"],
+    [0, "🐛", "Qu'est-ce que c'est que ça ?"]
+  ];
+  function rang(s) {
+    for (var i = 0; i < BAREME.length; i++) if (s >= BAREME[i][0]) return i;
+    return BAREME.length - 1;
+  }
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premier", e: "⚪", n: "Premier cercle", d: "Terminer une manche.", f: function (d) { return (d.manches || 0) >= 1; } },
+    { id: "s85", e: "👌", n: "Cercle honnête", d: "Atteindre 87 % sur un cercle.", f: function (d) { return (d.meilleur || 0) >= 87; } },
+    { id: "s93", e: "⭕", n: "Très beau cercle", d: "Atteindre 93 %.", f: function (d) { return (d.meilleur || 0) >= 93; } },
+    { id: "s97", e: "🎯", n: "Quasi parfait", d: "Atteindre 97 %.", f: function (d) { return (d.meilleur || 0) >= 97; } },
+    { id: "s995", e: "🤯", n: "Compas humain", d: "Atteindre 99,5 %.", f: function (d) { return (d.meilleur || 0) >= 99.5; } },
+    { id: "manche90", e: "🏆", n: "Régularité", d: "Finir une manche à 90 % de moyenne.", f: function (d) { return (d.meilleureMoy || 0) >= 90; } },
+    { id: "sansrate", e: "✨", n: "Sans raté", d: "Une manche de 5 cercles sans aucun échec.", f: function (d) { return !!d.mancheNette; } },
+    { id: "difficile", e: "🔥", n: "Main ferme", d: "Finir une manche en Difficile.", f: function (d) { return !!d.finiDifficile; } },
+    { id: "aveugle", e: "💀", n: "Les yeux fermés", d: "Finir une manche à l'aveugle.", f: function (d) { return !!d.finiAveugle; } },
+    { id: "geant", e: "🌑", n: "Cercle géant", d: "Un cercle de plus de 200 px de rayon à 90 %.", f: function (d) { return !!d.geant; } },
+    { id: "cent", e: "💯", n: "Cent cercles", d: "Dessiner 100 cercles.", f: function (d) { return (d.cercles || 0) >= 100; } },
+    { id: "rapide", e: "⚡", n: "Vite fait bien fait", d: "Un cercle à 90 % en moins de 1,5 seconde.", f: function (d) { return !!d.rapide; } }
+  ];
+
+  var A = Arcade.init({
+    id: "cercle", nom: "Le Cercle Parfait", emoji: "⭕",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { nouvelleManche(); majTout(); }
+  });
+  var d = A.d;
+
+  /* ------------------------------------------------------------------
+     Canevas
+     ------------------------------------------------------------------ */
+  var cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage");
+  var W = 0, H = 0, dpr = 1;
+  var pts = [], dessine = false, cx = 0, cy = 0, depart = 0, driftPhase = 0;
+  var tour = 0, TOURS = 5, resultats = [], points = 0;
+
+  function redimensionner() {
     dpr = window.devicePixelRatio || 1;
     W = stage.clientWidth; H = stage.clientHeight;
-    cv.width = W * dpr; cv.height = H * dpr;
+    cv.width = Math.max(1, W * dpr); cv.height = Math.max(1, H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    redraw();
+    if (!dessine) { cx = W / 2; cy = H / 2; }
+    redessiner();
   }
-  function center() { return { x: W / 2, y: H / 2 }; }
-
-  function colorFor(score) {
-    // red (0) -> yellow (60) -> green (100)
-    var h = Math.max(0, Math.min(120, (score - 40) * 2));
+  function couleur(s) {
+    var h = Math.max(0, Math.min(120, (s - 45) * 2.2));
     return "hsl(" + h + ",90%,55%)";
   }
 
-  function liveScore() {
-    if (pts.length < 3) return null;
-    var c = center(), sum = 0, rs = [];
-    for (var i = 0; i < pts.length; i++) { var r = Math.hypot(pts[i].x - c.x, pts[i].y - c.y); rs.push(r); sum += r; }
-    var mean = sum / rs.length, v = 0;
-    for (var j = 0; j < rs.length; j++) v += Math.abs(rs[j] - mean);
-    var dev = v / rs.length / mean;
-    return { score: Math.max(0, 100 - dev * 250), mean: mean };
+  function scoreVivant() {
+    if (pts.length < 4) return null;
+    var somme = 0, rayons = [];
+    for (var i = 0; i < pts.length; i++) {
+      var r = Math.hypot(pts[i].x - pts[i].cx, pts[i].y - pts[i].cy);
+      rayons.push(r); somme += r;
+    }
+    var moy = somme / rayons.length, v = 0;
+    for (var j = 0; j < rayons.length; j++) v += Math.abs(rayons[j] - moy);
+    var ecart = v / rayons.length / moy;
+    return { score: Math.max(0, 100 - ecart * A.D.severite), rayon: moy };
   }
 
-  function redraw(scoreColor) {
+  function redessiner(col) {
     ctx.clearRect(0, 0, W, H);
-    var c = center();
+    /* le point a viser */
     ctx.fillStyle = "#fff";
-    ctx.beginPath(); ctx.arc(c.x, c.y, 6, 0, Math.PI * 2); ctx.fill();
-    if (pts.length > 1) {
-      ctx.lineWidth = 8; ctx.lineCap = "round"; ctx.lineJoin = "round";
-      ctx.strokeStyle = scoreColor || "#fff";
+    ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill();
+    if (A.D.bouge && dessine) {
+      ctx.strokeStyle = "#ffffff44"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (pts.length > 1 && A.D.trace) {
+      ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.strokeStyle = col || "#fff";
       ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
       for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
       ctx.stroke();
     }
   }
-
-  function pos(e) {
-    var r = cv.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  function tracerCorrection(col) {
+    /* a l'aveugle : on revele le trait a la fin */
+    if (pts.length < 2) return;
+    ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.strokeStyle = col;
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
   }
 
-  function showMsg(v, m, color) {
-    valEl.textContent = v; valEl.style.color = color || "#fff"; msgEl.textContent = m;
-  }
+  function pos(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  function afficher(v, m, col) { $("val").textContent = v; $("val").style.color = col || "#fff"; $("msg").textContent = m; }
 
-  function fail(m) {
-    drawing = false; finished = true;
-    showMsg("✖", m, "#ff5252");
-  }
-
-  cv.addEventListener("pointerdown", function (e) {
-    e.preventDefault();
-    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
-    pts = [pos(e)]; drawing = true; finished = false;
-    showMsg("", "");
-    redraw();
-  });
-
-  cv.addEventListener("pointermove", function (e) {
-    if (!drawing) return;
-    var p = pos(e), last = pts[pts.length - 1];
-    if (Math.hypot(p.x - last.x, p.y - last.y) < 2) return;
-    pts.push(p);
-    var c = center();
-    if (Math.hypot(p.x - c.x, p.y - c.y) < 25) { redraw("#ff5252"); return fail("Trop près du centre !"); }
-    var s = liveScore();
-    redraw(s ? colorFor(s.score) : "#fff");
-    if (s && pts.length > 10) showMsg(s.score.toFixed(1) + "%", "", colorFor(s.score));
-
-    // total angle travelled
-    var ang = sweep();
-    if (Math.abs(ang) >= Math.PI * 2) finish();
-  });
-
-  function sweep() {
-    var c = center(), total = 0;
+  function balayage() {
+    var total = 0;
     for (var i = 1; i < pts.length; i++) {
-      var a1 = Math.atan2(pts[i - 1].y - c.y, pts[i - 1].x - c.x);
-      var a2 = Math.atan2(pts[i].y - c.y, pts[i].x - c.x);
-      var d = a2 - a1;
-      if (d > Math.PI) d -= Math.PI * 2;
-      if (d < -Math.PI) d += Math.PI * 2;
-      total += d;
+      var a1 = Math.atan2(pts[i - 1].y - pts[i - 1].cy, pts[i - 1].x - pts[i - 1].cx);
+      var a2 = Math.atan2(pts[i].y - pts[i].cy, pts[i].x - pts[i].cx);
+      var dd = a2 - a1;
+      if (dd > Math.PI) dd -= Math.PI * 2;
+      if (dd < -Math.PI) dd += Math.PI * 2;
+      total += dd;
     }
     return total;
   }
 
-  function finish() {
-    drawing = false; finished = true;
-    var s = liveScore();
-    if (!s) return;
-    if (s.mean < 50) { redraw("#ff5252"); return fail("Trop petit ! Fais un vrai cercle."); }
+  /* ------------------------------------------------------------------
+     Une manche de 5 cercles
+     ------------------------------------------------------------------ */
+  function nouvelleManche() {
+    tour = 0; resultats = []; points = 0; pts = []; dessine = false;
+    cx = W / 2; cy = H / 2;
+    afficher("", "");
+    $("consigne").textContent = "Maintiens le clic et tourne autour du point blanc.";
+    $("jaugeBox").style.display = "none";
+    redessiner(); majTout();
+  }
+
+  function finTour(score, rayon, duree, echec, raison) {
+    resultats.push(echec ? null : score);
+    d.cercles = (d.cercles || 0) + 1;
+    if (!echec) {
+      var pts_ = Math.round(score * 10 * A.D.mult);
+      points += pts_;
+      if (score > (d.meilleur || 0)) d.meilleur = score;
+      A.record("cercle", Math.round(score * 10) / 10, false);
+      if (score >= 90 && rayon > 200) d.geant = 1;
+      if (score >= 90 && duree < 1.5) d.rapide = 1;
+    }
+    tour++;
+    majTout();
+    A.check();
+    if (tour >= TOURS) return finManche();
+    setTimeout(function () {
+      afficher("", "");
+      $("consigne").textContent = "Cercle " + (tour + 1) + " sur " + TOURS + ".";
+      cx = W / 2; cy = H / 2; pts = []; redessiner();
+    }, 1100);
+  }
+
+  function finManche() {
+    var bons = resultats.filter(function (r) { return r != null; });
+    var moy = bons.length ? bons.reduce(function (a, b) { return a + b; }, 0) / bons.length : 0;
+    var rates = resultats.length - bons.length;
+    d.manches = (d.manches || 0) + 1;
+    if (moy > (d.meilleureMoy || 0)) d.meilleureMoy = moy;
+    if (rates === 0) d.mancheNette = 1;
+    if (A.D.id === "difficile") d.finiDifficile = 1;
+    if (A.D.id === "aveugle") d.finiAveugle = 1;
+    var recM = A.record("moyenne", Math.round(moy * 10) / 10, false);
+    var recP = A.record("points", points, false);
+    A.sauver(); A.check();
+    if (A.majSucces) A.majSucces();
+    majTout();   /* les records viennent d'etre ecrits : on rafraichit le panneau */
+
+    var l = [];
+    l.push("Moyenne : <b>" + moy.toFixed(1).replace(".", ",") + " %</b> — " + BAREME[rang(moy)][2]);
+    l.push("Meilleur cercle : <b>" + (bons.length ? Math.max.apply(null, bons).toFixed(1).replace(".", ",") + " %" : "aucun") + "</b>");
+    l.push("Ratés : <b>" + rates + "</b>");
+    l.push("Points : <b>" + A.nb(points) + "</b>");
+    if (recM) l.push("🏆 <b>Nouvelle meilleure moyenne !</b>");
+    if (recP) l.push("🏆 <b>Nouveau record de points !</b>");
+    if (recM || recP) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.18]]);
+
+    A.modal(A.D.e + " Manche terminée — " + A.D.n, l.join("<br>"),
+      [{ t: "Rejouer", c: "btn", go: nouvelleManche }, { t: "Voir mes chiffres", c: "btn alt" }]);
+  }
+
+  /* ------------------------------------------------------------------
+     Trace
+     ------------------------------------------------------------------ */
+  function rater(m) {
+    dessine = false;
+    $("jaugeBox").style.display = "none";
+    if (!A.D.trace) { redessiner(); tracerCorrection("#ff5252"); }
+    else redessiner("#ff5252");
+    afficher("✖", m, "#ff5252");
+    A.bip(180, 0.18, "sawtooth", 0.05);
+    finTour(0, 0, 0, true, m);
+  }
+
+  cv.addEventListener("pointerdown", function (e) {
+    if (tour >= TOURS) return;
+    e.preventDefault();
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    cx = W / 2; cy = H / 2;
+    driftPhase = Math.random() * Math.PI * 2;
+    pts = [Object.assign(pos(e), { cx: cx, cy: cy })];
+    dessine = true; depart = performance.now();
+    afficher("", "");
+    if (A.D.limite) { $("jaugeBox").style.display = "block"; $("jauge").style.width = "100%"; }
+    redessiner();
+    A.bip(440, 0.05, "sine", 0.03);
+  });
+
+  cv.addEventListener("pointermove", function (e) {
+    if (!dessine) return;
+    var p = pos(e), dernier = pts[pts.length - 1];
+    if (Math.hypot(p.x - dernier.x, p.y - dernier.y) < 2) return;
+
+    var el = (performance.now() - depart) / 1000;
+    /* le point central derive dans les modes durs */
+    if (A.D.bouge) {
+      cx = W / 2 + Math.sin(el * 1.1 + driftPhase) * A.D.bouge;
+      cy = H / 2 + Math.cos(el * 0.9 + driftPhase) * A.D.bouge * 0.8;
+    }
+    if (A.D.limite) {
+      var reste = 1 - el / A.D.limite;
+      $("jauge").style.width = Math.max(0, reste * 100) + "%";
+      $("jauge").style.background = reste < 0.3 ? "#ff5252" : "#ffd43b";
+      if (reste <= 0) return rater("Trop lent !");
+    }
+
+    pts.push({ x: p.x, y: p.y, cx: cx, cy: cy });
+    if (Math.hypot(p.x - cx, p.y - cy) < 26) return rater("Trop près du centre !");
+
+    var s = scoreVivant();
+    redessiner(s ? couleur(s.score) : "#fff");
+    if (s && pts.length > 12) afficher(s.score.toFixed(1).replace(".", ",") + " %", "", couleur(s.score));
+    if (Math.abs(balayage()) >= Math.PI * 2) terminerCercle();
+  });
+
+  function terminerCercle() {
+    dessine = false;
+    $("jaugeBox").style.display = "none";
+    var s = scoreVivant();
+    if (!s) return rater("Trop court !");
+    if (s.rayon < 45) return rater("Trop petit ! Fais un vrai cercle.");
+    var duree = (performance.now() - depart) / 1000;
     var score = s.score;
-    redraw(colorFor(score));
-    var m;
-    if (score >= 97) m = "Tu es un compas humain. 🤯";
-    else if (score >= 92) m = "Presque parfait !";
-    else if (score >= 85) m = "Pas mal du tout.";
-    else if (score >= 70) m = "C'est… un cercle, on va dire.";
-    else if (score >= 50) m = "On dirait une patate.";
-    else m = "Qu'est-ce que c'est que ça ?";
-    if (score > best) { best = score; m += " Nouveau record !"; }
-    showMsg(score.toFixed(1) + "%", m, colorFor(score));
-    document.getElementById("best").textContent = "Meilleur score : " + best.toFixed(1) + "%";
+    if (!A.D.trace) { redessiner(); tracerCorrection(couleur(score)); }
+    else redessiner(couleur(score));
+    var r = BAREME[rang(score)];
+    afficher(score.toFixed(1).replace(".", ",") + " %", r[1] + " " + r[2], couleur(score));
+    A.bip(440 + score * 5, 0.12, "triangle", 0.04);
+    finTour(score, s.rayon, duree, false);
   }
 
-  function stop() {
-    if (!drawing) return;
-    drawing = false;
-    if (Math.abs(sweep()) < Math.PI * 2) fail("Termine ton cercle !");
+  function arreter() {
+    if (!dessine) return;
+    if (Math.abs(balayage()) < Math.PI * 2) rater("Termine ton cercle !");
   }
-  cv.addEventListener("pointerup", stop);
-  cv.addEventListener("pointercancel", stop);
+  cv.addEventListener("pointerup", arreter);
+  cv.addEventListener("pointercancel", arreter);
 
-  window.addEventListener("resize", resize);
-  resize();
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function majTout() {
+    $("cTour").textContent = Math.min(tour + 1, TOURS) + " / " + TOURS;
+    var dernier = resultats.length ? resultats[resultats.length - 1] : undefined;
+    $("cDernier").textContent = dernier == null ? (resultats.length ? "raté" : "—") : dernier.toFixed(1).replace(".", ",") + " %";
+    var bons = resultats.filter(function (r) { return r != null; });
+    $("cMoy").textContent = bons.length ? (bons.reduce(function (a, b) { return a + b; }, 0) / bons.length).toFixed(1).replace(".", ",") + " %" : "—";
+    $("cPoints").textContent = A.nb(points);
+    var rec = A.meilleur("moyenne");
+    $("cRecord").textContent = rec ? rec.toFixed(1).replace(".", ",") + " %" : "—";
+
+    var h = "";
+    for (var i = 0; i < TOURS; i++) {
+      var v = resultats[i];
+      var cls = v === undefined ? "" : (v == null ? " ko" : " ok");
+      h += '<div class="tour' + cls + '">' + (v === undefined ? (i + 1) : (v == null ? "✖" : Math.round(v))) + "</div>";
+    }
+    $("tours").innerHTML = h;
+
+    var b = "", moy = bons.length ? bons.reduce(function (a, x) { return a + x; }, 0) / bons.length : -1;
+    var moi = moy < 0 ? -1 : rang(moy);
+    BAREME.forEach(function (x, i) {
+      b += '<div class="' + (i === moi ? "me" : "") + '"><span>' + x[1] + " " + x[2] + "</span><span>" +
+        (x[0] > 0 ? "≥ " + String(x[0]).replace(".", ",") + " %" : "le reste") + "</span></div>";
+    });
+    $("bareme").innerHTML = b;
+    $("regles").textContent = A.D.d;
+    majStats();
+  }
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Manches jouées", A.nb(d.manches || 0));
+    ligne("Cercles dessinés", A.nb(d.cercles || 0));
+    ligne("Meilleur cercle", d.meilleur ? d.meilleur.toFixed(1).replace(".", ",") + " %" : "—");
+    ligne("Meilleure moyenne", d.meilleureMoy ? d.meilleureMoy.toFixed(1).replace(".", ",") + " %" : "—");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var m = A.meilleur("moyenne", i), p = A.meilleur("points", i);
+      ligne(df.e + " " + df.n, m != null ? m.toFixed(1).replace(".", ",") + " % · " + A.nb(p || 0) + " pts" : "jamais joué");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  window.addEventListener("resize", redimensionner);
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  redimensionner();
+  nouvelleManche();
 })();
 </script>
 </body>

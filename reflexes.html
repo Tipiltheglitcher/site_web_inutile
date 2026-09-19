@@ -6,106 +6,395 @@
 <title>Réflexes de Limace</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
+  .game { max-width: 900px; margin: 0 auto; }
   .zone {
-    height: 58vh; min-height: 340px; border-radius: 24px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; text-align: center; color: #fff; cursor: pointer;
-    user-select: none; -webkit-user-select: none; touch-action: manipulation; padding: 20px; transition: background .1s;
+    position: relative; height: 52vh; min-height: 320px; border-radius: 24px; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    color: #fff; cursor: pointer; user-select: none; -webkit-user-select: none;
+    touch-action: manipulation; padding: 20px; transition: background .08s; overflow: hidden;
   }
-  .zone .big { font-size: clamp(2.2rem, 7vw, 4rem); font-weight: 800; line-height: 1.1; }
-  .zone .small { font-size: 1.15rem; opacity: .9; margin-top: 10px; }
+  .zone .big { font-size: clamp(1.9rem, 6vw, 3.4rem); font-weight: 800; line-height: 1.1; }
+  .zone .small { font-size: 1.05rem; opacity: .92; margin-top: 10px; max-width: 30ch; }
   .idle { background: #2b6fd6; } .wait { background: #d63a2b; } .go { background: #1fa55b; }
-  .early { background: #f08c00; } .result { background: #2b6fd6; }
-  .tries { display: flex; gap: 10px; justify-content: center; margin: 18px 0; flex-wrap: wrap; }
-  .try { width: 84px; padding: 10px 0; border-radius: 12px; background: #fff; border: 1px solid var(--line); text-align: center; font-weight: 700; }
-  .try.empty { color: #bbb; }
-  .scale { margin-top: 24px; }
-  .scale .row { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 10px; }
-  .scale .row.me { background: #fdffb6; font-weight: 700; }
+  .early { background: #f08c00; } .result { background: #2b6fd6; } .piege { background: #6c4fd6; }
+  .zone.secousse { animation: sec .3s linear; }
+  @keyframes sec { 0%,100% { transform: none; } 25% { transform: translate(-6px,3px); } 75% { transform: translate(6px,-3px); } }
+
+  /* cible a toucher en mode cauchemar */
+  .cible {
+    position: absolute; width: 96px; height: 96px; border-radius: 50%;
+    background: #1fa55b; border: 5px solid #fff; box-shadow: 0 0 0 6px rgba(0,0,0,.18);
+    display: flex; align-items: center; justify-content: center; font-size: 2.4rem;
+  }
+
+  .bandeau { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+  .essai {
+    min-width: 92px; padding: 9px 10px; border-radius: 12px; background: #fff;
+    border: 1px solid var(--line); text-align: center; font-weight: 700; font-size: .95rem;
+  }
+  .essai small { display: block; font-weight: 600; font-size: .72rem; color: var(--muted); }
+  .essai.vide { color: #bbb; }
+  .essai.top { border-color: var(--good); box-shadow: inset 0 -3px 0 var(--good); }
+  .essai.rate { border-color: var(--bad); color: var(--bad); }
+
+  .chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .chiffre { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; text-align: center; }
+  .chiffre b { display: block; font-size: 1.5rem; line-height: 1.2; }
+  .chiffre small { color: var(--muted); font-size: .78rem; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .echelle .row { display: flex; justify-content: space-between; padding: 7px 12px; border-radius: 10px; font-size: .95rem; }
+  .echelle .row.me { background: #fdffb6; font-weight: 700; }
+  .cible-demo { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: #1fa55b; vertical-align: -3px; border: 2px solid #fff; box-shadow: 0 0 0 1px #0003; }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">⚡</span></div>
-<div class="wrap">
-  <h1 class="center">Réflexes de Limace</h1>
-  <p class="sub center">Clique dès que l'écran devient vert. 5 essais. Pas de triche, on te voit.</p>
-  <div class="zone idle" id="zone"><div class="big" id="big">Clique pour commencer</div><div class="small" id="small">Tu peux aussi appuyer sur Espace</div></div>
-  <div class="tries" id="tries"></div>
-  <div class="panel scale">
-    <h3 style="margin-top:0">Où te situes-tu ?</h3>
-    <div id="scale"></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#9889;</span></div>
+<div class="wrap game">
+  <h1 class="center">R&eacute;flexes de Limace</h1>
+  <p class="sub center">Clique d&egrave;s que l'&eacute;cran devient <span class="cible-demo"></span> <b>vert</b>. Et seulement vert.</p>
+
+  <div id="difficulte"></div>
+
+  <div class="chiffres">
+    <div class="chiffre"><b id="cEssai">0 / 5</b><small>essai</small></div>
+    <div class="chiffre"><b id="cMoy">&mdash;</b><small>moyenne de la manche</small></div>
+    <div class="chiffre"><b id="cScore">0</b><small>points</small></div>
+    <div class="chiffre"><b id="cRecord">&mdash;</b><small>record (cette difficult&eacute;)</small></div>
+  </div>
+
+  <div class="zone idle" id="zone">
+    <div class="big" id="big">Clique pour commencer</div>
+    <div class="small" id="small">Tu peux aussi appuyer sur Espace</div>
+  </div>
+
+  <div class="bandeau" id="bandeau"></div>
+
+  <div class="cols">
+    <div class="panel echelle">
+      <h3>&#128207; O&ugrave; te situes-tu&nbsp;?</h3>
+      <div id="echelle"></div>
+    </div>
+    <div class="panel">
+      <div id="succes"></div>
+      <h3 style="margin-top:18px">&#128202; Tes chiffres</h3>
+      <div id="stats" style="font-size:.92rem"></div>
+    </div>
   </div>
 </div>
+
 <script>
 (function () {
-  var TRIES = 5;
-  var zone = document.getElementById("zone"), big = document.getElementById("big"), small = document.getElementById("small");
-  var state = "idle", times = [], timeout = null, goAt = 0;
-  var SCALE = [
-    [150, "🦸 Super-héros"], [200, "🐱 Chat"], [250, "🧑 Humain en forme"],
-    [300, "🧓 Humain le lundi matin"], [400, "🐢 Tortue"], [600, "🦥 Paresseux"], [Infinity, "🐌 Limace"]
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "tranquille", n: "Tranquille", e: "😌",
+      d: "5 essais. Aucun piège, le vert arrive et c'est tout.",
+      essais: 5, mini: 1400, alea: 2600, pieges: 0, faux: 0, cible: false, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮",
+      d: "5 essais. L'écran fait parfois des fausses couleurs pour te piocher.",
+      essais: 5, mini: 1200, alea: 3300, pieges: 0.35, faux: 0, cible: false, mult: 1.4 },
+    { id: "nerveux", n: "Nerveux", e: "🔥",
+      d: "7 essais, attentes plus longues, et des faux verts très ressemblants.",
+      essais: 7, mini: 1000, alea: 4500, pieges: 0.5, faux: 0.35, cible: false, mult: 2 },
+    { id: "cauchemar", n: "Cauchemar", e: "💀",
+      d: "7 essais. Faux verts, pièges, et il faut toucher une petite cible qui apparaît n'importe où.",
+      essais: 7, mini: 900, alea: 5200, pieges: 0.55, faux: 0.45, cible: true, mult: 3 }
   ];
 
-  function rank(ms) { for (var i = 0; i < SCALE.length; i++) if (ms < SCALE[i][0]) return i; return SCALE.length - 1; }
-
-  function renderTries() {
-    var h = "";
-    for (var i = 0; i < TRIES; i++) h += times[i] != null ? '<div class="try">' + times[i] + " ms</div>" : '<div class="try empty">—</div>';
-    document.getElementById("tries").innerHTML = h;
-  }
-  function renderScale(ms) {
-    var me = ms == null ? -1 : rank(ms), h = "", prev = 0;
-    SCALE.forEach(function (s, i) {
-      var label = s[0] === Infinity ? "> " + prev + " ms" : "< " + s[0] + " ms";
-      h += '<div class="row' + (i === me ? " me" : "") + '"><span>' + s[1] + (i === me ? " ← toi" : "") + "</span><span>" + label + "</span></div>";
-      prev = s[0];
-    });
-    document.getElementById("scale").innerHTML = h;
+  var ECHELLE = [
+    [140, "🦸 Surhumain"], [180, "🤖 Machine"], [220, "🐱 Chat"],
+    [260, "🧑 Humain en forme"], [320, "🧓 Humain le lundi matin"],
+    [420, "🐢 Tortue"], [600, "🦥 Paresseux"], [Infinity, "🐌 Limace"]
+  ];
+  function rang(ms) {
+    for (var i = 0; i < ECHELLE.length; i++) if (ms < ECHELLE[i][0]) return i;
+    return ECHELLE.length - 1;
   }
 
-  function set(cls, b, s) { zone.className = "zone " + cls; big.textContent = b; small.textContent = s; }
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premier", e: "🐣", n: "Premier réflexe", d: "Terminer une manche.",
+      f: function (d) { return (d.manches || 0) >= 1; } },
+    { id: "sous300", e: "🐢", n: "Plus vite qu'une tortue", d: "Un essai sous 300 ms.",
+      f: function (d) { return (d.meilleurCoup || 9999) < 300; } },
+    { id: "sous250", e: "🐱", n: "Réflexe de chat", d: "Un essai sous 250 ms.",
+      f: function (d) { return (d.meilleurCoup || 9999) < 250; } },
+    { id: "sous200", e: "🤖", n: "Réflexe de machine", d: "Un essai sous 200 ms.",
+      f: function (d) { return (d.meilleurCoup || 9999) < 200; } },
+    { id: "sous150", e: "🦸", n: "Surhumain", d: "Un essai sous 150 ms.",
+      f: function (d) { return (d.meilleurCoup || 9999) < 150; } },
+    { id: "propre", e: "✨", n: "Sans bavure", d: "Une manche complète sans aucun faux départ.",
+      f: function (d) { return !!d.mancheParfaite; } },
+    { id: "nerveux", e: "🔥", n: "Nerfs d'acier", d: "Finir une manche en Nerveux.",
+      f: function (d) { return !!d.finiNerveux; } },
+    { id: "cauchemar", e: "💀", n: "Insomniaque", d: "Finir une manche en Cauchemar.",
+      f: function (d) { return !!d.finiCauchemar; } },
+    { id: "patience", e: "🧘", n: "Moine", d: "Résister à 10 pièges sans cliquer.",
+      f: function (d) { return (d.piegesEvites || 0) >= 10; } },
+    { id: "cent", e: "💯", n: "Centenaire", d: "Faire 100 essais en tout.",
+      f: function (d) { return (d.essaisTotal || 0) >= 100; } },
+    { id: "serie", e: "🎯", n: "Régulier", d: "Cinq essais d'affilée sous 300 ms.",
+      f: function (d) { return (d.meilleureSerie || 0) >= 5; } },
+    { id: "gros", e: "🏆", n: "Gros score", d: "Dépasser 2 000 points sur une manche.",
+      f: function (d) { return (d.meilleurScore || 0) >= 2000; } }
+  ];
 
-  function startRound() {
-    state = "wait";
-    set("wait", "Attends le vert…", "Ne clique pas encore !");
-    timeout = setTimeout(function () {
-      state = "go"; goAt = performance.now();
-      set("go", "CLIQUE !", "");
-    }, 1200 + Math.random() * 3300);
+  var A = Arcade.init({
+    id: "reflexes", nom: "Réflexes de Limace", emoji: "⚡",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { raz(); majChiffres(); }
+  });
+  var d = A.d;
+  if (typeof d.essaisTotal !== "number") d.essaisTotal = 0;
+
+  /* ------------------------------------------------------------------
+     Etat de la manche
+     ------------------------------------------------------------------ */
+  var zone = $("zone"), grand = $("big"), petit = $("small");
+  var etat = "repos", temps = [], minuteur = null, partAt = 0, score = 0,
+      fauxDeparts = 0, serie = 0, piegesEvites = 0, cibleEl = null;
+
+  function poser(classe, titre, sous) {
+    zone.className = "zone " + classe;
+    grand.textContent = titre;
+    petit.textContent = sous || "";
+  }
+  function secouer() {
+    zone.classList.remove("secousse"); void zone.offsetWidth; zone.classList.add("secousse");
+  }
+  function nettoyerCible() { if (cibleEl) { cibleEl.remove(); cibleEl = null; } }
+
+  function raz() {
+    clearTimeout(minuteur); nettoyerCible();
+    etat = "repos"; temps = []; score = 0; fauxDeparts = 0; serie = 0; piegesEvites = 0;
+    poser("idle", "Clique pour commencer", "Tu peux aussi appuyer sur Espace");
+    majBandeau(); majChiffres();
   }
 
+  /* --- le deroulement d'un essai --- */
+  function lancerEssai() {
+    etat = "attente";
+    poser("wait", "Attends le vert…", "Ne clique pas encore !");
+    programmer();
+  }
+  function programmer() {
+    var D = A.D;
+    var delai = D.mini + Math.random() * D.alea;
+    minuteur = setTimeout(function () {
+      /* un piege : l'ecran change de couleur mais ce n'est PAS le vert */
+      if (Math.random() < D.pieges) return piege();
+      vert();
+    }, delai);
+  }
+  function piege() {
+    var D = A.D;
+    var faux = D.faux > 0 && Math.random() < D.faux;
+    etat = "piege";
+    if (faux) {
+      /* un vert tres proche du vrai, mais pas le bon */
+      zone.className = "zone";
+      zone.style.background = ["#3fbf74", "#2f9e44", "#4caf6a"][Math.floor(Math.random() * 3)];
+      grand.textContent = "CLIQUE !";
+      petit.textContent = "";
+    } else {
+      zone.style.background = "";
+      poser("piege", ["Presque…", "Pas encore", "Attention", "Hé !"][Math.floor(Math.random() * 4)], "");
+    }
+    A.bip(220, 0.07, "sine", 0.03);
+    minuteur = setTimeout(function () {
+      if (etat !== "piege") return;
+      piegesEvites++; d.piegesEvites = (d.piegesEvites || 0) + 1;
+      zone.style.background = "";
+      etat = "attente";
+      poser("wait", "Attends le vert…", "Bien vu, ce n'était pas le bon.");
+      A.check();
+      programmer();
+    }, 620);
+  }
+  function vert() {
+    etat = "vert"; partAt = performance.now();
+    zone.style.background = "";
+    if (A.D.cible) {
+      poser("go", "", "");
+      cibleEl = document.createElement("div");
+      cibleEl.className = "cible";
+      cibleEl.textContent = "👆";
+      var m = 60;
+      cibleEl.style.left = (m + Math.random() * Math.max(10, zone.clientWidth - 96 - m * 2)) + "px";
+      cibleEl.style.top = (m + Math.random() * Math.max(10, zone.clientHeight - 96 - m * 2)) + "px";
+      cibleEl.addEventListener("pointerdown", function (e) { e.preventDefault(); e.stopPropagation(); reussi(); });
+      zone.appendChild(cibleEl);
+    } else {
+      poser("go", "CLIQUE !", "");
+    }
+    A.bip(880, 0.08, "square", 0.05);
+  }
+
+  function reussi() {
+    var ms = Math.round(performance.now() - partAt);
+    nettoyerCible();
+    temps.push({ ms: ms });
+    d.essaisTotal = (d.essaisTotal || 0) + 1;
+    if (!d.meilleurCoup || ms < d.meilleurCoup) d.meilleurCoup = ms;
+    A.record("coup", ms, true);
+
+    if (ms < 300) { serie++; if (serie > (d.meilleureSerie || 0)) d.meilleureSerie = serie; }
+    else serie = 0;
+
+    var pts = Math.max(10, Math.round((700 - ms) * A.D.mult));
+    score += pts;
+    A.bip(520 + Math.max(0, 300 - ms), 0.09, "triangle", 0.04);
+
+    majBandeau();
+    if (temps.length >= A.D.essais) return terminer();
+    etat = "entre";
+    poser("result", ms + " ms", ECHELLE[rang(ms)][1] + " · +" + pts + " pts — clique pour l'essai " + (temps.length + 1) + " / " + A.D.essais);
+    majChiffres();
+    A.check();
+  }
+
+  function tropTot() {
+    clearTimeout(minuteur); nettoyerCible();
+    zone.style.background = "";
+    fauxDeparts++; serie = 0;
+    etat = "rate";
+    secouer();
+    A.bip(160, 0.2, "sawtooth", 0.05);
+    var raisons = ["Trop tôt ! 🙃", "Ce n'était pas vert !", "Raté !", "Calme-toi."];
+    poser("early", raisons[Math.floor(Math.random() * raisons.length)],
+      "Clique pour reprendre l'essai (− 150 points)");
+    score = Math.max(0, score - 150);
+    majChiffres();
+  }
+
+  function terminer() {
+    etat = "fini";
+    nettoyerCible();
+    var somme = temps.reduce(function (a, t) { return a + t.ms; }, 0);
+    var moy = Math.round(somme / temps.length);
+    var bonus = fauxDeparts === 0 ? Math.round(300 * A.D.mult) : 0;
+    score += bonus;
+
+    d.manches = (d.manches || 0) + 1;
+    if (fauxDeparts === 0) d.mancheParfaite = 1;
+    if (A.D.id === "nerveux") d.finiNerveux = 1;
+    if (A.D.id === "cauchemar") d.finiCauchemar = 1;
+    if (!d.meilleurScore || score > d.meilleurScore) d.meilleurScore = score;
+
+    var recMoy = A.record("moyenne", moy, true);
+    var recScore = A.record("score", score, false);
+    A.sauver();
+    A.check();
+
+    var lignes = [];
+    lignes.push("Moyenne : <b>" + moy + " ms</b> — " + ECHELLE[rang(moy)][1]);
+    lignes.push("Meilleur essai : <b>" + Math.min.apply(null, temps.map(function (t) { return t.ms; })) + " ms</b>");
+    lignes.push("Faux départs : <b>" + fauxDeparts + "</b>" + (bonus ? " — bonus sans-faute <b>+" + bonus + "</b>" : ""));
+    lignes.push("Score : <b>" + A.nb(score) + " points</b>");
+    if (recMoy) lignes.push("🏆 <b>Nouvelle meilleure moyenne !</b>");
+    if (recScore) lignes.push("🏆 <b>Nouveau record de points !</b>");
+
+    poser("result", moy + " ms de moyenne", ECHELLE[rang(moy)][1] + " — clique pour rejouer");
+    majChiffres(); majEchelle(moy); majStats();
+    if (A.majSucces) A.majSucces();
+    if (recMoy || recScore) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.18]]);
+
+    A.modal(A.D.e + " Manche terminée — " + A.D.n, lignes.join("<br>"),
+      [{ t: "Rejouer", c: "btn", go: function () { raz(); action(); } },
+       { t: "Regarder mes chiffres", c: "btn alt" }]);
+  }
+
+  /* --- clic / espace --- */
   function action() {
-    if (state === "idle" || state === "early" || state === "between") {
-      startRound();
-    } else if (state === "wait") {
-      clearTimeout(timeout);
-      state = "early";
-      set("early", "Trop tôt ! 🙃", "Clique pour réessayer (cet essai ne compte pas)");
-    } else if (state === "go") {
-      var ms = Math.round(performance.now() - goAt);
-      times.push(ms);
-      renderTries();
-      if (times.length >= TRIES) {
-        var avg = Math.round(times.reduce(function (a, b) { return a + b; }, 0) / times.length);
-        state = "done";
-        set("result", avg + " ms de moyenne", "Tu es : " + SCALE[rank(avg)][1] + " — clique pour rejouer");
-        renderScale(avg);
-      } else {
-        state = "between";
-        set("result", ms + " ms", SCALE[rank(ms)][1] + " — clique pour l'essai suivant (" + (times.length + 1) + "/" + TRIES + ")");
-      }
-    } else if (state === "done") {
-      times = []; renderTries(); renderScale(null);
-      startRound();
+    if (etat === "repos" || etat === "rate" || etat === "entre" || etat === "fini") {
+      if (etat === "fini") raz();
+      lancerEssai();
+    } else if (etat === "attente" || etat === "piege") {
+      tropTot();
+    } else if (etat === "vert") {
+      if (A.D.cible) { tropTot(); return; }   /* en cauchemar il faut toucher la cible */
+      reussi();
     }
   }
-
   zone.addEventListener("pointerdown", function (e) { e.preventDefault(); action(); });
   document.addEventListener("keydown", function (e) {
-    if (e.code === "Space" || e.key === " ") { e.preventDefault(); if (!e.repeat) action(); }
+    if (e.code === "Space" || e.key === " ") {
+      e.preventDefault();
+      if (e.repeat) return;
+      if (A.D.cible && etat === "vert") return;  /* le clavier ne vise pas */
+      action();
+    }
   });
 
-  renderTries(); renderScale(null);
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function majBandeau() {
+    var box = $("bandeau"); box.innerHTML = "";
+    var meilleur = temps.length ? Math.min.apply(null, temps.map(function (t) { return t.ms; })) : -1;
+    for (var i = 0; i < A.D.essais; i++) {
+      var el = document.createElement("div");
+      if (temps[i]) {
+        el.className = "essai" + (temps[i].ms === meilleur ? " top" : "");
+        el.innerHTML = "<span></span><small></small>";
+        el.querySelector("span").textContent = temps[i].ms + " ms";
+        el.querySelector("small").textContent = ECHELLE[rang(temps[i].ms)][1].split(" ")[0];
+      } else {
+        el.className = "essai vide";
+        el.textContent = "—";
+      }
+      box.appendChild(el);
+    }
+  }
+  function majChiffres() {
+    $("cEssai").textContent = Math.min(temps.length + (etat === "fini" ? 0 : 1), A.D.essais) + " / " + A.D.essais;
+    var moy = temps.length ? Math.round(temps.reduce(function (a, t) { return a + t.ms; }, 0) / temps.length) : null;
+    $("cMoy").textContent = moy ? moy + " ms" : "—";
+    $("cScore").textContent = A.nb(score);
+    var r = A.meilleur("moyenne");
+    $("cRecord").textContent = r ? r + " ms" : "—";
+  }
+  function majEchelle(ms) {
+    var moi = ms == null ? -1 : rang(ms), h = "", prec = 0;
+    ECHELLE.forEach(function (s, i) {
+      var etiq = s[0] === Infinity ? "> " + prec + " ms" : "< " + s[0] + " ms";
+      h += '<div class="row' + (i === moi ? " me" : "") + '"><span>' + s[1] + (i === moi ? " ← toi" : "") +
+        "</span><span>" + etiq + "</span></div>";
+      prec = s[0];
+    });
+    $("echelle").innerHTML = h;
+  }
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div style="display:flex;justify-content:space-between;padding:4px 0"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Manches jouées", A.nb(d.manches || 0));
+    ligne("Essais au total", A.nb(d.essaisTotal || 0));
+    ligne("Meilleur essai", d.meilleurCoup ? d.meilleurCoup + " ms" : "—");
+    ligne("Meilleure série sous 300 ms", A.nb(d.meilleureSerie || 0));
+    ligne("Pièges évités", A.nb(d.piegesEvites || 0));
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var m = A.meilleur("moyenne", i), s = A.meilleur("score", i);
+      ligne(df.e + " " + df.n, m ? m + " ms · " + A.nb(s || 0) + " pts" : "jamais joué");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  raz();
+  majEchelle(null);
+  majStats();
 })();
 </script>
 </body>

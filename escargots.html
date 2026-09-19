@@ -6,62 +6,126 @@
 <title>Grand Prix des Escargots</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  .game { max-width: 900px; margin: 0 auto; }
-  .track { background: #7cc36b; border-radius: 20px; padding: 14px 14px 14px 14px; position: relative; overflow: hidden; }
-  .lane { position: relative; height: 62px; border-bottom: 3px dashed #ffffff88; }
+  .game { max-width: 960px; margin: 0 auto; }
+  .saison { display: flex; gap: 6px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .manche { background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 5px 12px; font-size: .82rem; font-weight: 700; text-align: center; min-width: 74px; }
+  .manche.en-cours { border-color: var(--accent); }
+  .manche.faite { border-color: var(--good); }
+  .manche small { display: block; color: var(--muted); font-weight: 600; font-size: .72rem; }
+
+  .track { background: #7cc36b; border-radius: 20px; padding: 12px; position: relative; overflow: hidden; }
+  html[data-theme="dark"] .track { background: #2f5a28; }
+  .lane { position: relative; height: 58px; border-bottom: 3px dashed #ffffff88; }
   .lane:last-child { border-bottom: none; }
-  .lane .name { position: absolute; left: 6px; top: 2px; font-size: .75rem; font-weight: 800; color: #1d4d14; white-space: nowrap; }
-  .lane.me { background: #ffffff33; border-radius: 10px; }
-  .snail { position: absolute; top: 14px; font-size: 2.3rem; line-height: 1; transform: scaleX(-1); transition: left .1s linear; }
-  .snail .tag { font-size: .9rem; position: absolute; top: -8px; left: 50%; transform: scaleX(-1) translateX(50%); white-space: nowrap; }
-  .finish { position: absolute; top: 0; bottom: 0; right: 40px; width: 14px; background: repeating-linear-gradient(#000 0 10px, #fff 10px 20px); opacity: .8; }
-  .caster { background: #1d1d1f; color: #fff; border-radius: 14px; padding: 12px 16px; margin: 14px 0; font-weight: 600; min-height: 50px; }
-  .caster b { color: #ffd43b; }
-  .controls { display: flex; gap: 14px; justify-content: center; margin-top: 10px; }
-  .pad { font: inherit; font-size: 1.6rem; font-weight: 800; width: 130px; height: 90px; border-radius: 18px; border: none; background: #fff; box-shadow: 0 6px 0 #c9c2b2; cursor: pointer; touch-action: manipulation; user-select: none; }
-  .pad.next { background: #ffd43b; }
+  .lane .name { position: absolute; left: 6px; top: 1px; font-size: .72rem; font-weight: 800; color: #1d4d14; white-space: nowrap; }
+  html[data-theme="dark"] .lane .name { color: #cdeec4; }
+  .lane.moi { background: #ffffff33; border-radius: 10px; }
+  .snail { position: absolute; top: 13px; font-size: 2.2rem; line-height: 1; transform: scaleX(-1); transition: left .1s linear; }
+  .snail .tag { font-size: .85rem; position: absolute; top: -8px; left: 50%; transform: scaleX(-1) translateX(50%); white-space: nowrap; }
+  .finish { position: absolute; top: 0; bottom: 0; right: 36px; width: 12px; background: repeating-linear-gradient(#000 0 10px, #fff 10px 20px); opacity: .8; }
+  .compte { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 900; color: #fff; text-shadow: 0 4px 0 #0005; pointer-events: none; }
+
+  .commentaire { background: #1d1d1f; color: #fff; border-radius: 14px; padding: 11px 16px; margin: 12px 0; font-weight: 600; min-height: 48px; }
+  html[data-theme="dark"] .commentaire { background: #0c0c0e; }
+  .commentaire b { color: #ffd43b; }
+
+  .turbo { margin: 10px 0; }
+  .turbo small { display: block; font-size: .76rem; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+  .turbo .fond { background: #0001; border-radius: 99px; overflow: hidden; }
+  html[data-theme="dark"] .turbo .fond { background: #ffffff18; }
+  .turbo i { display: block; height: 11px; border-radius: 99px; background: #f59f00; transition: width .12s; }
+  .turbo.plein i { background: #e03131; animation: pulseT .5s infinite alternate; }
+  @keyframes pulseT { to { opacity: .55; } }
+
+  .pads { display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .pad { font: inherit; font-size: 1.5rem; font-weight: 800; width: 120px; height: 82px; border-radius: 18px; border: none; background: var(--card); box-shadow: 0 6px 0 #c9c2b2; cursor: pointer; touch-action: manipulation; user-select: none; color: inherit; }
+  html[data-theme="dark"] .pad { box-shadow: 0 6px 0 #0c0c0e; }
+  .pad.suivant { background: #ffd43b; color: #16161a; }
+  .pad.turbo-pad { width: 140px; background: #e03131; color: #fff; }
+  .pad.turbo-pad:disabled { opacity: .35; }
   .pad:active { transform: translateY(4px); box-shadow: 0 2px 0 #c9c2b2; }
-  .center-big { text-align: center; font-size: 1.1rem; color: var(--muted); margin-top: 8px; }
-  .count { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 6rem; font-weight: 900; color: #fff; text-shadow: 0 4px 0 #0005; pointer-events: none; }
-  .podium { text-align: center; }
-  .podium ol { display: inline-block; text-align: left; font-size: 1.15rem; }
+
+  .classement { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .classement th, .classement td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--line); }
+  .classement tr.moi { background: #fdffb6; font-weight: 700; }
+  html[data-theme="dark"] .classement tr.moi { background: #55541f; }
+  .classement td.pts { text-align: right; font-weight: 700; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🐌</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128012;</span></div>
 <div class="wrap game">
   <h1 class="center">Grand Prix des Escargots</h1>
-  <p class="sub center">Tu es <b>Turbo-Jean-Pierre</b>. Alterne les touches <b>←</b> et <b>→</b> (ou les deux gros boutons) pour avancer. Appuie deux fois sur la même : tu glisses dans ta propre bave.</p>
-  <div class="track" id="track"><div class="finish"></div><div class="count" id="count"></div></div>
-  <div class="caster" id="caster">🎙️ Bienvenue au Grand Prix ! Les concurrents sont… sur la ligne. Lentement.</div>
-  <div id="panel">
-    <div class="controls"><button class="pad" id="L">←</button><button class="pad" id="R">→</button></div>
-    <div class="center"><button class="btn" id="start" style="margin-top:16px">🏁 Lancer la course</button></div>
-    <div class="center-big">Meilleur temps : <span id="best">—</span></div>
+  <p class="sub center">Tu es <b>Turbo-Jean-Pierre</b>. Alterne <b>&larr;</b> et <b>&rarr;</b> pour avancer. Deux fois la m&ecirc;me&nbsp;: tu glisses dans ta bave.</p>
+
+  <div id="difficulte"></div>
+  <div class="saison" id="saison"></div>
+
+  <div class="track" id="track"><div class="finish"></div><div class="compte" id="compte"></div></div>
+
+  <div class="commentaire" id="commentaire">&#127908; Bienvenue au Grand Prix&nbsp;! Les concurrents sont&hellip; sur la ligne. Lentement.</div>
+
+  <div class="turbo" id="turboBox">
+    <small id="turboTxt">Turbo &mdash; alterne sans te tromper pour le remplir</small>
+    <div class="fond"><i id="turbo"></i></div>
   </div>
-  <div id="podium" class="panel podium" style="display:none;margin-top:10px"></div>
+
+  <div class="pads">
+    <button class="pad" id="L">&larr;</button>
+    <button class="pad turbo-pad" id="T" disabled>&#128293; TURBO</button>
+    <button class="pad" id="R">&rarr;</button>
+  </div>
+  <div class="center" style="margin-top:14px"><button class="btn" id="start">&#127937; Lancer la saison</button></div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>&#127942; Classement du championnat</h3>
+      <table class="classement"><tbody id="classement"></tbody></table>
+      <p style="font-size:.84rem;color:var(--muted);margin:10px 0 0">Points&nbsp;: 10 au vainqueur, puis 6, 4, 3, 2, 1.</p>
+      <p style="font-size:.9rem;margin:8px 0 0" id="regleDiff"></p>
+    </div>
+    <div class="panel">
+      <div id="succes"></div>
+      <h3 style="margin-top:18px">&#128202; Tes chiffres</h3>
+      <div id="stats"></div>
+    </div>
+  </div>
 </div>
+
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var RACERS = [
-    { n: "Turbo-Jean-Pierre (toi)", me: true, e: "🐌" },
-    { n: "Baveuse Express", e: "🐌", base: 7.5 },
-    { n: "Monsieur Coquille", e: "🐌", base: 7 },
-    { n: "La Limace Masquée", e: "🐛", base: 8.2 }
-  ];
-  var GOAL = 100, state = "idle", lastKey = null, raf = 0, t0 = 0, lastT = 0, nextEvent = 0, best = 0, finishOrder = [];
-  try { best = +localStorage.getItem("escargots-best") || 0; } catch (e) {}
-  if (best) $("best").textContent = best.toFixed(2).replace(".", ",") + " s";
 
-  var track = $("track");
-  RACERS.forEach(function (r) {
-    var l = document.createElement("div"); l.className = "lane" + (r.me ? " me" : "");
-    l.innerHTML = '<span class="name">' + r.n + '</span><span class="snail">' + r.e + '<span class="tag"></span></span>';
-    r.el = l.querySelector(".snail"); r.tag = l.querySelector(".tag");
-    track.appendChild(l);
-  });
+  var NOMS = ["Baveuse Express", "Monsieur Coquille", "La Limace Masquée", "Gastero Pode",
+    "Escargot Bleu", "Colimaçon Furieux", "Petit Gris"];
+  var EMOS = ["🐌", "🐌", "🐛", "🐌", "🐛", "🐌", "🐌"];
+  var CIRCUITS = ["Le Potager", "Le Mur du Jardin", "La Flaque", "Le Tas de Compost", "La Grande Salade"];
+  var POINTS = [10, 6, 4, 3, 2, 1];
+
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "amateur", n: "Amateur", e: "🌱",
+      d: "3 adversaires plutôt lents, glissade courte, piste de 100 baves.",
+      rivaux: 3, vitesse: 6.2, ecart: 0.5, but: 100, glissade: 0.5, turboCout: 12, mult: 1 },
+    { id: "regional", n: "Régional", e: "🎮",
+      d: "4 adversaires corrects. Il faut un rythme régulier.",
+      rivaux: 4, vitesse: 7.6, ecart: 0.6, but: 110, glissade: 0.7, turboCout: 15, mult: 1.6 },
+    { id: "national", n: "National", e: "🔥",
+      d: "5 bêtes de course et une piste plus longue. Les glissades font mal.",
+      rivaux: 5, vitesse: 9.0, ecart: 0.6, but: 125, glissade: 0.9, turboCout: 18, mult: 2.5 },
+    { id: "mondial", n: "Mondial", e: "💀",
+      d: "6 champions dopés à la salade. Sans turbo, tu n'as aucune chance.",
+      rivaux: 6, vitesse: 10.4, ecart: 0.7, but: 140, glissade: 1.1, turboCout: 20, mult: 4 }
+  ];
 
   var EVENTS = [
     function (r) { r.pause = 1.5; return "<b>" + r.n + "</b> s'arrête pour manger une feuille de salade. Priorités."; },
@@ -69,102 +133,328 @@
     function (r) { r.pause = 1; return "<b>" + r.n + "</b> rentre dans sa coquille, intimidé par une fourmi."; },
     function (r) { r.boost = 1.5; return "Le public en délire encourage <b>" + r.n + "</b> ! (Le public, c'est une coccinelle.)"; },
     function (r) { r.pause = 1.2; return "<b>" + r.n + "</b> fait un selfie. Ça prend du temps."; },
-    function (r) { r.back = 4; return "Un coup de vent ! <b>" + r.n + "</b> recule un peu."; }
+    function (r) { r.recul = 5; return "Un coup de vent ! <b>" + r.n + "</b> recule un peu."; },
+    function (r) { r.pause = 0.8; return "<b>" + r.n + "</b> a croisé un escargot qu'il connaît. Ils discutent."; },
+    function (r) { r.boost = 1.8; return "<b>" + r.n + "</b> a mangé un truc bizarre. Ça a l'air de marcher."; }
   ];
 
-  function px(pos) { var w = track.clientWidth - 110; return 14 + (pos / GOAL) * w; }
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "course", e: "🏁", n: "Première course", d: "Terminer une course.", f: function (d) { return (d.courses || 0) >= 1; } },
+    { id: "podium", e: "🥉", n: "Sur le podium", d: "Finir une course dans les trois premiers.", f: function (d) { return (d.podiums || 0) >= 1; } },
+    { id: "victoire", e: "🥇", n: "Vainqueur", d: "Gagner une course.", f: function (d) { return (d.victoires || 0) >= 1; } },
+    { id: "titre", e: "🏆", n: "Champion", d: "Gagner un championnat.", f: function (d) { return (d.titres || 0) >= 1; } },
+    { id: "grandchelem", e: "👑", n: "Grand chelem", d: "Gagner les 5 courses d'une saison.", f: function (d) { return !!d.grandChelem; } },
+    { id: "national", e: "🔥", n: "Niveau national", d: "Gagner un championnat National.", f: function (d) { return !!d.titreNational; } },
+    { id: "mondial", e: "💀", n: "Champion du monde", d: "Gagner un championnat Mondial.", f: function (d) { return !!d.titreMondial; } },
+    { id: "propre", e: "✨", n: "Sans une glissade", d: "Gagner une course sans glisser une seule fois.", f: function (d) { return !!d.courseNette; } },
+    { id: "turbo", e: "🔥", n: "Fond de bave", d: "Utiliser 25 turbos.", f: function (d) { return (d.turbos || 0) >= 25; } },
+    { id: "rapide", e: "⚡", n: "Bave rapide", d: "Gagner une course en moins de 20 secondes.", f: function (d) { return (d.meilleurTemps || 9999) < 20; } },
+    { id: "dix", e: "💪", n: "Vétéran", d: "Disputer 25 courses.", f: function (d) { return (d.courses || 0) >= 25; } },
+    { id: "dernier", e: "🍂", n: "Lanterne rouge", d: "Finir dernier. Ça arrive.", f: function (d) { return (d.derniers || 0) >= 1; } }
+  ];
 
-  function render() {
-    RACERS.forEach(function (r) { r.el.style.left = px(r.pos) + "px"; });
-  }
+  var A = Arcade.init({
+    id: "escargots", nom: "Grand Prix des Escargots", emoji: "🐌",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { nouvelleSaison(); }
+  });
+  var d = A.d;
 
-  function reset() {
-    RACERS.forEach(function (r) { r.pos = 0; r.pause = 0; r.boost = 0; r.back = 0; r.done = 0; r.tag.textContent = ""; r.slip = 0; });
-    finishOrder = []; lastKey = null;
-    render();
-  }
+  /* ------------------------------------------------------------------
+     Etat
+     ------------------------------------------------------------------ */
+  var COUREURS = [], etat = "repos", derniereTouche = null, raf = 0, t0 = 0, lastT = 0,
+      prochainEvent = 0, arrivees = [], manche = 0, MANCHES = 5, pointsSaison = {},
+      turbo = 0, turboActif = 0, glissadesCourse = 0, victoiresSaison = 0;
 
-  function press(k) {
-    if (state !== "race") return;
-    var me = RACERS[0];
-    if (me.done) return;
-    if (me.slip > 0) return;
-    if (k === lastKey) {
-      me.slip = 0.6; me.tag.textContent = "💦";
-      $("caster").innerHTML = "🎙️ Oh non ! <b>Turbo-Jean-Pierre</b> glisse dans sa bave !";
-    } else {
-      me.pos += 1; lastKey = k;
+  function construirePiste() {
+    var track = $("track");
+    Array.prototype.slice.call(track.querySelectorAll(".lane")).forEach(function (l) { l.remove(); });
+    COUREURS = [{ n: "Turbo-Jean-Pierre (toi)", moi: true, e: "🐌" }];
+    for (var i = 0; i < A.D.rivaux; i++) {
+      COUREURS.push({ n: NOMS[i], e: EMOS[i], base: A.D.vitesse * (1 - A.D.ecart / 2 + Math.random() * A.D.ecart) });
     }
-    $("L").classList.toggle("next", lastKey === "R" || lastKey === null);
-    $("R").classList.toggle("next", lastKey === "L" || lastKey === null);
+    COUREURS.forEach(function (r) {
+      var l = document.createElement("div");
+      l.className = "lane" + (r.moi ? " moi" : "");
+      l.innerHTML = '<span class="name"></span><span class="snail">' + r.e + '<span class="tag"></span></span>';
+      l.querySelector(".name").textContent = r.n;
+      r.el = l.querySelector(".snail"); r.tag = l.querySelector(".tag");
+      track.appendChild(l);
+    });
+  }
+
+  function px(pos) { var w = $("track").clientWidth - 100; return 12 + (pos / A.D.but) * w; }
+  function afficherPositions() { COUREURS.forEach(function (r) { r.el.style.left = px(r.pos) + "px"; }); }
+
+  function reinitialiserCourse() {
+    COUREURS.forEach(function (r) {
+      r.pos = 0; r.pause = 0; r.boost = 0; r.recul = 0; r.fini = 0; r.glisse = 0; r.tag.textContent = "";
+    });
+    arrivees = []; derniereTouche = null; turbo = 0; turboActif = 0; glissadesCourse = 0;
+    majTurbo(); afficherPositions(); majPads();
+  }
+
+  function nouvelleSaison() {
+    etat = "repos";
+    cancelAnimationFrame(raf);
+    manche = 0; pointsSaison = {}; victoiresSaison = 0;
+    construirePiste();
+    COUREURS.forEach(function (r) { pointsSaison[r.n] = 0; });
+    reinitialiserCourse();
+    $("start").style.display = "";
+    $("start").textContent = "🏁 Lancer la saison";
+    $("commentaire").innerHTML = "🎙️ Bienvenue au Grand Prix ! Cinq courses, un seul champion.";
+    $("regleDiff").textContent = A.D.e + " " + A.D.n + " : " + A.D.d;
+    majSaison(); majClassement(); majStats();
+    if (A.majSucces) A.majSucces();
+  }
+
+  /* ------------------------------------------------------------------
+     Commandes
+     ------------------------------------------------------------------ */
+  function majPads() {
+    $("L").classList.toggle("suivant", etat === "course" && (derniereTouche === "R" || derniereTouche === null));
+    $("R").classList.toggle("suivant", etat === "course" && (derniereTouche === "L" || derniereTouche === null));
+    $("T").disabled = !(etat === "course" && turbo >= 100);
+  }
+  function majTurbo() {
+    $("turbo").style.width = Math.min(100, turbo) + "%";
+    $("turboBox").classList.toggle("plein", turbo >= 100);
+    $("turboTxt").textContent = turboActif > 0 ? "🔥 TURBO ACTIF !" :
+      turbo >= 100 ? "Turbo prêt — appuie sur Espace ou sur le bouton rouge" :
+      "Turbo — alterne sans te tromper pour le remplir";
+  }
+
+  function appuyer(k) {
+    if (etat !== "course") return;
+    var moi = COUREURS[0];
+    if (moi.fini || moi.glisse > 0) return;
+    if (k === derniereTouche) {
+      moi.glisse = A.D.glissade;
+      moi.tag.textContent = "💦";
+      glissadesCourse++;
+      turbo = Math.max(0, turbo - 30);
+      A.bip(160, 0.12, "sawtooth", 0.04);
+      $("commentaire").innerHTML = "🎙️ Oh non ! <b>Turbo-Jean-Pierre</b> glisse dans sa bave !";
+    } else {
+      moi.pos += 1;
+      derniereTouche = k;
+      turbo = Math.min(100, turbo + 100 / A.D.turboCout);
+      A.bip(300 + turbo * 3, 0.03, "square", 0.02);
+    }
+    majTurbo(); majPads();
+  }
+  function lancerTurbo() {
+    if (etat !== "course" || turbo < 100) return;
+    turbo = 0; turboActif = 2.2;
+    d.turbos = (d.turbos || 0) + 1;
+    COUREURS[0].tag.textContent = "🔥";
+    A.melodie([[440, 0.06], [660, 0.06], [880, 0.1]]);
+    $("commentaire").innerHTML = "🎙️ <b>TURBO !</b> Jamais vu un escargot faire ça !";
+    majTurbo(); majPads(); A.check();
   }
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); if (!e.repeat) press(e.key === "ArrowLeft" ? "L" : "R"); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault(); if (!e.repeat) appuyer(e.key === "ArrowLeft" ? "L" : "R");
+    } else if (e.code === "Space") {
+      e.preventDefault(); if (!e.repeat) lancerTurbo();
+    }
   });
-  $("L").addEventListener("pointerdown", function (e) { e.preventDefault(); press("L"); });
-  $("R").addEventListener("pointerdown", function (e) { e.preventDefault(); press("R"); });
+  $("L").addEventListener("pointerdown", function (e) { e.preventDefault(); appuyer("L"); });
+  $("R").addEventListener("pointerdown", function (e) { e.preventDefault(); appuyer("R"); });
+  $("T").addEventListener("pointerdown", function (e) { e.preventDefault(); lancerTurbo(); });
 
+  /* ------------------------------------------------------------------
+     Boucle de course
+     ------------------------------------------------------------------ */
   function frame(now) {
     var dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
     var el = (now - t0) / 1000;
-    RACERS.forEach(function (r) {
-      if (r.done) return;
-      if (r.me) {
-        if (r.slip > 0) { r.slip -= dt; if (r.slip <= 0) { r.tag.textContent = ""; } }
+
+    COUREURS.forEach(function (r) {
+      if (r.fini) return;
+      if (r.moi) {
+        if (r.glisse > 0) { r.glisse -= dt; if (r.glisse <= 0) r.tag.textContent = turboActif > 0 ? "🔥" : ""; }
+        if (turboActif > 0) { r.pos += 9 * dt; }
       } else {
         if (r.pause > 0) { r.pause -= dt; r.tag.textContent = "💤"; }
         else {
-          var sp = r.base * (0.7 + Math.random() * 0.6) * (r.boost > 0 ? 2.2 : 1);
-          r.pos += sp * dt;
+          var v = r.base * (0.75 + Math.random() * 0.5) * (r.boost > 0 ? 2.2 : 1);
+          r.pos += v * dt;
           r.tag.textContent = r.boost > 0 ? "💨" : "";
         }
         if (r.boost > 0) r.boost -= dt;
       }
-      if (r.back > 0) { r.pos = Math.max(0, r.pos - r.back); r.back = 0; }
-      if (r.pos >= GOAL) { r.pos = GOAL; r.done = el; finishOrder.push(r); r.tag.textContent = ["🥇", "🥈", "🥉", "🍂"][finishOrder.length - 1]; }
+      if (r.recul > 0) { r.pos = Math.max(0, r.pos - r.recul); r.recul = 0; }
+      if (r.pos >= A.D.but) {
+        r.pos = A.D.but; r.fini = el; arrivees.push(r);
+        r.tag.textContent = ["🥇", "🥈", "🥉"][arrivees.length - 1] || "🍂";
+      }
     });
-    if (now > nextEvent) {
-      var cands = RACERS.filter(function (r) { return !r.done; });
-      if (cands.length) { var r = cands[Math.floor(Math.random() * cands.length)]; $("caster").innerHTML = "🎙️ " + EVENTS[Math.floor(Math.random() * EVENTS.length)](r); }
-      nextEvent = now + 2500 + Math.random() * 2500;
+
+    if (turboActif > 0) {
+      turboActif -= dt;
+      if (turboActif <= 0) { COUREURS[0].tag.textContent = ""; majTurbo(); }
     }
-    render();
-    if (RACERS[0].done || finishOrder.length >= RACERS.length) return finish();
+
+    if (now > prochainEvent) {
+      var libres = COUREURS.filter(function (r) { return !r.fini && !r.moi; });
+      if (libres.length) {
+        var r2 = libres[Math.floor(Math.random() * libres.length)];
+        $("commentaire").innerHTML = "🎙️ " + EVENTS[Math.floor(Math.random() * EVENTS.length)](r2);
+      }
+      prochainEvent = now + 2400 + Math.random() * 2600;
+    }
+
+    afficherPositions();
+    if (arrivees.length >= COUREURS.length) return finCourse();
     raf = requestAnimationFrame(frame);
   }
 
-  function finish() {
-    state = "idle";
-    var me = RACERS[0], place = finishOrder.indexOf(me) + 1;
-    // estimate the others' arrival order from their position
-    var rest = RACERS.filter(function (r) { return finishOrder.indexOf(r) === -1; }).sort(function (a, b) { return b.pos - a.pos; });
-    var order = finishOrder.concat(rest);
-    var rec = place === 1 && (!best || me.done < best);
-    if (rec) { best = me.done; try { localStorage.setItem("escargots-best", best); } catch (e) {} $("best").textContent = best.toFixed(2).replace(".", ",") + " s"; }
-    var titles = ["🏆 VICTOIRE ! Tu es l'escargot le plus rapide du jardin !", "🥈 Deuxième ! Une performance baveuse mais honorable.", "🥉 Troisième. Ta coquille est déçue.", "🍂 Dernier. Même la limace t'a battu."];
-    $("podium").style.display = "block";
-    $("podium").innerHTML = "<h2>" + titles[place - 1] + "</h2><p>Ton temps : <b>" + me.done.toFixed(2).replace(".", ",") + " s</b>" + (rec ? " · Nouveau record !" : "") + "</p><ol>" +
-      order.map(function (r) { return "<li>" + r.e + " " + r.n + "</li>"; }).join("") + "</ol>";
-    $("caster").innerHTML = "🎙️ Et c'est terminé ! " + (place === 1 ? "Quelle course <b>légendaire</b> !" : "On se revoit l'année prochaine. Ou dans 3 heures, à cette vitesse.");
-    $("start").style.display = ""; $("start").textContent = "🔁 Revanche";
+  function finCourse() {
+    etat = "repos";
+    var moi = COUREURS[0];
+    var place = arrivees.indexOf(moi) + 1;
+    arrivees.forEach(function (r, i) { pointsSaison[r.n] = (pointsSaison[r.n] || 0) + (POINTS[i] || 0); });
+
+    d.courses = (d.courses || 0) + 1;
+    if (place === 1) {
+      d.victoires = (d.victoires || 0) + 1;
+      victoiresSaison++;
+      if (glissadesCourse === 0) d.courseNette = 1;
+      if (!d.meilleurTemps || moi.fini < d.meilleurTemps) d.meilleurTemps = moi.fini;
+      A.record("temps", Math.round(moi.fini * 100) / 100, true);
+    }
+    if (place <= 3) d.podiums = (d.podiums || 0) + 1;
+    if (place === COUREURS.length) d.derniers = (d.derniers || 0) + 1;
+    A.sauver(); A.check();
+
+    var titres = ["🏆 VICTOIRE !", "🥈 Deuxième.", "🥉 Troisième.",
+      "4ᵉ. Bof.", "5ᵉ. Aïe.", "🍂 Dernier."];
+    $("commentaire").innerHTML = "🎙️ " + (titres[place - 1] || "Terminé.") +
+      " Temps : <b>" + moi.fini.toFixed(2).replace(".", ",") + " s</b>. " +
+      (place === 1 ? "Quelle course <b>légendaire</b> !" : "On se revoit à la prochaine manche.");
+
+    manche++;
+    majSaison(); majClassement(); majStats();
+    if (A.majSucces) A.majSucces();
+
+    if (manche >= MANCHES) return finSaison();
+    $("start").style.display = "";
+    $("start").textContent = "🏁 Manche " + (manche + 1) + " — " + CIRCUITS[manche];
   }
 
+  function finSaison() {
+    var table = Object.keys(pointsSaison).map(function (n) { return { n: n, p: pointsSaison[n] }; })
+      .sort(function (a, b) { return b.p - a.p; });
+    var moiNom = COUREURS[0].n;
+    var rang = table.findIndex(function (x) { return x.n === moiNom; }) + 1;
+    var mesPoints = pointsSaison[moiNom] || 0;
+    var score = Math.round(mesPoints * 100 * A.D.mult + (rang === 1 ? 1000 * A.D.mult : 0));
+
+    d.saisons = (d.saisons || 0) + 1;
+    if (rang === 1) {
+      d.titres = (d.titres || 0) + 1;
+      if (A.D.id === "national") d.titreNational = 1;
+      if (A.D.id === "mondial") d.titreMondial = 1;
+      if (victoiresSaison >= MANCHES) d.grandChelem = 1;
+    }
+    var recP = A.record("points", mesPoints, false);
+    var recS = A.record("score", score, false);
+    A.sauver(); A.check();
+    if (A.majSucces) A.majSucces();
+
+    $("start").style.display = "";
+    $("start").textContent = "🔁 Nouvelle saison";
+    var titre = rang === 1 ? "🏆 CHAMPION !" : rang === 2 ? "🥈 Vice-champion" :
+                rang === 3 ? "🥉 Troisième du championnat" : "Saison terminée";
+    if (rang === 1) A.melodie([[660, 0.12], [880, 0.12], [1100, 0.12], [1320, 0.25]]);
+    A.modal(titre,
+      "Tu finis <b>" + rang + (rang === 1 ? "ᵉʳ" : "ᵉ") + "</b> du championnat " + A.D.n +
+      " avec <b>" + mesPoints + " points</b> et " + victoiresSaison + " victoire(s).<br>Score : <b>" + A.nb(score) + "</b>" +
+      (recP ? "<br>🏆 <b>Nouveau record de points !</b>" : "") +
+      (recS ? "<br>🏆 <b>Meilleur score !</b>" : ""),
+      [{ t: "Nouvelle saison", c: "btn", go: nouvelleSaison }, { t: "Voir le classement", c: "btn alt" }]);
+  }
+
+  /* ------------------------------------------------------------------
+     Depart
+     ------------------------------------------------------------------ */
   $("start").addEventListener("click", function () {
-    reset();
-    $("podium").style.display = "none"; $("start").style.display = "none";
-    state = "count";
-    var n = 3; $("count").textContent = n;
+    if (etat !== "repos") return;      /* jamais deux courses en parallele */
+    if (manche >= MANCHES) return nouvelleSaison();
+    cancelAnimationFrame(raf);
+    reinitialiserCourse();
+    $("start").style.display = "none";
+    etat = "compte";
+    var n = 3;
+    $("compte").textContent = n;
+    A.bip(440, 0.1);
     var iv = setInterval(function () {
       n--;
-      if (n > 0) $("count").textContent = n;
-      else if (n === 0) { $("count").textContent = "GO !"; state = "race"; t0 = lastT = performance.now(); nextEvent = t0 + 2000; $("caster").innerHTML = "🎙️ C'est parti ! Enfin… ils démarrent. Doucement."; raf = requestAnimationFrame(frame); }
-      else { $("count").textContent = ""; clearInterval(iv); }
+      if (n > 0) { $("compte").textContent = n; A.bip(440, 0.1); }
+      else if (n === 0) {
+        $("compte").textContent = "GO !";
+        A.bip(880, 0.2);
+        etat = "course";
+        t0 = lastT = performance.now();
+        prochainEvent = t0 + 2000;
+        $("commentaire").innerHTML = "🎙️ C'est parti sur <b>" + CIRCUITS[manche] + "</b> ! Enfin… ils démarrent. Doucement.";
+        majPads();
+        raf = requestAnimationFrame(frame);
+      } else { $("compte").textContent = ""; clearInterval(iv); }
     }, 800);
   });
 
-  window.addEventListener("resize", render);
-  reset();
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function majSaison() {
+    var h = "";
+    for (var i = 0; i < MANCHES; i++) {
+      var cls = i < manche ? " faite" : (i === manche ? " en-cours" : "");
+      h += '<div class="manche' + cls + '">' + (i + 1) + "<small>" + CIRCUITS[i] + "</small></div>";
+    }
+    $("saison").innerHTML = h;
+  }
+  function majClassement() {
+    var table = Object.keys(pointsSaison).map(function (n) { return { n: n, p: pointsSaison[n] }; })
+      .sort(function (a, b) { return b.p - a.p; });
+    var moiNom = COUREURS.length ? COUREURS[0].n : "";
+    var h = "";
+    table.forEach(function (x, i) {
+      h += '<tr class="' + (x.n === moiNom ? "moi" : "") + '"><td>' + (i + 1) + "</td><td>" + x.n +
+        '</td><td class="pts">' + x.p + "</td></tr>";
+    });
+    $("classement").innerHTML = h || '<tr><td colspan="3" style="color:var(--muted)">La saison n\'a pas commencé.</td></tr>';
+  }
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Saisons jouées", A.nb(d.saisons || 0));
+    ligne("Courses disputées", A.nb(d.courses || 0));
+    ligne("Victoires", A.nb(d.victoires || 0));
+    ligne("Podiums", A.nb(d.podiums || 0));
+    ligne("Titres", A.nb(d.titres || 0));
+    ligne("Turbos utilisés", A.nb(d.turbos || 0));
+    ligne("Meilleur temps", d.meilleurTemps ? d.meilleurTemps.toFixed(2).replace(".", ",") + " s" : "—");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var p = A.meilleur("points", i), t = A.meilleur("temps", i);
+      ligne(df.e + " " + df.n, p != null ? p + " pts · " + (t != null ? t.toFixed(2).replace(".", ",") + " s" : "—") : "jamais joué");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  window.addEventListener("resize", afficherPositions);
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  nouvelleSaison();
 })();
 </script>
 </body>

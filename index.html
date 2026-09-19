@@ -6,42 +6,256 @@
 <title>Jeux Idiots</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  .hero { text-align: center; padding: 40px 0 30px; }
-  .hero h1 { font-size: clamp(2.6rem, 8vw, 5rem); margin: 0; }
+  .hero { text-align: center; padding: 34px 0 22px; }
+  .hero h1 { font-size: clamp(2.4rem, 7.5vw, 4.6rem); margin: 0; }
   .hero h1 span { color: var(--accent); display: inline-block; transform: rotate(-4deg); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-  .card { display: block; text-decoration: none; border-radius: 20px; padding: 26px 22px; min-height: 210px; transition: transform .15s ease, box-shadow .15s ease; color: #1d1d1f; }
+
+  .profil { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .profil div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; text-align: center; }
+  .profil b { display: block; font-size: 1.5rem; line-height: 1.2; }
+  .profil small { color: var(--muted); font-size: .78rem; }
+  .barreGlobale { height: 10px; border-radius: 99px; background: #eee; overflow: hidden; margin: 4px 0 16px; }
+  html[data-theme="dark"] .barreGlobale { background: #34343c; }
+  .barreGlobale i { display: block; height: 100%; background: var(--good); width: 0; transition: width .5s; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 18px; }
+  .card { display: flex; flex-direction: column; text-decoration: none; border-radius: 20px; padding: 22px 20px 16px; min-height: 212px;
+          transition: transform .15s ease, box-shadow .15s ease; color: #1d1d1f; }
   .card:hover { transform: translateY(-5px) rotate(-0.6deg); box-shadow: 0 14px 30px rgba(0,0,0,.12); }
-  .card .emo { font-size: 3rem; line-height: 1; }
-  .card h2 { margin: 14px 0 6px; font-size: 1.35rem; }
-  .card p { margin: 0; opacity: .8; }
+  .card .emo { font-size: 2.8rem; line-height: 1; }
+  .card h2 { margin: 12px 0 5px; font-size: 1.28rem; }
+  .card p { margin: 0 0 12px; opacity: .82; font-size: .93rem; flex: 1; }
+  .card .pied { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .78rem; font-weight: 800;
+                background: rgba(255,255,255,.55); border-radius: 999px; padding: 5px 11px; }
+  html[data-theme="dark"] .card .pied { background: rgba(0,0,0,.28); }
+  .card .pied .rec { font-weight: 700; opacity: .85; }
   .c1 { background: #ffd6a5; } .c2 { background: #caffbf; } .c3 { background: #9bf6ff; }
   .c4 { background: #ffc6ff; } .c5 { background: #fdffb6; } .c6 { background: #bdb2ff; }
+
+  .sauvegarde { margin-top: 30px; }
+  .rangee { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .zone { width: 100%; min-height: 96px; font-family: ui-monospace, Consolas, monospace; font-size: .72rem;
+          border-radius: 12px; border: 1px solid var(--line); padding: 10px; resize: vertical; background: var(--card); color: inherit; }
+  .flash { margin-top: 10px; font-weight: 700; min-height: 1.4em; }
+  .flash.ok { color: var(--good); } .flash.ko { color: var(--bad); }
+  .note { font-size: .88rem; color: var(--muted); }
+  .note code { background: #f0ece2; padding: 1px 5px; border-radius: 5px; }
+  html[data-theme="dark"] .note code { background: #34343c; }
+  h3 { margin: 0 0 12px; font-size: 1.1rem; }
 </style>
 </head>
 <body>
+<div class="topbar"><span class="logo">&#127918;</span><span style="flex:1"></span></div>
 <div class="wrap">
   <div class="hero">
     <h1>Jeux <span>Idiots</span></h1>
-    <p class="sub">13 petits jeux inutiles pour perdre ton temps avec style.</p>
+    <p class="sub">15 petits jeux inutiles, quatre niveaux de difficult&eacute; chacun, et un profil qui garde tout.</p>
   </div>
-  <div class="grid">
-    <a class="card c1" href="pigeon.html"><div class="emo">🐦</div><h2>Négocie avec le Pigeon</h2><p>Un pigeon a volé ton sandwich. Récupère-le. Diplomatiquement.</p></a>
-    <a class="card c2" href="gerard.html"><div class="emo">🪴</div><h2>Gérard, la plante dramatique</h2><p>Garde en vie une plante très, très susceptible.</p></a>
-    <a class="card c3" href="zorg.html"><div class="emo">👽</div><h2>Le Dîner de Zorg</h2><p>Un alien affamé. Des goûts bizarres. Trouve son plat préféré.</p></a>
-    <a class="card c4" href="statue.html"><div class="emo">🗿</div><h2>La Statue</h2><p>Ne bouge plus. Même quand la mouche arrive.</p></a>
-    <a class="card c5" href="chaussettes.html"><div class="emo">🧦</div><h2>Le Tiroir à Chaussettes</h2><p>Range les paires. Il en restera toujours une toute seule.</p></a>
-    <a class="card c6" href="escargots.html"><div class="emo">🐌</div><h2>Grand Prix des Escargots</h2><p>La course la plus lente et la plus intense du monde.</p></a>
-    <a class="card c3" href="mot-de-passe.html"><div class="emo">🔐</div><h2>Le Mot de Passe</h2><p>Choisis un mot de passe. Facile… au début.</p></a>
-    <a class="card c4" href="milliardaire.html"><div class="emo">💸</div><h2>Dépense 100 milliards</h2><p>Achète des yachts, des châteaux et 40 millions de croissants.</p></a>
-    <a class="card c5" href="cercle.html"><div class="emo">⭕</div><h2>Le Cercle Parfait</h2><p>Dessine un cercle à la souris. Juste un cercle. Tu vas rater.</p></a>
-    <a class="card c6" href="bouton-fuyant.html"><div class="emo">🏃</div><h2>Le Bouton Fuyant</h2><p>Clique sur le bouton. Il n'est pas d'accord.</p></a>
-    <a class="card c1" href="reflexes.html"><div class="emo">⚡</div><h2>Réflexes de Limace</h2><p>Es-tu plus rapide qu'un chat ou qu'un paresseux ?</p></a>
-    <a class="card c2" href="bouton-inutile.html"><div class="emo">🔴</div><h2>Le Bouton Inutile</h2><p>16 bâtiments, 109 améliorations, des boutons dorés et du prestige. Tu es perdu.</p></a>
-    <a class="card c4" href="fessee.html"><div class="emo">🍑</div><h2>La Fessée Légendaire</h2><p>Crée deux personnages, habille-les… et PAF.</p></a>
+
+  <div class="panel" style="margin-bottom:24px">
+    <h3>&#128100; Ton profil</h3>
+    <div class="profil" id="profil"></div>
+    <div class="barreGlobale"><i id="barreGlobale"></i></div>
+    <p class="note" id="resumeProfil"></p>
+  </div>
+
+  <div class="grid" id="grille"></div>
+
+  <div class="panel sauvegarde">
+    <h3>&#128190; Sauvegarde</h3>
+    <p class="note">Tout est enregistr&eacute; automatiquement dans ce navigateur&nbsp;: records, succ&egrave;s et difficult&eacute;s choisies, pour les 15 jeux. Pour emporter ton profil ailleurs, exporte un fichier <code>.pouet</code>.</p>
+    <div class="rangee" style="margin-top:12px">
+      <button class="btn" id="exporter">&#11015;&#65039; Exporter mon profil</button>
+      <button class="btn alt" id="importer">&#128193; Charger un fichier</button>
+      <button class="btn alt" id="copier">&#128203; Copier le code</button>
+      <button class="btn alt" id="coller">&#128229; Charger le code coll&eacute;</button>
+    </div>
+    <input type="file" id="fichier" accept=".pouet,.txt,text/plain" style="display:none">
+    <textarea class="zone" id="zone" spellcheck="false" placeholder="Colle ici un code de profil, puis clique sur &laquo; Charger le code coll&eacute; &raquo;."></textarea>
+    <div class="flash" id="flash"></div>
+    <p class="note" style="margin-top:14px">&#128274; <b>Anti-triche&nbsp;:</b> le fichier est brouill&eacute; puis <b>sign&eacute;</b>. Une seule lettre modifi&eacute;e et il est refus&eacute;. Les valeurs sont aussi recontr&ocirc;l&eacute;es au chargement.</p>
+    <div class="rangee" style="margin-top:14px">
+      <button class="btn alt" id="effacer">&#128465;&#65039; Effacer tout le profil</button>
+    </div>
   </div>
 </div>
-<footer>Fait avec amour et beaucoup d'inutilité.</footer>
+<footer>Fait avec amour et beaucoup d'inutilit&eacute;.</footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* Chaque jeu : sa carte, son nombre de succes, et la statistique a afficher. */
+  var JEUX = [
+    { f: "pigeon.html", id: "pigeon", e: "🐦", n: "Négocie avec le Pigeon", c: "c1", succes: 12,
+      p: "Un pigeon a volé ton sandwich. Récupère-le. Diplomatiquement.",
+      stat: function (d) { var n = Object.keys(d.fins || {}).length; return n ? n + " / 10 fins" : null; } },
+    { f: "gerard.html", id: "gerard", e: "🪴", n: "Gérard, la plante dramatique", c: "c2", succes: 12,
+      p: "Garde en vie une plante très, très susceptible.",
+      stat: function (d) { return d.record ? "record " + Math.floor(d.record) + " s" : null; } },
+    { f: "zorg.html", id: "zorg", e: "👽", n: "Le Dîner de Zorg", c: "c3", succes: 12,
+      p: "Un alien affamé, des goûts bizarres, un menu entier à deviner.",
+      stat: function (d) { return d.menus ? d.menus + " menu(s)" : null; } },
+    { f: "statue.html", id: "statue", e: "🗿", n: "La Statue", c: "c4", succes: 12,
+      p: "Ne bouge plus. Même quand le cercle se téléporte.",
+      stat: function (d) { return d.record ? "record " + d.record.toFixed(1).replace(".", ",") + " s" : null; } },
+    { f: "chaussettes.html", id: "chaussettes", e: "🧦", n: "Le Tiroir à Chaussettes", c: "c5", succes: 12,
+      p: "Range les paires. Il en restera toujours une toute seule.",
+      stat: function (d) { return d.meilleurNiveau ? "niveau " + d.meilleurNiveau : null; } },
+    { f: "escargots.html", id: "escargots", e: "🐌", n: "Grand Prix des Escargots", c: "c6", succes: 12,
+      p: "Cinq courses, un championnat, et un turbo à la bave.",
+      stat: function (d) { return d.titres ? d.titres + " titre(s)" : (d.courses ? d.courses + " course(s)" : null); } },
+    { f: "mot-de-passe.html", id: "motdepasse", e: "🔐", n: "Le Mot de Passe", c: "c3", succes: 12,
+      p: "25 règles absurdes. Elles apparaissent une par une.",
+      stat: function (d) { return d.maxRegles ? d.maxRegles + " règles" : null; } },
+    { f: "milliardaire.html", id: "milliardaire", e: "💸", n: "Dépense la fortune", c: "c4", succes: 12,
+      p: "Des yachts, des châteaux, un million de croissants, et le fisc.",
+      stat: function (d) { return d.maxObjectifs ? d.maxObjectifs + " / 10 objectifs" : null; } },
+    { f: "cercle.html", id: "cercle", e: "⭕", n: "Le Cercle Parfait", c: "c5", succes: 12,
+      p: "Dessine un cercle à la souris. Tu vas rater.",
+      stat: function (d) { return d.meilleur ? d.meilleur.toFixed(1).replace(".", ",") + " %" : null; } },
+    { f: "bouton-fuyant.html", id: "fuyant", e: "🏃", n: "Le Bouton Fuyant", c: "c6", succes: 12,
+      p: "Attrape-le. Plusieurs fois. Il n'est pas d'accord.",
+      stat: function (d) { return d.meilleurTemps ? "record " + d.meilleurTemps.toFixed(1).replace(".", ",") + " s" : null; } },
+    { f: "reflexes.html", id: "reflexes", e: "⚡", n: "Réflexes de Limace", c: "c1", succes: 12,
+      p: "Clique dès que c'est vert. Attention aux faux verts.",
+      stat: function (d) { return d.meilleurCoup ? d.meilleurCoup + " ms" : null; } },
+    { f: "bouton-inutile.html", id: "boutonInutile", e: "🔴", n: "Le Bouton Inutile", c: "c2", succes: 57,
+      p: "26 bâtiments, 159 améliorations, des boutons dorés et du prestige.",
+      stat: function (d) { return d.resume && d.resume.clics ? Arcade.nb(d.resume.clics) + " clics" : null; },
+      succesExterne: function (d) { return d.resume ? (d.resume.succes || 0) : 0; } },
+    { f: "fessee.html", id: "fessee", e: "🍑", n: "La Fessée Légendaire", c: "c4", succes: 12,
+      p: "Crée deux personnages, habille-les… et PAF.",
+      stat: function (d) { return d.fessees ? Arcade.nb(d.fessees) + " fessées" : null; } },
+    { f: "ballon.html", id: "ballon", e: "🎈", n: "Le Ballon de Baudruche", c: "c1", succes: 12,
+      p: "Gonfle-le le plus possible. Relâche avant qu'il n'explose.",
+      stat: function (d) { return d.plusGros ? "gonflage " + Math.round(d.plusGros) : null; } },
+    { f: "memoire.html", id: "memoire", e: "🐟", n: "Mémoire de Poisson Rouge", c: "c3", succes: 12,
+      p: "Gustave te montre une suite de couleurs. Refais-la. Il en rajoute une.",
+      stat: function (d) { return d.record ? "niveau " + d.record : null; } }
+  ];
+
+  var P = Arcade.profil();
+
+  function succesDuJeu(j) {
+    if (j.succesExterne) return j.succesExterne(P.g[j.id] || {});
+    var n = 0, prefixe = j.id + ".";
+    Object.keys(P.a).forEach(function (k) { if (k.indexOf(prefixe) === 0) n++; });
+    return n;
+  }
+
+  function afficher() {
+    P = Arcade.profil();
+    var grille = $("grille");
+    grille.innerHTML = "";
+    var totalSucces = 0, totalMax = 0, joues = 0;
+
+    JEUX.forEach(function (j) {
+      var d = P.g[j.id] || {};
+      var s = succesDuJeu(j);
+      totalSucces += s; totalMax += j.succes;
+      if (Object.keys(d).length > 2 || s > 0) joues++;
+
+      var a = document.createElement("a");
+      a.className = "card " + j.c;
+      a.href = j.f;
+      var stat = null;
+      try { stat = j.stat(d); } catch (e) {}
+      a.innerHTML = '<div class="emo"></div><h2></h2><p></p>' +
+        '<div class="pied"><span class="ach"></span><span class="rec"></span></div>';
+      a.querySelector(".emo").textContent = j.e;
+      a.querySelector("h2").textContent = j.n;
+      a.querySelector("p").textContent = j.p;
+      a.querySelector(".ach").textContent = "🏅 " + s + " / " + j.succes;
+      a.querySelector(".rec").textContent = stat || "jamais joué";
+      grille.appendChild(a);
+    });
+
+    var prof = $("profil");
+    prof.innerHTML = "";
+    function carte(v, l) {
+      var e = document.createElement("div");
+      var b = document.createElement("b"); b.textContent = v;
+      var s = document.createElement("small"); s.textContent = l;
+      e.appendChild(b); e.appendChild(s); prof.appendChild(e);
+    }
+    carte(totalSucces + " / " + totalMax, "succès débloqués");
+    carte(joues + " / " + JEUX.length, "jeux essayés");
+    carte(Arcade.secondes(P.temps || 0), "temps de jeu");
+    carte(new Date(P.cree).toLocaleDateString("fr-FR"), "profil créé le");
+    $("barreGlobale").style.width = (totalMax ? totalSucces / totalMax * 100 : 0) + "%";
+    $("resumeProfil").textContent = totalSucces === totalMax
+      ? "🏆 Tu as absolument tout débloqué. Il est peut-être temps de sortir."
+      : "Il te reste " + (totalMax - totalSucces) + " succès à décrocher. Chaque jeu en cache douze, sauf Le Bouton Inutile qui en a cinquante-sept.";
+  }
+
+  /* ------------------------------------------------------------------
+     Sauvegarde
+     ------------------------------------------------------------------ */
+  function flash(msg, ok) {
+    var f = $("flash");
+    f.textContent = msg;
+    f.className = "flash " + (ok ? "ok" : "ko");
+  }
+  $("exporter").addEventListener("click", function () {
+    Arcade.exporter();
+    flash("Profil exporté. Garde le fichier précieusement.", true);
+  });
+  $("importer").addEventListener("click", function () { $("fichier").click(); });
+  $("fichier").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      Arcade.importer(String(r.result), f.name, function (ok) {
+        if (ok) { flash("✔ Profil chargé.", true); afficher(); }
+        else flash("❌ Profil refusé.", false);
+      });
+    };
+    r.onerror = function () { flash("Impossible de lire le fichier.", false); };
+    r.readAsText(f);
+    this.value = "";
+  });
+  $("copier").addEventListener("click", function () {
+    var txt = Arcade.texteFichier();
+    $("zone").value = txt;
+    $("zone").select();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(txt).then(
+        function () { flash("Code copié dans le presse-papier.", true); },
+        function () { flash("Code affiché ci-dessous : copie-le à la main.", true); });
+    } else flash("Code affiché ci-dessous : copie-le à la main.", true);
+  });
+  $("coller").addEventListener("click", function () {
+    Arcade.importer($("zone").value, "code collé", function (ok) {
+      if (ok) { flash("✔ Profil chargé.", true); afficher(); }
+      else flash("❌ Profil refusé.", false);
+    });
+  });
+  $("effacer").addEventListener("click", function () {
+    Arcade.modal("🗑️ Tout effacer ?",
+      "Records, succès et progression des 15 jeux : tout disparaît définitivement. Pense à exporter un fichier avant, si tu hésites." +
+      "<br><br><small>Le Bouton Inutile garde sa propre sauvegarde détaillée, à effacer depuis son onglet Sauvegarde.</small>",
+      [{ t: "Annuler", c: "btn alt" },
+       { t: "Effacer définitivement", c: "btn", go: function () {
+         Arcade.effacer(); afficher(); flash("Profil effacé.", true);
+       } }]);
+  });
+
+  var refus = Arcade.refus();
+  if (refus) {
+    setTimeout(function () {
+      Arcade.modal("⚠️ Profil refusé",
+        "Le profil enregistré dans ce navigateur est invalide ou a été modifié (" + refus + "). Tout repart de zéro.",
+        [{ t: "D'accord", c: "btn" }]);
+    }, 400);
+  }
+
+  Arcade.boutonSon();
+  afficher();
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Ballon de Baudruche</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script src="arcade.js"></script>
+<style>
+  .game { max-width: 900px; margin: 0 auto; }
+  .chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 9px; margin-bottom: 14px; }
+  .chiffre { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; text-align: center; }
+  .chiffre b { display: block; font-size: 1.4rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .chiffre small { color: var(--muted); font-size: .76rem; }
+
+  .scene { position: relative; height: 54vh; min-height: 360px; border-radius: 22px; overflow: hidden;
+           background: linear-gradient(#cfe9ff, #eef7ff); display: flex; align-items: flex-end; justify-content: center; }
+  html[data-theme="dark"] .scene { background: linear-gradient(#1b2a3a, #10161f); }
+  .ballon { position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%); transform-origin: 50% 100%; }
+  .ballon svg { display: block; overflow: visible; }
+  .ballon.tremble { animation: tremble .12s infinite; }
+  @keyframes tremble { 0%,100% { transform: translateX(-50%) rotate(0); } 25% { transform: translateX(-50%) rotate(-1.6deg); } 75% { transform: translateX(-50%) rotate(1.6deg); } }
+
+  .pompe { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; }
+  .pompe button {
+    font: inherit; font-weight: 800; font-size: 1.05rem; padding: 15px 34px; border-radius: 16px; border: none;
+    background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 6px 0 #c23d1f; user-select: none; touch-action: manipulation;
+  }
+  .pompe button:active { transform: translateY(4px); box-shadow: 0 2px 0 #c23d1f; }
+  .pompe button:disabled { opacity: .45; box-shadow: 0 6px 0 #999; background: #999; cursor: not-allowed; }
+
+  .risque { position: absolute; left: 20px; right: 20px; top: 16px; }
+  .risque small { display: block; text-align: center; font-size: .78rem; font-weight: 800; color: #24506e; margin-bottom: 4px; }
+  html[data-theme="dark"] .risque small { color: #a9c7dd; }
+  .risque .fond { background: #ffffff88; border-radius: 99px; overflow: hidden; }
+  html[data-theme="dark"] .risque .fond { background: #ffffff22; }
+  .risque i { display: block; height: 11px; width: 0; background: var(--good); border-radius: 99px; transition: width .08s linear, background .2s; }
+
+  .paf { position: absolute; font-weight: 800; font-size: 1.5rem; pointer-events: none; animation: paf 1s ease-out forwards; white-space: nowrap; }
+  @keyframes paf { from { opacity: 1; transform: translate(-50%,0) scale(1); } to { opacity: 0; transform: translate(-50%,-70px) scale(1.4); } }
+  .bouts { position: absolute; font-size: 1.6rem; pointer-events: none; animation: bout .9s ease-out forwards; }
+  @keyframes bout { to { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rr)); } }
+
+  .serie { display: flex; gap: 6px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
+  .bal { min-width: 52px; padding: 5px 8px; border-radius: 10px; background: var(--card); border: 1px solid var(--line);
+         font-size: .8rem; font-weight: 800; text-align: center; }
+  .bal.ok { border-color: var(--good); box-shadow: inset 0 -3px 0 var(--good); }
+  .bal.pop { border-color: var(--bad); color: var(--bad); }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
+</style>
+</head>
+<body>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#127880;</span></div>
+<div class="wrap game">
+  <h1 class="center">Le Ballon de Baudruche</h1>
+  <p class="sub center">Maintiens la pompe pour gonfler. Plus il est gros, plus il rapporte. Rel&acirc;che avant qu'il n'explose.</p>
+
+  <div id="difficulte"></div>
+
+  <div class="chiffres">
+    <div class="chiffre"><b id="cBallon">1 / 5</b><small>ballon</small></div>
+    <div class="chiffre"><b id="cTaille">0</b><small>gonflage</small></div>
+    <div class="chiffre"><b id="cGain">0</b><small>points en jeu</small></div>
+    <div class="chiffre"><b id="cScore">0</b><small>points gard&eacute;s</small></div>
+    <div class="chiffre"><b id="cRecord">&mdash;</b><small>record (cette difficult&eacute;)</small></div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="risque"><small id="risqueTxt">Il a l'air tout neuf.</small><div class="fond"><i id="risque"></i></div></div>
+    <div class="ballon" id="ballon"></div>
+    <div class="pompe"><button id="pompe" type="button">&#128294; MAINTENIR POUR GONFLER</button></div>
+  </div>
+
+  <div class="serie" id="serie"></div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>&#129300; Comment gagner</h3>
+      <p style="font-size:.93rem;margin:0 0 8px">Chaque ballon a un <b>point de rupture caché</b>, tiré au hasard. Tant que tu gonfles, les points montent&nbsp;; dès que tu rel&acirc;ches, ils sont <b>gardés définitivement</b>. S'il explose, tu perds tout ce qu'il avait accumulé.</p>
+      <p style="font-size:.93rem;margin:0 0 8px">Le ballon <b>grince</b> et tremble quand il approche de sa limite. À toi de sentir le moment.</p>
+      <p style="font-size:.93rem;margin:0" id="regleDiff"></p>
+    </div>
+    <div class="panel">
+      <div id="succes"></div>
+      <h3 style="margin-top:18px">&#128202; Tes chiffres</h3>
+      <div id="stats"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "tranquille", n: "Tranquille", e: "😌",
+      d: "5 ballons solides : ils cassent rarement avant 60. Pompe lente.",
+      ballons: 5, mini: 60, maxi: 100, vitesse: 17, fuite: 0, rafales: 0, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮",
+      d: "5 ballons plus fragiles et une pompe plus rapide.",
+      ballons: 5, mini: 45, maxi: 100, vitesse: 24, fuite: 0, rafales: 0, mult: 1.6 },
+    { id: "fragile", n: "Fragile", e: "🔥",
+      d: "6 ballons très fragiles, et ils se dégonflent quand tu lâches la pompe.",
+      ballons: 6, mini: 33, maxi: 100, vitesse: 31, fuite: 7, rafales: 0, mult: 2.6 },
+    { id: "cauchemar", n: "Cauchemar", e: "💀",
+      d: "7 ballons, fuite permanente, et des coups de pompe incontrôlés qui ajoutent d'un coup.",
+      ballons: 7, mini: 24, maxi: 100, vitesse: 38, fuite: 11, rafales: 1700, mult: 4 }
+  ];
+
+  var GRINCEMENTS = [
+    [0, "Il a l'air tout neuf."],
+    [0.45, "Ça se tend un peu…"],
+    [0.65, "Il commence à grincer."],
+    [0.8, "⚠️ Il craque. Sérieusement."],
+    [0.92, "😱 Relâche. RELACHE !"]
+  ];
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premier", e: "🎈", n: "Premier ballon", d: "Garder un ballon sans le faire exploser.", f: function (d) { return (d.gardes || 0) >= 1; } },
+    { id: "gros70", e: "💨", n: "Bien gonflé", d: "Garder un ballon à 70 de gonflage.", f: function (d) { return (d.plusGros || 0) >= 70; } },
+    { id: "gros85", e: "🌡️", n: "Tendu", d: "Garder un ballon à 85.", f: function (d) { return (d.plusGros || 0) >= 85; } },
+    { id: "gros95", e: "🤯", n: "Inconscient", d: "Garder un ballon à 95.", f: function (d) { return (d.plusGros || 0) >= 95; } },
+    { id: "parfait", e: "✨", n: "Manche parfaite", d: "Finir une manche sans aucune explosion.", f: function (d) { return !!d.mancheNette; } },
+    { id: "fragile", e: "🔥", n: "Main légère", d: "Finir une manche en Fragile.", f: function (d) { return !!d.finiFragile; } },
+    { id: "cauchemar", e: "💀", n: "Nerfs de latex", d: "Finir une manche en Cauchemar.", f: function (d) { return !!d.finiCauchemar; } },
+    { id: "explosions", e: "💥", n: "Artificier", d: "Faire exploser 25 ballons.", f: function (d) { return (d.explosions || 0) >= 25; } },
+    { id: "prudent", e: "🧘", n: "Prudent", d: "Garder un ballon à moins de 20. Bravo, c'est courageux.", f: function (d) { return !!d.tresPrudent; } },
+    { id: "score2000", e: "🏆", n: "Gros souffle", d: "Dépasser 2 000 points sur une manche.", f: function (d) { return (d.meilleurScore || 0) >= 2000; } },
+    { id: "cent", e: "💯", n: "Cent ballons", d: "Gonfler 100 ballons en tout.", f: function (d) { return (d.ballons || 0) >= 100; } },
+    { id: "toutes", e: "👑", n: "Souffleur complet", d: "Finir une manche dans les quatre difficultés.",
+      f: function (d) { return d.finiTranquille && d.finiNormal && d.finiFragile && d.finiCauchemar; } }
+  ];
+
+  var A = Arcade.init({
+    id: "ballon", nom: "Le Ballon de Baudruche", emoji: "🎈",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { nouvelleManche(); }
+  });
+  var d = A.d;
+
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var taille = 0, seuil = 0, gonfle = false, boucle = null, indice = 0,
+      score = 0, resultats = [], explosionsManche = 0, prochaineRafale = 0, couleur = "#e03131";
+  var COULEURS = ["#e03131", "#1c7ed6", "#2f9e44", "#f59f00", "#9c36b5", "#e8590c", "#0ca678"];
+
+  function dessiner() {
+    var t = Math.max(0, taille);
+    var rx = 26 + t * 0.95, ry = 32 + t * 1.12;
+    var h = ry * 2 + 70, w = rx * 2 + 30;
+    $("ballon").innerHTML =
+      '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+      '<ellipse cx="' + (w / 2) + '" cy="' + (ry + 6) + '" rx="' + rx + '" ry="' + ry + '" fill="' + couleur + '" stroke="#1d1d1f" stroke-width="3"/>' +
+      '<ellipse cx="' + (w / 2 - rx * 0.35) + '" cy="' + (ry * 0.65) + '" rx="' + (rx * 0.22) + '" ry="' + (ry * 0.3) + '" fill="#ffffff66"/>' +
+      '<path d="M' + (w / 2 - 7) + ' ' + (ry * 2 + 4) + ' h14 l-7 12 z" fill="' + couleur + '" stroke="#1d1d1f" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M' + (w / 2) + ' ' + (ry * 2 + 16) + ' q10 18 -6 30 q-14 12 4 22" fill="none" stroke="#1d1d1f" stroke-width="2.5"/>' +
+      "</svg>";
+  }
+
+  function paf(txt, couleurTxt) {
+    var el = document.createElement("div");
+    el.className = "paf"; el.textContent = txt;
+    el.style.left = "50%"; el.style.top = "42%";
+    if (couleurTxt) el.style.color = couleurTxt;
+    $("scene").appendChild(el);
+    setTimeout(function () { el.remove(); }, 1000);
+  }
+  function eclats() {
+    var bouts = ["💥", "🎊", "✨", "🔴"];
+    for (var i = 0; i < 10; i++) {
+      var el = document.createElement("div");
+      el.className = "bouts"; el.textContent = bouts[i % bouts.length];
+      el.style.left = "50%"; el.style.top = "45%";
+      el.style.setProperty("--dx", (Math.random() * 400 - 200) + "px");
+      el.style.setProperty("--dy", (Math.random() * -260 - 40) + "px");
+      el.style.setProperty("--rr", (Math.random() * 720 - 360) + "deg");
+      $("scene").appendChild(el);
+      setTimeout(function (e) { return function () { e.remove(); }; }(el), 900);
+    }
+  }
+
+  function pointsPour(t) { return Math.round(Math.pow(Math.max(0, t), 1.65) * A.D.mult); }
+
+  function nouveauBallon() {
+    taille = 0;
+    seuil = A.D.mini + Math.random() * (A.D.maxi - A.D.mini);
+    couleur = COULEURS[indice % COULEURS.length];
+    prochaineRafale = A.D.rafales ? performance.now() + A.D.rafales : Infinity;
+    dessiner(); majAffichage();
+  }
+
+  function nouvelleManche() {
+    arreter();
+    indice = 0; score = 0; resultats = []; explosionsManche = 0;
+    $("pompe").disabled = false;
+    $("pompe").textContent = "🔦 MAINTENIR POUR GONFLER";
+    $("regleDiff").textContent = A.D.e + " " + A.D.n + " : " + A.D.d;
+    nouveauBallon();
+    majSerie(); majStats();
+    if (A.majSucces) A.majSucces();
+  }
+
+  function arreter() { gonfle = false; clearInterval(boucle); boucle = null; $("ballon").classList.remove("tremble"); }
+
+  function tic() {
+    var dt = 0.03;
+    if (gonfle) taille += A.D.vitesse * dt;
+    else if (A.D.fuite) taille = Math.max(0, taille - A.D.fuite * dt);
+
+    if (A.D.rafales && performance.now() > prochaineRafale) {
+      var sursaut = 4 + Math.random() * 7;
+      taille += sursaut;
+      paf("💨 +" + Math.round(sursaut), "#7048e8");
+      A.bip(300, 0.08, "square", 0.04);
+      prochaineRafale = performance.now() + A.D.rafales * (0.7 + Math.random() * 0.8);
+    }
+
+    var part = taille / seuil;
+    $("ballon").classList.toggle("tremble", part > 0.8);
+    if (part >= 1) return exploser();
+    if (gonfle && Math.random() < 0.25) A.bip(180 + taille * 6, 0.03, "sine", 0.02);
+    majAffichage();
+  }
+
+  function pomper() {
+    if ($("pompe").disabled) return;
+    if (!boucle) boucle = setInterval(tic, 30);
+    gonfle = true;
+  }
+  function relacher() {
+    if (!gonfle) return;
+    gonfle = false;
+    garder();
+  }
+
+  function garder() {
+    clearInterval(boucle); boucle = null;
+    $("ballon").classList.remove("tremble");
+    var gagne = pointsPour(taille);
+    score += gagne;
+    resultats.push({ taille: taille, points: gagne, pop: false });
+    d.gardes = (d.gardes || 0) + 1;
+    d.ballons = (d.ballons || 0) + 1;
+    if (taille > (d.plusGros || 0)) d.plusGros = taille;
+    if (taille > 0 && taille < 20) d.tresPrudent = 1;
+    paf("+" + A.nb(gagne), "#1fa55b");
+    A.melodie([[520, 0.07], [700, 0.1]]);
+    suivant();
+  }
+
+  function exploser() {
+    arreter();
+    eclats();
+    paf("💥 BOUM", "#e03131");
+    A.bip(90, 0.35, "sawtooth", 0.07);
+    resultats.push({ taille: taille, points: 0, pop: true });
+    explosionsManche++;
+    d.explosions = (d.explosions || 0) + 1;
+    d.ballons = (d.ballons || 0) + 1;
+    taille = 0; dessiner();
+    suivant();
+  }
+
+  function suivant() {
+    indice++;
+    A.check(); A.sauver();
+    majSerie(); majAffichage(); majStats();
+    if (indice >= A.D.ballons) return finManche();
+    setTimeout(nouveauBallon, 700);
+  }
+
+  function finManche() {
+    $("pompe").disabled = true;
+    $("pompe").textContent = "Manche terminée";
+    if (explosionsManche === 0) d.mancheNette = 1;
+    if (score > (d.meilleurScore || 0)) d.meilleurScore = score;
+    if (A.D.id === "tranquille") d.finiTranquille = 1;
+    if (A.D.id === "normal") d.finiNormal = 1;
+    if (A.D.id === "fragile") d.finiFragile = 1;
+    if (A.D.id === "cauchemar") d.finiCauchemar = 1;
+    /* un "record" a zero point n'en est pas un : on ne l'annonce pas */
+    var rec = A.record("score", score, false) && score > 0;
+    var gardes = resultats.filter(function (r) { return !r.pop; }).length;
+    A.record("gardes", gardes, false);
+    A.sauver(); A.check();
+    majStats();
+    if (A.majSucces) A.majSucces();
+    if (rec) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.2]]);
+
+    var plusGros = resultats.reduce(function (m, r) { return r.pop ? m : Math.max(m, r.taille); }, 0);
+    A.modal(explosionsManche === 0 ? "✨ Manche parfaite !" : "🎈 Manche terminée",
+      "Points gardés : <b>" + A.nb(score) + "</b><br>" +
+      "Ballons sauvés : <b>" + gardes + " / " + A.D.ballons + "</b><br>" +
+      "Plus gros ballon gardé : <b>" + Math.round(plusGros) + "</b>" +
+      (rec ? "<br>🏆 <b>Nouveau record !</b>" : ""),
+      [{ t: "Rejouer", c: "btn", go: nouvelleManche }, { t: "Voir mes chiffres", c: "btn alt" }]);
+  }
+
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function majAffichage() {
+    dessiner();
+    $("cBallon").textContent = Math.min(indice + 1, A.D.ballons) + " / " + A.D.ballons;
+    $("cTaille").textContent = Math.round(taille);
+    $("cGain").textContent = A.nb(pointsPour(taille));
+    $("cScore").textContent = A.nb(score);
+    var r = A.meilleur("score");
+    $("cRecord").textContent = r != null ? A.nb(r) : "—";
+
+    /* la jauge ne montre pas le vrai seuil : juste une impression */
+    var part = Math.min(1, taille / A.D.maxi);
+    $("risque").style.width = (part * 100) + "%";
+    $("risque").style.background = part > 0.8 ? "var(--bad)" : part > 0.55 ? "#f59f00" : "var(--good)";
+    var txt = GRINCEMENTS[0][1];
+    GRINCEMENTS.forEach(function (g) { if (taille / seuil >= g[0]) txt = g[1]; });
+    $("risqueTxt").textContent = txt;
+  }
+
+  function majSerie() {
+    var h = "";
+    for (var i = 0; i < A.D.ballons; i++) {
+      var r = resultats[i];
+      var cls = !r ? "" : (r.pop ? " pop" : " ok");
+      h += '<div class="bal' + cls + '">' + (!r ? (i + 1) : (r.pop ? "💥" : A.nb(r.points))) + "</div>";
+    }
+    $("serie").innerHTML = h;
+  }
+
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Ballons gonflés", A.nb(d.ballons || 0));
+    ligne("Ballons gardés", A.nb(d.gardes || 0));
+    ligne("Explosions", A.nb(d.explosions || 0));
+    ligne("Plus gros gardé", Math.round(d.plusGros || 0));
+    ligne("Meilleure manche", A.nb(d.meilleurScore || 0) + " pts");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var s = A.meilleur("score", i), g = A.meilleur("gardes", i);
+      ligne(df.e + " " + df.n, s != null ? A.nb(s) + " pts · " + (g || 0) + " sauvés" : "jamais joué");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
+  var p = $("pompe");
+  p.addEventListener("pointerdown", function (e) { e.preventDefault(); pomper(); });
+  p.addEventListener("pointerup", function (e) { e.preventDefault(); relacher(); });
+  p.addEventListener("pointerleave", relacher);
+  p.addEventListener("pointercancel", relacher);
+  document.addEventListener("keydown", function (e) {
+    if ((e.code === "Space" || e.key === " ") && !e.repeat) { e.preventDefault(); pomper(); }
+  });
+  document.addEventListener("keyup", function (e) {
+    if (e.code === "Space" || e.key === " ") { e.preventDefault(); relacher(); }
+  });
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  nouvelleManche();
+})();
+</script>
+</body>
+</html>

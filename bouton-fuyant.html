@@ -6,153 +6,435 @@
 <title>Le Bouton Fuyant</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
+  .game { max-width: 980px; margin: 0 auto; }
+  .chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 9px; margin-bottom: 14px; }
+  .chiffre { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; text-align: center; }
+  .chiffre b { display: block; font-size: 1.4rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .chiffre small { color: var(--muted); font-size: .76rem; }
+
   .arena {
-    position: relative; height: 62vh; min-height: 380px; background: #fff; border: 2px dashed var(--line);
-    border-radius: 22px; overflow: hidden; touch-action: manipulation; user-select: none;
+    position: relative; height: 60vh; min-height: 400px; background: #fff;
+    border: 2px dashed var(--line); border-radius: 22px; overflow: hidden;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
   }
-  #runner {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    font: inherit; font-weight: 800; font-size: 1.15rem; padding: 14px 26px; border-radius: 14px;
+  .fuyant {
+    position: absolute; transform: translate(-50%, -50%);
+    font: inherit; font-weight: 800; font-size: 1.1rem; padding: 13px 24px; border-radius: 14px;
     border: none; background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap;
-    transition: left .18s ease-out, top .18s ease-out, background .3s;
+    transition: left .16s ease-out, top .16s ease-out, background .3s;
     box-shadow: 0 6px 0 #c23d1f;
   }
-  #runner:active { box-shadow: 0 2px 0 #c23d1f; }
-  .bubble {
-    position: absolute; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff;
+  .fuyant:active { box-shadow: 0 2px 0 #c23d1f; }
+  .fuyant.leurre { box-shadow: 0 6px 0 #c23d1f; }
+  .prises { position: absolute; left: 12px; top: 12px; display: flex; gap: 5px; z-index: 4; }
+  .prise { width: 16px; height: 16px; border-radius: 50%; background: #0001; }
+  .prise.on { background: var(--good); }
+  .bulle {
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%); background: var(--ink); color: var(--bg);
     padding: 8px 16px; border-radius: 999px; font-weight: 600; white-space: nowrap; max-width: 92%;
-    overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    overflow: hidden; text-overflow: ellipsis; pointer-events: none; z-index: 5;
   }
-  .stats { display: flex; gap: 14px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
-  .stat { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 18px; text-align: center; min-width: 130px; }
-  .stat b { display: block; font-size: 1.5rem; }
-  .victory { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: #fdffb6; text-align: center; padding: 20px; }
-  .victory .big { font-size: 5rem; }
+  .energie { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(340px, 80%); z-index: 4; }
+  .energie small { display: block; text-align: center; font-size: .74rem; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+  .energie i { display: block; height: 9px; border-radius: 99px; background: var(--good); transition: width .2s; }
+  .energie .fond { background: #0001; border-radius: 99px; overflow: hidden; }
+  .paf { position: absolute; font-weight: 800; font-size: 1.4rem; pointer-events: none; animation: paf .9s ease-out forwards; z-index: 6; white-space: nowrap; }
+  @keyframes paf { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -60px); } }
+
+  .fin { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column;
+         background: rgba(255,250,240,.97); text-align: center; padding: 20px; z-index: 10; overflow-y: auto; }
+  .fin.show { display: flex; }
+  html[data-theme="dark"] .fin { background: rgba(22,22,26,.97); }
+  .fin .big { font-size: 3.4rem; }
+  .fin .dedans { max-width: 560px; width: 100%; }
+  .lignes { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin: 14px 0; }
+  .lignes div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .lignes b { display: block; font-size: 1.15rem; }
+  .lignes small { color: var(--muted); font-size: .74rem; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🏃</span></div>
-<div class="wrap">
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#127939;</span></div>
+<div class="wrap game">
   <h1 class="center">Le Bouton Fuyant</h1>
-  <p class="sub center">Il suffit de cliquer sur le bouton. C'est tout. Vraiment.</p>
-  <div class="stats">
-    <div class="stat"><b id="esc">0</b>fuites</div>
-    <div class="stat"><b id="tim">0,0 s</b>temps</div>
-    <div class="stat"><b id="energy">100 %</b>énergie du bouton</div>
+  <p class="sub center">Il suffit de cliquer sur le bouton. Plusieurs fois. Il n'est pas d'accord.</p>
+
+  <div id="difficulte"></div>
+
+  <div class="chiffres">
+    <div class="chiffre"><b id="cPrises">0 / 3</b><small>captures</small></div>
+    <div class="chiffre"><b id="cTemps">0,0 s</b><small>chrono</small></div>
+    <div class="chiffre"><b id="cFuites">0</b><small>fuites</small></div>
+    <div class="chiffre"><b id="cPenal">0</b><small>leurres touch&eacute;s</small></div>
+    <div class="chiffre"><b id="cRecord">&mdash;</b><small>record (cette difficult&eacute;)</small></div>
   </div>
+
   <div class="arena" id="arena">
-    <div class="bubble" id="bubble">Essaie de m'attraper 😏</div>
-    <button id="runner">Clique-moi</button>
-    <div class="victory" id="victory">
-      <div class="big">🏆</div>
-      <h2 id="vtxt">Tu m'as eu !</h2>
-      <p id="vsub"></p>
-      <button class="btn" id="again">Recommencer</button>
+    <div class="prises" id="prises"></div>
+    <div class="bulle" id="bulle">Clique sur &laquo;&nbsp;Lancer la chasse&nbsp;&raquo;.</div>
+    <div class="energie" id="energieBox" style="display:none">
+      <small id="energieTxt">&Eacute;nergie du bouton</small>
+      <div class="fond"><i id="energie"></i></div>
+    </div>
+    <div class="fin show" id="fin">
+      <div class="dedans">
+        <div class="big" id="fEmo">&#127939;</div>
+        <h2 id="fTitre">Pr&ecirc;t&nbsp;?</h2>
+        <p id="fTexte">Choisis ta difficult&eacute; et attrape le bouton le plus vite possible.</p>
+        <div class="lignes" id="fLignes"></div>
+        <button class="btn" id="go">Lancer la chasse</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>&#129300; Comment &ccedil;a marche</h3>
+      <p style="font-size:.93rem;margin:0 0 10px">Le bouton s'enfuit d&egrave;s que le curseur s'approche, mais chaque fuite le <b>fatigue</b>. Quand son &eacute;nergie tombe &agrave; z&eacute;ro, il ne peut plus bouger&nbsp;: attrape-le. Il en faut plusieurs pour gagner, et il r&eacute;cup&egrave;re un peu entre chaque capture.</p>
+      <p style="font-size:.93rem;margin:0" id="regleDiff"></p>
+      <p style="font-size:.86rem;color:var(--muted);margin:10px 0 0">Sur &eacute;cran tactile, il esquive directement tes doigts.</p>
+    </div>
+    <div class="panel">
+      <div id="succes"></div>
+      <h3 style="margin-top:18px">&#128202; Tes chiffres</h3>
+      <div id="stats"></div>
     </div>
   </div>
 </div>
+
 <script>
 (function () {
-  var arena = document.getElementById("arena"), btn = document.getElementById("runner");
-  var bubble = document.getElementById("bubble");
-  var MAX = 30; // escapes before the button is exhausted
-  var escapes = 0, start = 0, timer = null, done = false, lastJump = 0;
-  var LINES = [
-    "Essaie de m'attraper 😏", "Trop lent !", "Raté !", "Hé hé hé", "Tu y étais presque… non.",
-    "Je suis un bouton libre !", "Tu cliques comme ma grand-mère", "Pas aujourd'hui !", "Olé ! 💃",
-    "Tu vas y passer la nuit", "Je fais du cardio", "Allez, encore un effort", "Je commence à fatiguer…",
-    "Pfiou… 😮‍💨", "Laisse-moi respirer", "Je… n'en… peux… plus…"
+  var $ = function (id) { return document.getElementById(id); };
+  var arena = $("arena");
+
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "gentil", n: "Gentil", e: "😌",
+      d: "3 captures. Il se fatigue vite et ne triche pas.",
+      prises: 3, endurance: 18, rayon: 70, saut: 210, leurres: 0, teleport: 0, repos: 0.35, mult: 1 },
+    { id: "normal", n: "Normal", e: "🎮",
+      d: "5 captures, plus d'endurance, et un leurre à partir de la 2ᵉ.",
+      prises: 5, endurance: 28, rayon: 95, saut: 250, leurres: 1, teleport: 0, repos: 0.45, mult: 1.6 },
+    { id: "sportif", n: "Sportif", e: "🔥",
+      d: "6 captures, il sent le curseur de loin, et deux leurres traînent dans l'arene.",
+      prises: 6, endurance: 42, rayon: 125, saut: 290, leurres: 2, teleport: 0, repos: 0.55, mult: 2.5 },
+    { id: "cauchemar", n: "Cauchemar", e: "💀",
+      d: "7 captures, trois leurres, et il se téléporte tout seul même si tu ne bouges pas.",
+      prises: 7, endurance: 58, rayon: 150, saut: 320, leurres: 3, teleport: 2200, repos: 0.6, mult: 4 }
   ];
 
-  function energy() { return Math.max(0, 1 - escapes / MAX); }
+  var LIGNES = [
+    "Essaie de m'attraper 😏", "Trop lent !", "Raté !", "Hé hé hé",
+    "Tu y étais presque… non.", "Je suis un bouton libre !", "Tu cliques comme ma grand-mère",
+    "Pas aujourd'hui !", "Olé ! 💃", "Tu vas y passer la nuit", "Je fais du cardio",
+    "Allez, encore un effort", "Je commence à fatiguer…", "Pfiou… 😮‍💨",
+    "Laisse-moi respirer", "Je… n'en… peux… plus…"
+  ];
+  var MOQUERIES = ["Mauvais bouton ! 😜", "C'était un leurre.", "Tu as cliqué sur mon cousin.",
+    "Celui-là est en carton.", "Ha ! Pas moi."];
 
-  function place(x, y) { btn.style.left = x + "px"; btn.style.top = y + "px"; }
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "premiere", e: "🎯", n: "Première prise", d: "Attraper le bouton une fois.", f: function (d) { return (d.prises || 0) >= 1; } },
+    { id: "chasse", e: "🏁", n: "Chasse terminée", d: "Finir une chasse complète.", f: function (d) { return (d.chasses || 0) >= 1; } },
+    { id: "propre", e: "✨", n: "Sans bavure", d: "Finir une chasse sans toucher un seul leurre.", f: function (d) { return !!d.chasseNette; } },
+    { id: "rapide30", e: "⏱️", n: "Chasseur rapide", d: "Finir une chasse en moins de 30 secondes.", f: function (d) { return (d.meilleurTemps || 9999) < 30; } },
+    { id: "rapide15", e: "⚡", n: "Éclair", d: "Finir une chasse en moins de 15 secondes.", f: function (d) { return (d.meilleurTemps || 9999) < 15; } },
+    { id: "sportif", e: "🔥", n: "Bon coureur", d: "Finir une chasse en Sportif.", f: function (d) { return !!d.finiSportif; } },
+    { id: "cauchemar", e: "💀", n: "Prédateur", d: "Finir une chasse en Cauchemar.", f: function (d) { return !!d.finiCauchemar; } },
+    { id: "dupremier", e: "🤩", n: "Du premier coup", d: "Attraper le bouton sans qu'il ait fui une seule fois.", f: function (d) { return !!d.sansFuite; } },
+    { id: "fuites500", e: "🏃", n: "Marathonien", d: "Provoquer 500 fuites en tout.", f: function (d) { return (d.fuites || 0) >= 500; } },
+    { id: "leurres", e: "🤡", n: "Crédule", d: "Toucher 20 leurres. Bravo.", f: function (d) { return (d.leurres || 0) >= 20; } },
+    { id: "prises50", e: "🧤", n: "Collectionneur", d: "Attraper le bouton 50 fois.", f: function (d) { return (d.prises || 0) >= 50; } },
+    { id: "toutes", e: "👑", n: "Chasseur complet", d: "Finir une chasse dans les quatre difficultés.",
+      f: function (d) { return d.chasseGentil && d.chasseNormal && d.finiSportif && d.finiCauchemar; } }
+  ];
 
-  function jump(px, py) {
-    var now = performance.now();
-    if (now - lastJump < 120) return;
-    lastJump = now;
-    if (!start) { start = now; timer = setInterval(tick, 100); }
-    var aw = arena.clientWidth, ah = arena.clientHeight;
-    var bw = btn.offsetWidth, bh = btn.offsetHeight;
-    var minX = bw / 2 + 10, maxX = aw - bw / 2 - 10, minY = bh / 2 + 60, maxY = ah - bh / 2 - 10;
-    var e = energy();
-    var dist = 80 + 260 * e; // jumps get shorter when tired
-    var nx, ny, tries = 0;
+  var A = Arcade.init({
+    id: "fuyant", nom: "Le Bouton Fuyant", emoji: "🏃",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { preparer(); }
+  });
+  var d = A.d;
+
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var enCours = false, prises = 0, fuites = 0, penal = 0, t0 = 0, chrono = null,
+      vrai = null, leurres = [], energie = 1, derniereFuite = 0, prochTeleport = 0, sansFuiteCeTour = true;
+
+  function nouveauBouton(leurre) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "fuyant" + (leurre ? " leurre" : "");
+    b.textContent = "Clique-moi";
+    arena.appendChild(b);
+    return b;
+  }
+  function placer(b, x, y) { b.style.left = x + "px"; b.style.top = y + "px"; }
+  function bornes(b) {
+    var l = b.offsetWidth / 2 + 12, h = b.offsetHeight / 2 + 54;
+    return { minX: l, maxX: arena.clientWidth - l, minY: h, maxY: arena.clientHeight - b.offsetHeight / 2 - 44 };
+  }
+  function placerAuHasard(b) {
+    var z = bornes(b);
+    placer(b, z.minX + Math.random() * Math.max(1, z.maxX - z.minX), z.minY + Math.random() * Math.max(1, z.maxY - z.minY));
+  }
+  function paf(txt, x, y, col) {
+    var el = document.createElement("div");
+    el.className = "paf"; el.textContent = txt;
+    el.style.left = x + "px"; el.style.top = y + "px";
+    if (col) el.style.color = col;
+    arena.appendChild(el);
+    setTimeout(function () { el.remove(); }, 900);
+  }
+  function dire(t) { $("bulle").textContent = t; }
+
+  function sauter(b, px, py, force) {
+    var D = A.D, z = bornes(b);
+    var dist = force || (90 + (D.saut - 90) * energie);
+    var nx, ny, essais = 0;
     do {
       var a = Math.random() * Math.PI * 2;
-      nx = btn.offsetLeft + Math.cos(a) * dist;
-      ny = btn.offsetTop + Math.sin(a) * dist;
-      tries++;
-    } while (tries < 30 && (nx < minX || nx > maxX || ny < minY || ny > maxY || Math.hypot(nx - px, ny - py) < 90));
-    nx = Math.min(maxX, Math.max(minX, nx));
-    ny = Math.min(maxY, Math.max(minY, ny));
-    place(nx, ny);
-    escapes++;
-    var idx = Math.min(LINES.length - 1, Math.floor((escapes / MAX) * LINES.length));
-    if (Math.random() < 0.6 || escapes > MAX * 0.7) bubble.textContent = LINES[idx];
-    btn.style.background = "hsl(" + (12 + (1 - energy()) * 200) + ",85%,55%)";
-    btn.style.transitionDuration = (0.18 + (1 - energy()) * 0.35) + "s";
-    btn.textContent = energy() <= 0 ? "Bon ok… 😵" : energy() < 0.35 ? "Pitié…" : "Clique-moi";
-    updateStats();
+      nx = b.offsetLeft + Math.cos(a) * dist;
+      ny = b.offsetTop + Math.sin(a) * dist;
+      essais++;
+    } while (essais < 30 && (nx < z.minX || nx > z.maxX || ny < z.minY || ny > z.maxY ||
+             (px != null && Math.hypot(nx - px, ny - py) < D.rayon + 30)));
+    placer(b, Math.min(z.maxX, Math.max(z.minX, nx)), Math.min(z.maxY, Math.max(z.minY, ny)));
   }
 
-  function updateStats() {
-    document.getElementById("esc").textContent = escapes;
-    document.getElementById("energy").textContent = Math.round(energy() * 100) + " %";
+  function fuir(px, py) {
+    var now = performance.now();
+    if (now - derniereFuite < 110) return;
+    derniereFuite = now;
+    sauter(vrai, px, py);
+    fuites++; sansFuiteCeTour = false;
+    d.fuites = (d.fuites || 0) + 1;
+    energie = Math.max(0, energie - 1 / A.D.endurance);
+    A.bip(300 + energie * 400, 0.05, "square", 0.03);
+
+    var idx = Math.min(LIGNES.length - 1, Math.floor((1 - energie) * LIGNES.length));
+    if (Math.random() < 0.55 || energie < 0.3) dire(LIGNES[idx]);
+    vrai.style.background = "hsl(" + (12 + (1 - energie) * 200) + ",85%,55%)";
+    vrai.style.transitionDuration = (0.16 + (1 - energie) * 0.4) + "s";
+    vrai.textContent = energie <= 0 ? "Bon ok… 😵" : energie < 0.35 ? "Pitié…" : "Clique-moi";
+    /* les leurres bougent aussi, sinon ils sont trop faciles a ecarter */
+    leurres.forEach(function (l) { if (Math.random() < 0.5) sauter(l, px, py); });
+    majChiffres();
   }
-  function elapsed() { return start ? (performance.now() - start) / 1000 : 0; }
-  function tick() { document.getElementById("tim").textContent = elapsed().toFixed(1).replace(".", ",") + " s"; }
 
   arena.addEventListener("pointermove", function (e) {
-    if (done || energy() <= 0 || e.pointerType !== "mouse") return;
+    if (!enCours || e.pointerType !== "mouse" || energie <= 0) return;
     var r = arena.getBoundingClientRect();
     var px = e.clientX - r.left, py = e.clientY - r.top;
-    var bx = btn.offsetLeft, by = btn.offsetTop;
-    var radius = 40 + 60 * energy();
-    // distance from pointer to the button rectangle
-    var dx = Math.max(Math.abs(px - bx) - btn.offsetWidth / 2, 0);
-    var dy = Math.max(Math.abs(py - by) - btn.offsetHeight / 2, 0);
-    if (Math.hypot(dx, dy) < radius) jump(px, py);
+    var dx = Math.max(Math.abs(px - vrai.offsetLeft) - vrai.offsetWidth / 2, 0);
+    var dy = Math.max(Math.abs(py - vrai.offsetTop) - vrai.offsetHeight / 2, 0);
+    if (Math.hypot(dx, dy) < A.D.rayon) fuir(px, py);
   });
 
-  // Touch screens: the button dodges the tap itself, less and less often
-  btn.addEventListener("pointerdown", function (e) {
-    btn.dataset.dodged = "";
-    if (done || e.pointerType === "mouse") return;
-    if (Math.random() < energy()) {
-      e.preventDefault();
-      var r = arena.getBoundingClientRect();
-      lastJump = 0;
-      jump(e.clientX - r.left, e.clientY - r.top);
-      btn.dataset.dodged = "1";
+  function brancher(b, estLeurre) {
+    /* ecran tactile : le bouton esquive le doigt lui-meme */
+    b.addEventListener("pointerdown", function (e) {
+      b.dataset.esquive = "";
+      if (!enCours || e.pointerType === "mouse") return;
+      if (!estLeurre && energie > 0 && Math.random() < energie) {
+        e.preventDefault();
+        var r = arena.getBoundingClientRect();
+        derniereFuite = 0;
+        fuir(e.clientX - r.left, e.clientY - r.top);
+        b.dataset.esquive = "1";
+      }
+    });
+    b.addEventListener("click", function () {
+      if (!enCours) return;
+      if (b.dataset.esquive === "1") { b.dataset.esquive = ""; return; }
+      if (estLeurre) return toucheLeurre(b);
+      attrape();
+    });
+  }
+
+  function toucheLeurre(b) {
+    penal++; d.leurres = (d.leurres || 0) + 1;
+    paf("🤡 +2 s", b.offsetLeft, b.offsetTop, "#e03131");
+    t0 -= 2000;                       /* 2 secondes de penalite */
+    dire(MOQUERIES[Math.floor(Math.random() * MOQUERIES.length)]);
+    A.bip(140, 0.18, "sawtooth", 0.05);
+    sauter(b, null, null, 260);
+    majChiffres();
+    A.check();
+  }
+
+  function attrape() {
+    prises++;
+    d.prises = (d.prises || 0) + 1;
+    if (sansFuiteCeTour) d.sansFuite = 1;
+    paf("🎯 Attrapé !", vrai.offsetLeft, vrai.offsetTop, "#1fa55b");
+    A.melodie([[660, 0.09], [880, 0.12]]);
+    majPrises(); majChiffres();
+    if (prises >= A.D.prises) return gagne();
+
+    /* il recupere un peu et repart */
+    energie = A.D.repos;
+    sansFuiteCeTour = true;
+    vrai.style.background = ""; vrai.style.transitionDuration = "";
+    vrai.textContent = "Clique-moi";
+    dire(["Bon. Une de perdue…", "Ce n'était qu'un échauffement.", "Deuxième round !",
+      "J'ai repris mon souffle.", "Tu ne m'auras pas deux fois. Enfin, si."][Math.floor(Math.random() * 5)]);
+    placerAuHasard(vrai);
+    /* un leurre de plus a chaque capture, jusqu'au maximum */
+    if (leurres.length < A.D.leurres && prises >= 1) ajouterLeurre();
+    majChiffres();
+  }
+
+  function ajouterLeurre() {
+    var l = nouveauBouton(true);
+    brancher(l, true);
+    placerAuHasard(l);
+    leurres.push(l);
+    paf("👥 un leurre !", arena.clientWidth / 2, 70, "#7048e8");
+  }
+
+  function gagne() {
+    enCours = false;
+    clearInterval(chrono);
+    var t = (performance.now() - t0) / 1000;
+    var score = Math.max(50, Math.round((180 - t) * 10 * A.D.mult)) + prises * 50;
+
+    d.chasses = (d.chasses || 0) + 1;
+    if (penal === 0) d.chasseNette = 1;
+    if (!d.meilleurTemps || t < d.meilleurTemps) d.meilleurTemps = t;
+    if (A.D.id === "gentil") d.chasseGentil = 1;
+    if (A.D.id === "normal") d.chasseNormal = 1;
+    if (A.D.id === "sportif") d.finiSportif = 1;
+    if (A.D.id === "cauchemar") d.finiCauchemar = 1;
+    var recT = A.record("temps", Math.round(t * 100) / 100, true);
+    var recS = A.record("score", score, false);
+    A.sauver(); A.check();
+
+    var titre = t < 15 ? ["⚡", "Insaisissable"] : t < 30 ? ["🏆", "Beau réflexe"] :
+                t < 60 ? ["👍", "Chasse honnête"] : ["🐢", "Ça a pris du temps"];
+    $("fEmo").textContent = titre[0];
+    $("fTitre").textContent = titre[1];
+    $("fTexte").textContent = "Tu l'as attrapé " + prises + " fois en " + t.toFixed(1).replace(".", ",") +
+      " s." + (recT ? " 🏆 Nouveau record !" : "");
+    if (recT || recS) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.2]]);
+    $("go").textContent = "Nouvelle chasse";
+    majFin({ temps: t, score: score, fuites: fuites, penal: penal, recT: recT, recS: recS });
+    $("fin").classList.add("show");
+  }
+
+  /* ------------------------------------------------------------------
+     Mise en place
+     ------------------------------------------------------------------ */
+  function preparer() {
+    clearInterval(chrono);
+    enCours = false;
+    if (vrai) vrai.remove();
+    leurres.forEach(function (l) { l.remove(); });
+    leurres = [];
+    vrai = nouveauBouton(false);
+    brancher(vrai, false);
+    placer(vrai, arena.clientWidth / 2, arena.clientHeight / 2);
+    prises = 0; fuites = 0; penal = 0; energie = 1; sansFuiteCeTour = true;
+    $("energieBox").style.display = "none";
+    majPrises(); majChiffres(); majFin();
+    $("regleDiff").textContent = A.D.e + " " + A.D.n + " : " + A.D.d;
+  }
+
+  function demarrer() {
+    preparer();
+    enCours = true;
+    t0 = performance.now();
+    prochTeleport = A.D.teleport ? t0 + A.D.teleport : Infinity;
+    $("fin").classList.remove("show");
+    $("energieBox").style.display = "block";
+    dire("Essaie de m'attraper 😏");
+    chrono = setInterval(boucle, 60);
+  }
+
+  function boucle() {
+    if (!enCours) return;
+    var now = performance.now();
+    $("cTemps").textContent = ((now - t0) / 1000).toFixed(1).replace(".", ",") + " s";
+    $("energie").style.width = Math.round(energie * 100) + "%";
+    $("energie").style.background = energie > 0.5 ? "var(--good)" : energie > 0.15 ? "#f59f00" : "var(--bad)";
+    $("energieTxt").textContent = energie <= 0 ? "Épuisé ! Attrape-le !" : "Énergie du bouton : " + Math.round(energie * 100) + " %";
+    if (now > prochTeleport && energie > 0) {
+      sauter(vrai, null, null, 200);
+      prochTeleport = now + A.D.teleport;
     }
-  });
+  }
 
-  btn.addEventListener("click", function () {
-    if (done) return;
-    if (btn.dataset.dodged === "1") { btn.dataset.dodged = ""; return; }
-    done = true;
-    clearInterval(timer);
-    tick();
-    var t = elapsed().toFixed(1).replace(".", ",");
-    document.getElementById("vtxt").textContent = escapes === 0 ? "Quoi ?! Du premier coup ?" : "Tu m'as eu !";
-    document.getElementById("vsub").textContent = "Il t'a fallu " + t + " s et le bouton s'est enfui " + escapes + " fois.";
-    document.getElementById("victory").style.display = "flex";
-  });
+  /* ------------------------------------------------------------------
+     Affichage
+     ------------------------------------------------------------------ */
+  function majPrises() {
+    var h = "";
+    for (var i = 0; i < A.D.prises; i++) h += '<div class="prise' + (i < prises ? " on" : "") + '"></div>';
+    $("prises").innerHTML = h;
+  }
+  function majChiffres() {
+    $("cPrises").textContent = prises + " / " + A.D.prises;
+    $("cFuites").textContent = A.nb(fuites);
+    $("cPenal").textContent = A.nb(penal);
+    var r = A.meilleur("temps");
+    $("cRecord").textContent = r != null ? r.toFixed(1).replace(".", ",") + " s" : "—";
+  }
+  function majFin(partie) {
+    var box = $("fLignes"); box.innerHTML = "";
+    function carte(v, l) {
+      var e = document.createElement("div");
+      var b = document.createElement("b"); b.textContent = v;
+      var s = document.createElement("small"); s.textContent = l;
+      e.appendChild(b); e.appendChild(s); box.appendChild(e);
+    }
+    if (partie) {
+      carte(partie.temps.toFixed(1).replace(".", ",") + " s", "ton temps");
+      carte(A.nb(partie.score), "points");
+      carte(A.nb(partie.fuites), "fuites provoquées");
+      carte(A.nb(partie.penal), "leurres touchés");
+    }
+    var rt = A.meilleur("temps"), rs = A.meilleur("score");
+    carte(rt != null ? rt.toFixed(1).replace(".", ",") + " s" : "—", "record en " + A.D.n);
+    carte(rs != null ? A.nb(rs) : "—", "meilleurs points");
+    carte(A.nb(d.chasses || 0), "chasses terminées");
+    majStats();
+    if (A.majSucces) A.majSucces();
+  }
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Chasses terminées", A.nb(d.chasses || 0));
+    ligne("Captures au total", A.nb(d.prises || 0));
+    ligne("Fuites provoquées", A.nb(d.fuites || 0));
+    ligne("Leurres touchés", A.nb(d.leurres || 0));
+    ligne("Meilleur temps", d.meilleurTemps ? d.meilleurTemps.toFixed(1).replace(".", ",") + " s" : "—");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var t = A.meilleur("temps", i), s = A.meilleur("score", i);
+      ligne(df.e + " " + df.n, t != null ? t.toFixed(1).replace(".", ",") + " s · " + A.nb(s || 0) + " pts" : "jamais fini");
+    });
+    $("stats").innerHTML = l.join("");
+  }
 
-  document.getElementById("again").addEventListener("click", function () {
-    escapes = 0; start = 0; done = false; clearInterval(timer);
-    document.getElementById("victory").style.display = "none";
-    btn.style.transitionDuration = ""; btn.style.background = ""; btn.textContent = "Clique-moi";
-    bubble.textContent = LINES[0];
-    place(arena.clientWidth / 2, arena.clientHeight / 2);
-    updateStats(); document.getElementById("tim").textContent = "0,0 s";
-  });
+  $("go").addEventListener("click", demarrer);
+  window.addEventListener("resize", function () { if (!enCours && vrai) placer(vrai, arena.clientWidth / 2, arena.clientHeight / 2); });
 
-  place(arena.clientWidth / 2, arena.clientHeight / 2);
-  window.addEventListener("resize", function () { if (!done) place(arena.clientWidth / 2, arena.clientHeight / 2); });
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  preparer();
 })();
 </script>
 </body>

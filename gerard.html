@@ -6,166 +6,468 @@
 <title>Gérard la plante</title>
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
+<script src="arcade.js"></script>
 <style>
-  .game { max-width: 760px; margin: 0 auto; }
-  .stage { position: relative; background: linear-gradient(#e3f6ff, #fdfbf3); border: 1px solid var(--line); border-radius: 22px; padding: 20px; text-align: center; overflow: hidden; }
-  .stage.dark { background: linear-gradient(#2c2c44, #4a4a5e); color: #fff; }
-  .plant { font-size: 7rem; line-height: 1; display: inline-block; transition: transform .3s; user-select: none; }
-  .plant.sad { transform: rotate(18deg) scale(.92); }
-  .plant.dance { animation: dance .5s ease-in-out infinite alternate; }
-  @keyframes dance { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
-  .pot { font-size: 1rem; font-weight: 800; background: #b5651d; color: #fff; display: inline-block; padding: 4px 30px; border-radius: 0 0 20px 20px; margin-top: -8px; }
-  .face { font-size: 2rem; position: absolute; left: 50%; top: 88px; transform: translateX(-50%); pointer-events: none; }
-  .bubble { background: #fff; color: #1d1d1f; border: 2px solid #1d1d1f; border-radius: 16px; padding: 10px 14px; font-weight: 600; min-height: 48px; margin: 0 auto 14px; max-width: 480px; }
-  .bubble.urgent { background: #ffe0e0; border-color: var(--bad); }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
-  @media (max-width: 600px) { .stats { grid-template-columns: 1fr 1fr; } }
-  .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; text-align: left; font-size: .85rem; font-weight: 700; color: #1d1d1f; }
-  .bar { height: 10px; background: #eee; border-radius: 99px; overflow: hidden; margin-top: 5px; position: relative; }
-  .bar i { display: block; height: 100%; border-radius: 99px; }
-  .bar.warnhigh:after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 15%; background: repeating-linear-gradient(45deg, #e0313155 0 4px, transparent 4px 8px); }
-  .actions { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  @media (max-width: 600px) { .actions { grid-template-columns: repeat(3, 1fr); } }
-  .act { font: inherit; font-weight: 700; padding: 12px 6px; border-radius: 14px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
-  .act span { display: block; font-size: 1.8rem; }
+  .game { max-width: 820px; margin: 0 auto; }
+  .stage { position: relative; background: linear-gradient(#e3f6ff, #fdfbf3); border: 1px solid var(--line); border-radius: 22px; padding: 18px; text-align: center; overflow: hidden; }
+  .stage.nuit { background: linear-gradient(#2c2c44, #4a4a5e); color: #fff; }
+  .stage.canicule { background: linear-gradient(#ffd8a8, #ffe8cc); }
+  .stage.pluie { background: linear-gradient(#bac8d3, #dfe6ec); }
+  html[data-theme="dark"] .stage { background: linear-gradient(#1c2a33, #202024); border-color: var(--line); }
+  html[data-theme="dark"] .stage.nuit { background: linear-gradient(#0e0e18, #1a1a24); }
+
+  .haut { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; font-size: .95rem; }
+  .plante { font-size: 6rem; line-height: 1; display: inline-block; transition: transform .3s; user-select: none; }
+  .plante.triste { transform: rotate(18deg) scale(.92); }
+  .plante.danse { animation: danse .5s ease-in-out infinite alternate; }
+  @keyframes danse { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+  .pot { font-size: .95rem; font-weight: 800; background: #b5651d; color: #fff; display: inline-block; padding: 4px 28px; border-radius: 0 0 20px 20px; margin-top: -6px; }
+  .bulle { background: #fff; color: #1d1d1f; border: 2px solid #1d1d1f; border-radius: 16px; padding: 10px 14px; font-weight: 600; min-height: 46px; margin: 0 auto 12px; max-width: 500px; }
+  .bulle.urgent { background: #ffe0e0; border-color: var(--bad); }
+  html[data-theme="dark"] .bulle { background: #2c2c34; color: var(--ink); border-color: #55555f; }
+  html[data-theme="dark"] .bulle.urgent { background: #5a2020; border-color: var(--bad); }
+
+  .jauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 14px 0; }
+  @media (max-width: 620px) { .jauges { grid-template-columns: 1fr 1fr; } }
+  .jauge { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 7px 10px; text-align: left; font-size: .82rem; font-weight: 700; color: var(--ink); }
+  .barre { height: 10px; background: #eee; border-radius: 99px; overflow: hidden; margin-top: 5px; position: relative; }
+  html[data-theme="dark"] .barre { background: #34343c; }
+  .barre i { display: block; height: 100%; border-radius: 99px; transition: width .2s; }
+  .barre.dangerhaut:after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 15%; background: repeating-linear-gradient(45deg, #e0313155 0 4px, transparent 4px 8px); }
+
+  .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  @media (max-width: 620px) { .actions { grid-template-columns: repeat(3, 1fr); } }
+  .act { font: inherit; font-weight: 700; font-size: .82rem; padding: 10px 4px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); cursor: pointer; color: inherit; position: relative; overflow: hidden; }
+  .act span { display: block; font-size: 1.6rem; }
   .act:hover:not(:disabled) { background: #eafbe7; }
-  .act:disabled { opacity: .4; cursor: wait; }
-  .act.wanted { border: 3px solid var(--bad); animation: pulse .6s infinite alternate; }
+  html[data-theme="dark"] .act:hover:not(:disabled) { background: #22402a; }
+  .act:disabled { opacity: .45; cursor: wait; }
+  .act.demande { border: 3px solid var(--bad); animation: pulse .6s infinite alternate; }
   @keyframes pulse { to { transform: scale(1.06); } }
-  .top { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; }
-  .over { position: absolute; inset: 0; background: rgba(255,255,255,.95); color: #1d1d1f; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 5; }
+  .act .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
+
+  .paf { position: absolute; font-weight: 800; pointer-events: none; animation: paf 1s ease-out forwards; z-index: 6; white-space: nowrap; }
+  @keyframes paf { from { opacity: 1; transform: translate(-50%,0); } to { opacity: 0; transform: translate(-50%,-55px); } }
+
+  .over { position: absolute; inset: 0; background: rgba(255,255,255,.96); color: var(--ink); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 18px; z-index: 5; overflow-y: auto; }
+  html[data-theme="dark"] .over { background: rgba(22,22,26,.96); }
   .over.show { display: flex; }
+  .over .dedans { max-width: 560px; width: 100%; }
+  .lignes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px,1fr)); gap: 8px; margin: 14px 0; }
+  .lignes div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .lignes b { display: block; font-size: 1.15rem; }
+  .lignes small { color: var(--muted); font-size: .74rem; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  h3 { margin: 0 0 12px; font-size: 1.05rem; }
+  .ligne { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🪴</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#129524;</span></div>
 <div class="wrap game">
-  <h1 class="center">Gérard, la plante dramatique</h1>
-  <p class="sub center">Gérard a besoin d'eau, de lumière, de compliments et de divertissement. Mais attention : trop d'eau et il se noie. Et il fait des caprices.</p>
+  <h1 class="center">G&eacute;rard, la plante dramatique</h1>
+  <p class="sub center">Il a besoin d'eau, de lumi&egrave;re, de compliments et d'attention. Mais trop d'eau et il se noie. Et il fait des caprices.</p>
+
+  <div id="difficulte"></div>
+
   <div class="stage" id="stage">
-    <div class="top"><span>⏱️ <span id="time">0</span> s</span><span>🏆 Record : <span id="best">0</span> s</span></div>
-    <div class="bubble" id="bubble">Bonjour. Je suis Gérard. Clique sur « Commencer » si tu es prêt·e à assumer mes besoins.</div>
-    <div class="plant" id="plant">🪴</div><br><div class="pot">GÉRARD</div>
-    <div class="stats" id="stats"></div>
+    <div class="haut">
+      <span>&#127774; Jour <b id="jour">1</b></span>
+      <span>&#9201;&#65039; <b id="temps">0</b> s</span>
+      <span>&#127942; Record <b id="record">0</b> s</span>
+    </div>
+    <div class="bulle" id="bulle">Bonjour. Je suis G&eacute;rard. Clique sur &laquo;&nbsp;Commencer&nbsp;&raquo; si tu es pr&ecirc;t&middot;e &agrave; assumer mes besoins.</div>
+    <div class="plante" id="plante">&#129524;</div><br><div class="pot">G&Eacute;RARD</div>
+    <div class="jauges" id="jauges"></div>
     <div class="actions" id="actions"></div>
-    <div class="over show" id="over"><div style="font-size:4rem" id="overEmo">🪴</div><h2 id="overTitle" style="margin:6px 0">Prêt·e ?</h2><p id="overText">Survis le plus longtemps possible.</p><button class="btn" id="startBtn">Commencer</button></div>
+
+    <div class="over show" id="over">
+      <div class="dedans">
+        <div style="font-size:3.2rem" id="overEmo">&#129524;</div>
+        <h2 id="overTitre" style="margin:6px 0">Pr&ecirc;t&middot;e&nbsp;?</h2>
+        <p id="overTexte">Survis le plus longtemps possible.</p>
+        <div class="lignes" id="overLignes"></div>
+        <button class="btn" id="startBtn">Commencer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>&#129504; Ce qu'il faut savoir</h3>
+      <p style="font-size:.93rem;margin:0 0 8px">Chaque jauge descend toute seule, de plus en plus vite. <b>Eau</b> et <b>Lumi&egrave;re</b> tuent aussi quand elles montent trop haut&nbsp;: vise le milieu.</p>
+      <p style="font-size:.93rem;margin:0 0 8px">Quand G&eacute;rard fait un <b>caprice</b>, l'action demand&eacute;e s'entoure de rouge. R&eacute;ponds &agrave; temps, sinon il boude. Et toutes les nuits, la m&eacute;t&eacute;o s'en m&ecirc;le.</p>
+      <p style="font-size:.93rem;margin:0" id="regleDiff"></p>
+    </div>
+    <div class="panel">
+      <div id="succes"></div>
+      <h3 style="margin-top:18px">&#128202; Tes chiffres</h3>
+      <div id="stats"></div>
+    </div>
   </div>
 </div>
+
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var STATS = [
-    { k: "eau", n: "💧 Eau", col: "#2b8be0", max: true },
-    { k: "soleil", n: "☀️ Lumière", col: "#f2b705", max: true },
-    { k: "ego", n: "💖 Ego", col: "#e64980" },
-    { k: "fun", n: "🎉 Moral", col: "#7950f2" }
+
+  /* ------------------------------------------------------------------
+     Besoins et actions
+     ------------------------------------------------------------------ */
+  var JAUGES = [
+    { k: "eau", n: "💧 Eau", c: "#2b8be0", haut: true },
+    { k: "soleil", n: "☀️ Lumière", c: "#f2b705", haut: true },
+    { k: "ego", n: "💖 Ego", c: "#e64980" },
+    { k: "fun", n: "🎉 Moral", c: "#7950f2" },
+    { k: "sante", n: "🌿 Santé", c: "#2f9e44", avance: true }
   ];
   var ACTIONS = [
-    { k: "eau", e: "💧", n: "Arroser", fx: { eau: 18 }, cd: 900, lines: ["Glou glou. Merci.", "Ahhh, de l'eau du robinet… comme c'est… modeste.", "Tu veux me noyer ou quoi ?"] },
-    { k: "soleil", e: "☀️", n: "Lumière", fx: { soleil: 20, eau: -5 }, cd: 900, lines: ["Je bronze.", "Ahhh, la photosynthèse.", "Je suis radieux. Littéralement."] },
-    { k: "ego", e: "💖", n: "Compliment", fx: { ego: 28 }, cd: 1100, lines: ["Oui, mes feuilles sont magnifiques. Je sais.", "Dis-le encore.", "Enfin quelqu'un qui me comprend."] },
-    { k: "fun", e: "🎵", n: "Musique", fx: { fun: 30, ego: -4 }, cd: 1200, lines: ["C'est mon morceau !", "Je danse. Enfin, je penche.", "Pas mal, mais je préfère l'opéra."] },
-    { k: "blague", e: "🤡", n: "Blague", fx: { fun: 18, ego: 8 }, cd: 1500, lines: ["Ha. Ha. Ha. (Gérard ne rit pas.)", "C'est l'histoire d'une plante… non, j'ai compris.", "Pfff. Bon, d'accord, elle était drôle."] }
+    { k: "eau", e: "💧", n: "Arroser", fx: { eau: 20 }, cd: 900,
+      lignes: ["Glou glou. Merci.", "Ahhh, de l'eau du robinet… comme c'est… modeste.", "Tu veux me noyer ou quoi ?"] },
+    { k: "soleil", e: "☀️", n: "Lumière", fx: { soleil: 22, eau: -5 }, cd: 900,
+      lignes: ["Je bronze.", "Ahhh, la photosynthèse.", "Je suis radieux. Littéralement."] },
+    { k: "ombre", e: "🌂", n: "Ombre", fx: { soleil: -22, eau: 4 }, cd: 900,
+      lignes: ["Merci, j'avais trop chaud.", "Un peu de fraîcheur.", "Mes feuilles te remercient."] },
+    { k: "ego", e: "💖", n: "Compliment", fx: { ego: 30 }, cd: 1100,
+      lignes: ["Oui, mes feuilles sont magnifiques. Je sais.", "Dis-le encore.", "Enfin quelqu'un qui me comprend."] },
+    { k: "fun", e: "🎵", n: "Musique", fx: { fun: 32, ego: -4 }, cd: 1200,
+      lignes: ["C'est mon morceau !", "Je danse. Enfin, je penche.", "Pas mal, mais je préfère l'opéra."] },
+    { k: "blague", e: "🤡", n: "Blague", fx: { fun: 20, ego: 8 }, cd: 1500,
+      lignes: ["Ha. Ha. Ha. (Gérard ne rit pas.)", "C'est l'histoire d'une plante… non, j'ai compris.", "Pfff. Bon, d'accord, elle était drôle."] },
+    { k: "traiter", e: "🧴", n: "Traiter", fx: { sante: 32, fun: -5 }, cd: 1800, avance: true,
+      lignes: ["Ça pique mais ça fait du bien.", "Adieu, pucerons.", "Je déteste ça. Continue."] },
+    { k: "rempoter", e: "🪴", n: "Rempoter", fx: { sante: 20, ego: 14, eau: -8 }, cd: 4000, avance: true,
+      lignes: ["Un pot neuf ! Je suis un autre végétal.", "Enfin de la place pour mes racines.", "C'est du terreau bio au moins ?"] }
   ];
   var CAPRICES = [
-    ["eau", "J'EXIGE DE L'EAU. MAINTENANT."], ["soleil", "Il fait trop sombre ici, j'ai peur !"],
-    ["ego", "Personne ne me dit jamais que je suis beau…"], ["fun", "Je m'ennuie à mourir. Mets de la musique !"],
-    ["blague", "Raconte-moi une blague ou je fane."]
+    ["eau", "J'EXIGE DE L'EAU. MAINTENANT."],
+    ["soleil", "Il fait trop sombre ici, j'ai peur !"],
+    ["ombre", "Trop de soleil ! Mets-moi à l'ombre !"],
+    ["ego", "Personne ne me dit jamais que je suis beau…"],
+    ["fun", "Je m'ennuie à mourir. Mets de la musique !"],
+    ["blague", "Raconte-moi une blague ou je fane."],
+    ["traiter", "ÇA GRATTE. Il y a des bêtes sur moi !"],
+    ["rempoter", "Ce pot est une insulte. Rempote-moi."]
   ];
-  var IDLE = ["Tu as vu mes feuilles aujourd'hui ?", "Le cactus d'à côté me regarde bizarrement.", "Je pense, donc je pousse.", "Parfois je rêve d'être une tulipe.", "Tu m'aimes, hein ?", "J'ai vu une araignée. On ne se parle pas."];
+  var BAVARDAGES = ["Tu as vu mes feuilles aujourd'hui ?", "Le cactus d'à côté me regarde bizarrement.",
+    "Je pense, donc je pousse.", "Parfois je rêve d'être une tulipe.", "Tu m'aimes, hein ?",
+    "J'ai vu une araignée. On ne se parle pas.", "Mon grand-père était un chêne. Enfin, il le disait.",
+    "Est-ce que les plantes rêvent ?", "J'ai poussé d'un millimètre. C'est énorme."];
 
-  var S, running = false, loop = null, best = 0, cooldown = {}, caprice = null, t0 = 0, lastIdle = 0;
-  try { best = +localStorage.getItem("gerard-best") || 0; } catch (e) {}
-  $("best").textContent = best;
+  var METEO = [
+    { id: "beau", n: "☀️ Belle journée", txt: "Une belle journée se lève.", classe: "", fx: {} },
+    { id: "canicule", n: "🔥 Canicule", txt: "Canicule ! Le soleil tape et l'eau s'évapore.", classe: "canicule", fx: { soleil: 0.9, eau: 1.8 } },
+    { id: "pluie", n: "🌧️ Pluie", txt: "Il pleut. Gratuit, mais attention à la noyade.", classe: "pluie", fx: { eau: -0.9, soleil: 1.5 } },
+    { id: "nuit", n: "🌙 Nuit blanche", txt: "Nuit sans lune. Gérard n'aime pas le noir.", classe: "nuit", fx: { soleil: 1.7, fun: 1.4 } },
+    { id: "pucerons", n: "🐛 Pucerons", txt: "Invasion de pucerons ! Traite-le vite.", classe: "", fx: { sante: 2.4 } }
+  ];
 
-  var statsBox = $("stats");
-  STATS.forEach(function (s) {
-    var d = document.createElement("div"); d.className = "stat";
-    d.innerHTML = s.n + '<div class="bar' + (s.max ? " warnhigh" : "") + '"><i style="background:' + s.col + '"></i></div>';
-    s.bar = d.querySelector("i"); statsBox.appendChild(d);
+  /* ------------------------------------------------------------------
+     Difficultes
+     ------------------------------------------------------------------ */
+  var DIFFS = [
+    { id: "facile", n: "Bouture", e: "🌱",
+      d: "4 besoins, descente lente, caprices rares. Pour apprendre à connaître Gérard.",
+      besoins: ["eau", "soleil", "ego", "fun"], vitesse: 0.75, acc: 70, caprice: 0.008, delaiCaprice: 8000,
+      jour: 35, meteo: false, mult: 1 },
+    { id: "normal", n: "Plante verte", e: "🎮",
+      d: "4 besoins, rythme normal, caprices réguliers et météo à partir du jour 2.",
+      besoins: ["eau", "soleil", "ego", "fun"], vitesse: 1.05, acc: 48, caprice: 0.013, delaiCaprice: 6500,
+      jour: 30, meteo: true, mult: 1.6 },
+    { id: "exigeant", n: "Plante rare", e: "🔥",
+      d: "5 besoins dont la santé, plus l'ombre et les traitements. Il devient vraiment pénible.",
+      besoins: ["eau", "soleil", "ego", "fun", "sante"], vitesse: 1.35, acc: 38, caprice: 0.018, delaiCaprice: 5500,
+      jour: 26, meteo: true, mult: 2.6 },
+    { id: "cauchemar", n: "Orchidée", e: "💀",
+      d: "Tout, très vite, avec des caprices permanents. Personne ne garde une orchidée en vie.",
+      besoins: ["eau", "soleil", "ego", "fun", "sante"], vitesse: 1.8, acc: 30, caprice: 0.026, delaiCaprice: 4500,
+      jour: 22, meteo: true, mult: 4 }
+  ];
+
+  /* ------------------------------------------------------------------
+     Succes
+     ------------------------------------------------------------------ */
+  var SUCCES = [
+    { id: "jour2", e: "🌱", n: "Deuxième jour", d: "Survivre jusqu'au jour 2.", f: function (d) { return (d.meilleurJour || 0) >= 2; } },
+    { id: "jour5", e: "🌿", n: "Une semaine (presque)", d: "Atteindre le jour 5.", f: function (d) { return (d.meilleurJour || 0) >= 5; } },
+    { id: "jour10", e: "🌳", n: "Main verte", d: "Atteindre le jour 10.", f: function (d) { return (d.meilleurJour || 0) >= 10; } },
+    { id: "min2", e: "⏱️", n: "Deux minutes", d: "Tenir 120 secondes.", f: function (d) { return (d.record || 0) >= 120; } },
+    { id: "min5", e: "🏆", n: "Cinq minutes", d: "Tenir 300 secondes.", f: function (d) { return (d.record || 0) >= 300; } },
+    { id: "caprices", e: "🙏", n: "Serviteur dévoué", d: "Satisfaire 50 caprices.", f: function (d) { return (d.caprices || 0) >= 50; } },
+    { id: "exigeant", e: "🔥", n: "Jardinier confirmé", d: "Tenir 60 secondes en Plante rare.", f: function (d) { return (d.recExigeant || 0) >= 60; } },
+    { id: "cauchemar", e: "💀", n: "Fleuriste", d: "Tenir 60 secondes avec l'orchidée.", f: function (d) { return (d.recCauchemar || 0) >= 60; } },
+    { id: "noyade", e: "🌊", n: "Trop d'amour", d: "Noyer Gérard.", f: function (d) { return !!d.mortNoyade; } },
+    { id: "crame", e: "🔥", n: "Bien cuit", d: "Le faire cramer au soleil.", f: function (d) { return !!d.mortSoleil; } },
+    { id: "toutesmorts", e: "☠️", n: "Collectionneur de drames", d: "Découvrir six fins différentes.", f: function (d) { return Object.keys(d.morts || {}).length >= 6; } },
+    { id: "parties", e: "🔁", n: "Persistant", d: "Adopter 25 Gérard.", f: function (d) { return (d.parties || 0) >= 25; } }
+  ];
+
+  var A = Arcade.init({
+    id: "gerard", nom: "Gérard la plante", emoji: "🪴",
+    difficultes: DIFFS, succes: SUCCES,
+    surChangement: function () { preparer(); }
   });
-  var actBox = $("actions");
-  ACTIONS.forEach(function (a) {
-    var b = document.createElement("button"); b.className = "act";
-    b.innerHTML = "<span>" + a.e + "</span>" + a.n;
-    b.addEventListener("click", function () { doAction(a); });
-    a.btn = b; actBox.appendChild(b);
-  });
-
-  function say(txt, urgent) { $("bubble").textContent = txt; $("bubble").className = "bubble" + (urgent ? " urgent" : ""); }
-  function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
-
-  function doAction(a) {
-    if (!running || cooldown[a.k] > performance.now()) return;
-    for (var k in a.fx) S[k] += a.fx[k];
-    cooldown[a.k] = performance.now() + a.cd;
-    a.btn.disabled = true;
-    setTimeout(function () { a.btn.disabled = false; }, a.cd);
-    if (caprice && caprice.k === a.k) {
-      caprice = null; S.ego += 10; say("Merci. Tu es pardonné·e. Pour l'instant.");
-    } else if (caprice) {
-      S.ego -= 5; say("Ce n'est PAS ce que j'ai demandé !", true);
-    } else say(rnd(a.lines));
-    $("plant").className = "plant" + (a.k === "fun" ? " dance" : "");
-    if (a.k === "fun") setTimeout(function () { if (running) $("plant").className = "plant"; }, 1500);
-    render();
+  var d = A.d;
+  if (d.record == null) {
+    var vieux = 0;
+    try { vieux = +localStorage.getItem("gerard-best") || 0; } catch (e) {}
+    if (vieux > 0) { d.record = vieux; A.sauver(); }
   }
 
-  function render() {
-    STATS.forEach(function (s) { s.bar.style.width = Math.max(0, Math.min(100, S[s.k])) + "%"; });
-    ACTIONS.forEach(function (a) { a.btn.classList.toggle("wanted", !!caprice && caprice.k === a.k); });
-    $("stage").classList.toggle("dark", S.soleil < 25);
-    var low = STATS.some(function (s) { return S[s.k] < 25; });
-    if ($("plant").className.indexOf("dance") === -1) $("plant").className = "plant" + (low ? " sad" : "");
+  /* ------------------------------------------------------------------
+     Partie
+     ------------------------------------------------------------------ */
+  var S = {}, enCours = false, boucle = null, refroidi = {}, caprice = null,
+      t0 = 0, dernierBavardage = 0, jour = 1, meteo = METEO[0], prochainJour = 0,
+      capricesReussis = 0;
+
+  function besoinsActifs() { return A.D.besoins; }
+  function actionsActives() {
+    return ACTIONS.filter(function (a) {
+      if (a.k === "ombre") return A.D.besoins.indexOf("soleil") !== -1;
+      if (a.avance) return A.D.besoins.indexOf("sante") !== -1;
+      return A.D.besoins.indexOf(a.k) !== -1 || a.k === "blague";
+    });
+  }
+
+  function construire() {
+    var jb = $("jauges"); jb.innerHTML = "";
+    JAUGES.forEach(function (g) {
+      if (besoinsActifs().indexOf(g.k) === -1) { g.el = null; return; }
+      var el = document.createElement("div");
+      el.className = "jauge";
+      el.innerHTML = g.n + '<div class="barre' + (g.haut ? " dangerhaut" : "") + '"><i style="background:' + g.c + '"></i></div>';
+      g.bar = el.querySelector("i"); g.el = el;
+      jb.appendChild(el);
+    });
+    var ab = $("actions"); ab.innerHTML = "";
+    actionsActives().forEach(function (a) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "act";
+      b.innerHTML = "<span>" + a.e + "</span>" + a.n + '<i class="cd"></i>';
+      b.addEventListener("click", function () { agir(a); });
+      a.btn = b; a.cdEl = b.querySelector(".cd");
+      ab.appendChild(b);
+    });
+  }
+
+  function dire(t, urgent) {
+    $("bulle").textContent = t;
+    $("bulle").className = "bulle" + (urgent ? " urgent" : "");
+  }
+  function hasard(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function paf(txt, couleur) {
+    var p = document.createElement("div");
+    p.className = "paf"; p.textContent = txt;
+    p.style.left = "50%"; p.style.top = "42%";
+    if (couleur) p.style.color = couleur;
+    $("stage").appendChild(p);
+    setTimeout(function () { p.remove(); }, 1000);
+  }
+
+  function agir(a) {
+    if (!enCours || refroidi[a.k] > performance.now()) return;
+    for (var k in a.fx) if (S[k] != null) S[k] += a.fx[k];
+    refroidi[a.k] = performance.now() + a.cd;
+    a.btn.disabled = true;
+    var debut = performance.now();
+    var iv = setInterval(function () {
+      var p = (performance.now() - debut) / a.cd;
+      a.cdEl.style.width = Math.min(100, p * 100) + "%";
+      if (p >= 1) { clearInterval(iv); a.cdEl.style.width = "0"; a.btn.disabled = false; }
+    }, 50);
+
+    if (caprice && caprice.k === a.k) {
+      caprice = null; S.ego = Math.min(100, (S.ego || 0) + 12);
+      capricesReussis++; d.caprices = (d.caprices || 0) + 1;
+      dire("Merci. Tu es pardonné·e. Pour l'instant.");
+      paf("😌 caprice satisfait", "#1fa55b");
+      A.bip(700, 0.1, "triangle", 0.04);
+    } else if (caprice) {
+      S.ego -= 6;
+      dire("Ce n'est PAS ce que j'ai demandé !", true);
+      A.bip(200, 0.12, "sawtooth", 0.04);
+    } else {
+      dire(hasard(a.lignes));
+      A.bip(480, 0.06, "sine", 0.03);
+    }
+    $("plante").className = "plante" + (a.k === "fun" ? " danse" : "");
+    if (a.k === "fun") setTimeout(function () { if (enCours) $("plante").className = "plante"; }, 1500);
+    afficher();
+  }
+
+  function afficher() {
+    JAUGES.forEach(function (g) {
+      if (!g.el) return;
+      g.bar.style.width = Math.max(0, Math.min(100, S[g.k])) + "%";
+    });
+    actionsActives().forEach(function (a) { a.btn.classList.toggle("demande", !!caprice && caprice.k === a.k); });
+    var st = $("stage");
+    st.className = "stage " + (meteo.classe || "") + (S.soleil < 25 ? " nuit" : "");
+    var bas = besoinsActifs().some(function (k) { return S[k] < 25; });
+    if ($("plante").className.indexOf("danse") === -1) $("plante").className = "plante" + (bas ? " triste" : "");
+  }
+
+  function nouveauJour() {
+    jour++;
+    $("jour").textContent = jour;
+    if (A.D.meteo) {
+      meteo = jour === 1 ? METEO[0] : hasard(METEO);
+      if (meteo.id === "pucerons" && besoinsActifs().indexOf("sante") === -1) meteo = METEO[0];
+      dire("🌅 Jour " + jour + ". " + meteo.txt, meteo.id !== "beau");
+      paf(meteo.n, "#7048e8");
+    } else {
+      paf("🌅 Jour " + jour, "#7048e8");
+    }
+    A.bip(520, 0.14, "triangle", 0.04);
   }
 
   function tick() {
     var now = performance.now(), el = (now - t0) / 1000;
-    var speed = 1 + el / 45; // gets harder
-    S.eau -= 1.1 * speed * 0.25; S.soleil -= 0.9 * speed * 0.25; S.ego -= 1.0 * speed * 0.25; S.fun -= 1.2 * speed * 0.25;
-    $("time").textContent = Math.floor(el);
+    var vitesse = A.D.vitesse * (1 + el / A.D.acc);
+    var base = { eau: 1.1, soleil: 0.95, ego: 1.0, fun: 1.2, sante: 0.55 };
+
+    besoinsActifs().forEach(function (k) {
+      var taux = base[k] * vitesse * 0.25;
+      if (meteo.fx && meteo.fx[k]) taux *= meteo.fx[k];
+      S[k] -= taux;
+    });
+    $("temps").textContent = Math.floor(el);
+
+    if (now > prochainJour) { nouveauJour(); prochainJour = now + A.D.jour * 1000; }
 
     if (caprice) {
-      var left = Math.ceil((caprice.until - now) / 1000);
-      if (left <= 0) { caprice = null; S.ego -= 25; S.fun -= 15; say("Tu m'as ignoré. Je m'en souviendrai toute ma vie.", true); }
-      else $("bubble").textContent = caprice.txt + " (" + left + " s)";
-    } else if (el > 5 && Math.random() < 0.012 * speed) {
-      var c = rnd(CAPRICES);
-      caprice = { k: c[0], txt: c[1], until: now + 6000 };
-      say(c[1], true);
-    } else if (now - lastIdle > 9000) { lastIdle = now; say(rnd(IDLE)); }
+      var reste = Math.ceil((caprice.jusqua - now) / 1000);
+      if (reste <= 0) {
+        caprice = null; S.ego -= 26; S.fun -= 16;
+        dire("Tu m'as ignoré. Je m'en souviendrai toute ma vie.", true);
+        A.bip(160, 0.25, "sawtooth", 0.05);
+      } else $("bulle").textContent = caprice.txt + " (" + reste + " s)";
+    } else if (el > 4 && Math.random() < A.D.caprice) {
+      var possibles = CAPRICES.filter(function (c) {
+        return actionsActives().some(function (a) { return a.k === c[0]; });
+      });
+      var c = hasard(possibles);
+      caprice = { k: c[0], txt: c[1], jusqua: now + A.D.delaiCaprice };
+      dire(c[1], true);
+      A.bip(300, 0.16, "square", 0.045);
+    } else if (now - dernierBavardage > 9000) {
+      dernierBavardage = now; dire(hasard(BAVARDAGES));
+    }
 
-    var dead = null;
-    if (S.eau > 100) dead = ["🌊", "Gérard s'est noyé", "Trop d'eau. Il est parti en faisant des bulles."];
-    else if (S.soleil > 100) dead = ["🔥", "Gérard a cramé", "Il voulait bronzer, pas devenir une frite."];
-    else if (S.eau <= 0) dead = ["🏜️", "Gérard est tout sec", "Il est devenu une plante séchée. Très déco, mais morte."];
-    else if (S.soleil <= 0) dead = ["🌑", "Gérard a peur du noir", "Il s'est enfui du pot pendant la nuit."];
-    else if (S.ego <= 0) dead = ["💔", "Gérard a démissionné", "Il est parti vivre chez des gens qui l'apprécient."];
-    else if (S.fun <= 0) dead = ["😴", "Gérard est mort d'ennui", "Il a fané en bâillant."];
-    render();
-    if (dead) gameOver(dead, Math.floor(el));
+    var mort = null;
+    if (S.eau > 100) mort = ["noyade", "🌊", "Gérard s'est noyé", "Trop d'eau. Il est parti en faisant des bulles."];
+    else if (S.soleil > 100) mort = ["soleil", "🔥", "Gérard a cramé", "Il voulait bronzer, pas devenir une frite."];
+    else if (S.eau <= 0) mort = ["sec", "🏜️", "Gérard est tout sec", "Une plante séchée, c'est très déco. Mais c'est mort."];
+    else if (S.soleil <= 0) mort = ["noir", "🌑", "Gérard a peur du noir", "Il s'est enfui du pot pendant la nuit."];
+    else if (S.ego <= 0) mort = ["ego", "💔", "Gérard a démissionné", "Il est parti vivre chez des gens qui l'apprécient."];
+    else if (S.fun <= 0) mort = ["ennui", "😴", "Gérard est mort d'ennui", "Il a fané en bâillant."];
+    else if (S.sante != null && S.sante <= 0) mort = ["parasites", "🐛", "Gérard a été mangé", "Les pucerons ont gagné. Ils t'envoient leurs remerciements."];
+
+    afficher();
+    if (mort) finPartie(mort, el);
   }
 
-  function gameOver(d, sec) {
-    running = false; clearInterval(loop); caprice = null;
-    ACTIONS.forEach(function (a) { a.btn.classList.remove("wanted"); });
-    var rec = sec > best;
-    if (rec) { best = sec; try { localStorage.setItem("gerard-best", best); } catch (e) {} $("best").textContent = best; }
-    $("overEmo").textContent = d[0]; $("overTitle").textContent = d[1];
-    $("overText").textContent = d[2] + " Tu as tenu " + sec + " secondes." + (rec ? " 🏆 Nouveau record !" : "");
+  function finPartie(mort, secondes) {
+    enCours = false;
+    clearInterval(boucle);
+    caprice = null;
+    actionsActives().forEach(function (a) { a.btn.classList.remove("demande"); });
+
+    var score = Math.round(secondes * 10 * A.D.mult + (jour - 1) * 150 * A.D.mult + capricesReussis * 40);
+    d.parties = (d.parties || 0) + 1;
+    d.morts = d.morts || {};
+    d.morts[mort[0]] = 1;
+    if (mort[0] === "noyade") d.mortNoyade = 1;
+    if (mort[0] === "soleil") d.mortSoleil = 1;
+    if (secondes > (d.record || 0)) d.record = secondes;
+    if (jour > (d.meilleurJour || 0)) d.meilleurJour = jour;
+    if (A.D.id === "exigeant" && secondes > (d.recExigeant || 0)) d.recExigeant = secondes;
+    if (A.D.id === "cauchemar" && secondes > (d.recCauchemar || 0)) d.recCauchemar = secondes;
+    var recT = A.record("temps", Math.round(secondes * 10) / 10, false);
+    var recS = A.record("score", score, false);
+    A.sauver(); A.check();
+
+    $("overEmo").textContent = mort[1];
+    $("overTitre").textContent = mort[2];
+    $("overTexte").textContent = mort[3] + " Tu as tenu " + Math.floor(secondes) + " secondes, jusqu'au jour " + jour + "." +
+      (recT ? " 🏆 Nouveau record !" : "");
+    if (recT) A.melodie([[660, 0.1], [880, 0.1], [1100, 0.18]]);
+    else A.bip(150, 0.3, "sawtooth", 0.05);
     $("startBtn").textContent = "Adopter un nouveau Gérard";
+    majFin({ temps: secondes, jour: jour, score: score, caprices: capricesReussis });
     $("over").classList.add("show");
   }
 
+  function preparer() {
+    clearInterval(boucle);
+    enCours = false;
+    construire();
+    S = {};
+    besoinsActifs().forEach(function (k) { S[k] = k === "sante" ? 80 : (k === "ego" || k === "fun" ? 62 : 48); });
+    jour = 1; meteo = METEO[0]; caprice = null; capricesReussis = 0;
+    $("jour").textContent = 1; $("temps").textContent = 0;
+    $("record").textContent = Math.floor(d.record || 0);
+    $("regleDiff").textContent = A.D.e + " " + A.D.n + " : " + A.D.d;
+    afficher(); majFin();
+  }
+
+  function majFin(partie) {
+    var box = $("overLignes"); box.innerHTML = "";
+    function carte(v, l) {
+      var e = document.createElement("div");
+      var b = document.createElement("b"); b.textContent = v;
+      var s = document.createElement("small"); s.textContent = l;
+      e.appendChild(b); e.appendChild(s); box.appendChild(e);
+    }
+    if (partie) {
+      carte(Math.floor(partie.temps) + " s", "cette partie");
+      carte("Jour " + partie.jour, "atteint");
+      carte(A.nb(partie.score), "points");
+      carte(A.nb(partie.caprices), "caprices satisfaits");
+    }
+    var rt = A.meilleur("temps"), rs = A.meilleur("score");
+    carte(rt != null ? Math.floor(rt) + " s" : "—", "record en " + A.D.n);
+    carte(rs != null ? A.nb(rs) : "—", "meilleurs points");
+    carte(A.nb(d.parties || 0), "Gérard adoptés");
+    majStats();
+    if (A.majSucces) A.majSucces();
+  }
+
+  function majStats() {
+    var l = [];
+    function ligne(k, v) { l.push('<div class="ligne"><span>' + k + "</span><b>" + v + "</b></div>"); }
+    ligne("Gérard adoptés", A.nb(d.parties || 0));
+    ligne("Meilleur temps", d.record ? Math.floor(d.record) + " s" : "—");
+    ligne("Meilleur jour", A.nb(d.meilleurJour || 0));
+    ligne("Caprices satisfaits", A.nb(d.caprices || 0));
+    ligne("Fins découvertes", Object.keys(d.morts || {}).length + " / 7");
+    l.push('<div style="margin-top:10px;font-weight:700">Records par difficulté</div>');
+    DIFFS.forEach(function (df, i) {
+      var t = A.meilleur("temps", i), s = A.meilleur("score", i);
+      ligne(df.e + " " + df.n, t != null ? Math.floor(t) + " s · " + A.nb(s || 0) + " pts" : "jamais joué");
+    });
+    $("stats").innerHTML = l.join("");
+  }
+
   $("startBtn").addEventListener("click", function () {
-    S = { eau: 45, soleil: 45, ego: 60, fun: 60 };
-    cooldown = {}; caprice = null; running = true; t0 = performance.now(); lastIdle = t0;
-    ACTIONS.forEach(function (a) { a.btn.disabled = false; });
+    preparer();
+    refroidi = {}; enCours = true;
+    t0 = performance.now(); dernierBavardage = t0;
+    prochainJour = t0 + A.D.jour * 1000;
+    actionsActives().forEach(function (a) { a.btn.disabled = false; a.cdEl.style.width = "0"; });
     $("over").classList.remove("show");
-    say("C'est parti. Ne me déçois pas.");
-    render();
-    clearInterval(loop); loop = setInterval(tick, 250);
+    dire("C'est parti. Ne me déçois pas.");
+    afficher();
+    clearInterval(boucle);
+    boucle = setInterval(tick, 250);
   });
+
+  A.barreDifficulte("difficulte");
+  A.panneauSucces("succes");
+  preparer();
 })();
 </script>
 </body>
