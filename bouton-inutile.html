@@ -10,181 +10,1368 @@
   body { transition: background .6s; }
   body.disco { animation: disco 2s linear infinite; }
   @keyframes disco { 0% { background: #ffd6a5; } 25% { background: #caffbf; } 50% { background: #9bf6ff; } 75% { background: #ffc6ff; } 100% { background: #ffd6a5; } }
-  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
-  @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
-  .main { text-align: center; }
-  .count { font-size: clamp(2.5rem, 9vw, 4.5rem); font-weight: 800; line-height: 1; }
-  .rate { color: var(--muted); margin: 6px 0 20px; min-height: 1.5em; }
-  .bigbtn-wrap { position: relative; height: 300px; display: flex; align-items: center; justify-content: center; }
+  .hide { display: none !important; }
+
+  .layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr) minmax(300px,340px); gap: 20px; align-items: start; }
+  @media (max-width: 1150px) {
+    .layout { grid-template-columns: minmax(0,1fr) minmax(300px,340px); }
+    .colMain { grid-column: 1; grid-row: 1; }
+    .colShop { grid-column: 2; grid-row: 1; }
+    .colTabs { grid-column: 1 / -1; grid-row: 2; }
+  }
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+    .colMain, .colShop, .colTabs { grid-column: auto; grid-row: auto; }
+    .colMain { order: 0; } .colShop { order: 1; } .colTabs { order: 2; }
+    .colMain { position: static; }
+  }
+
+  /* ---------- Colonne du bouton ---------- */
+  .colMain { text-align: center; position: sticky; top: 12px; }
+  .count { font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 800; line-height: 1.05; word-break: break-word; }
+  .count small { display: block; font-size: .8rem; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .rate { color: var(--muted); margin: 8px 0 2px; min-height: 1.4em; font-weight: 700; }
+  .perclic { color: var(--muted); font-size: .88rem; margin-bottom: 8px; }
+  .buffs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 28px; }
+  .buff { font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #fdffb6; border: 1px solid #e0d96a; color: #4a4410; }
+  .buff.bad { background: #ffd6d6; border-color: #e09a9a; color: #6b1a1a; }
+
+  .bigbtn-wrap { position: relative; height: 290px; display: flex; align-items: center; justify-content: center; }
   #big {
     width: 200px; height: 200px; border-radius: 50%; border: none; cursor: pointer;
     background: radial-gradient(circle at 35% 30%, #ff8a8a, #e03131 60%, #a51d1d);
-    box-shadow: 0 12px 0 #7a1414, 0 18px 30px rgba(0,0,0,.25); color: #fff; font: inherit; font-weight: 800; font-size: 1.2rem;
-    transition: transform .06s, box-shadow .06s, width .4s, height .4s; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    box-shadow: 0 12px 0 #7a1414, 0 18px 30px rgba(0,0,0,.25); color: #fff; font: inherit; font-weight: 800; font-size: 1.15rem;
+    transition: transform .06s, box-shadow .06s, width .4s, height .4s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
   }
-  #big:active { transform: translateY(8px); box-shadow: 0 4px 0 #7a1414, 0 8px 14px rgba(0,0,0,.25); }
-  #big.huge { width: 260px; height: 260px; }
-  .float { position: absolute; font-weight: 800; pointer-events: none; animation: up .9s ease-out forwards; font-size: 1.3rem; }
-  @keyframes up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-80px); } }
-  .message { min-height: 3em; font-size: 1.15rem; font-weight: 600; margin-top: 10px; padding: 0 10px; }
-  .shop h3, .ach h3 { margin: 0 0 12px; }
-  .up { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 10px; background: #fff; cursor: pointer; width: 100%; text-align: left; font: inherit; color: inherit; }
+  #big:active { transform: translateY(8px) scale(.97); box-shadow: 0 4px 0 #7a1414, 0 8px 14px rgba(0,0,0,.25); }
+  #big.t1 { width: 232px; height: 232px; }
+  #big.t2 { width: 258px; height: 258px; background: radial-gradient(circle at 35% 30%, #ffd06a, #f08c00 60%, #9c5a00); box-shadow: 0 12px 0 #7a4600, 0 18px 30px rgba(0,0,0,.25); }
+  #big.t3 { width: 262px; height: 262px; background: radial-gradient(circle at 35% 30%, #c3a6ff, #7048e8 60%, #3b2585); box-shadow: 0 12px 0 #2c1a63, 0 18px 34px rgba(0,0,0,.3); }
+  .float { position: absolute; font-weight: 800; pointer-events: none; animation: up .9s ease-out forwards; font-size: 1.2rem; white-space: nowrap; }
+  .float.crit { font-size: 1.7rem; animation: up 1.2s ease-out forwards; }
+  @keyframes up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-90px); } }
+  .message { min-height: 3.2em; font-size: 1.02rem; font-weight: 600; padding: 0 6px; }
+  .soundbtn { font: inherit; font-size: .82rem; font-weight: 700; cursor: pointer; padding: 5px 13px; border-radius: 999px;
+              background: var(--card); border: 1px solid var(--line); color: inherit; }
+  .soundbtn:hover { background: #f3efe6; }
+  .soundbtn.off { opacity: .65; }
+  .ticker { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px; font-size: .86rem; color: var(--muted); font-style: italic; min-height: 3em; }
+
+  /* ---------- Onglets ---------- */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .tab { font: inherit; font-weight: 700; font-size: .86rem; cursor: pointer; padding: 8px 13px; border-radius: 999px;
+         background: var(--card); border: 1px solid var(--line); color: inherit; }
+  .tab:hover { background: #f3efe6; }
+  .tab.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pane { display: none; }
+  .pane.on { display: block; }
+  .paneHead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 12px; }
+  .paneHead h3 { margin: 0; font-size: 1.08rem; }
+  .paneHead span { color: var(--muted); font-size: .84rem; }
+
+  /* ---------- Listes achetables ---------- */
+  .up { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 12px; border: 1px solid var(--line);
+        margin-bottom: 8px; background: #fff; cursor: pointer; width: 100%; text-align: left; font: inherit; color: inherit; }
   .up:hover:not(:disabled) { background: #f7f3ea; }
   .up:disabled { opacity: .45; cursor: not-allowed; }
-  .up .e { font-size: 1.8rem; }
-  .up .t { flex: 1; }
+  .up.can { border-color: #8fd6a8; box-shadow: inset 3px 0 0 var(--good); }
+  .up .e { font-size: 1.65rem; line-height: 1; width: 1.6em; text-align: center; flex: none; }
+  .up .t { flex: 1; min-width: 0; }
   .up .t b { display: block; }
-  .up .t small { color: var(--muted); }
-  .up .c { font-weight: 700; white-space: nowrap; }
-  .ach { margin-top: 20px; }
-  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
-  .badge { font-size: 1.6rem; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: #eee; border-radius: 12px; filter: grayscale(1); opacity: .35; }
+  .up .t small { color: var(--muted); display: block; }
+  .up .c { font-weight: 700; white-space: nowrap; text-align: right; font-size: .88rem; }
+  .up .c i { display: block; font-style: normal; font-weight: 600; font-size: .76rem; color: var(--muted); }
+  .empty { color: var(--muted); font-size: .9rem; padding: 6px 2px 10px; }
+
+  .shopHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 6px; flex-wrap: wrap; }
+  .shopHead h3 { margin: 0; font-size: 1.08rem; }
+  .amt { display: flex; gap: 4px; }
+  .amt button { font: inherit; font-size: .78rem; font-weight: 700; padding: 5px 9px; border-radius: 8px; border: 1px solid var(--line);
+                background: var(--card); color: inherit; cursor: pointer; }
+  .amt button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .amt button.sell.on { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .shopNote { font-size: .78rem; color: var(--muted); margin: 0 0 12px; }
+
+  /* ---------- Succes ---------- */
+  .badges { display: flex; flex-wrap: wrap; gap: 7px; }
+  .badge { font-size: 1.45rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+           background: #eee; border-radius: 12px; filter: grayscale(1); opacity: .35; cursor: help; }
   .badge.on { filter: none; opacity: 1; background: #fdffb6; }
-  .reset { margin-top: 14px; font-size: .85rem; }
+  .pbar { height: 9px; border-radius: 999px; background: #eee; overflow: hidden; margin: 4px 0 14px; }
+  .pbar i { display: block; height: 100%; background: var(--good); width: 0; transition: width .4s; }
+
+  /* ---------- Stats ---------- */
+  .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 9px; }
+  .stat { border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; background: #fff; }
+  .stat b { display: block; font-size: 1rem; word-break: break-word; }
+  .stat small { color: var(--muted); }
+
+  /* ---------- Sauvegarde ---------- */
+  .saverow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .savebox { width: 100%; min-height: 110px; font-family: ui-monospace, Consolas, monospace; font-size: .72rem;
+             border-radius: 12px; border: 1px solid var(--line); padding: 10px; resize: vertical; background: #fff; color: inherit; }
+  .note { font-size: .85rem; color: var(--muted); }
+  .note code { background: #f0ece2; padding: 1px 5px; border-radius: 5px; }
+  .flash { margin-top: 10px; font-weight: 700; min-height: 1.4em; }
+  .flash.ok { color: var(--good); } .flash.ko { color: var(--bad); }
+
+  /* ---------- Bouton dore ---------- */
+  #gold { position: fixed; z-index: 900; width: 84px; height: 84px; border: none; border-radius: 50%; cursor: pointer; padding: 0;
+          background: radial-gradient(circle at 34% 28%, #fff6c9, #ffd43b 55%, #c98a00);
+          box-shadow: 0 0 0 4px rgba(255,212,59,.35), 0 10px 26px rgba(0,0,0,.3); font-size: 2.1rem; line-height: 84px;
+          animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.13); } }
+
+  /* ---------- Fenetres / toasts ---------- */
+  .over { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--card); color: var(--ink); border-radius: 18px; padding: 26px; max-width: 470px; width: 100%; text-align: center;
+           box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .modal h2 { margin: 0 0 10px; }
+  .modal p { margin: 0 0 16px; }
+  .modal .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .toasts { position: fixed; left: 16px; bottom: 16px; z-index: 1100; display: flex; flex-direction: column; gap: 8px; max-width: 290px; }
+  .toast { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px; font-size: .88rem;
+           box-shadow: 0 8px 24px rgba(0,0,0,.18); animation: tin .3s ease-out; }
+  .toast b { display: block; }
+  @keyframes tin { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- Mode sombre ---------- */
+  html[data-theme="dark"] .tab:hover { background: #2c2c34; }
+  html[data-theme="dark"] .pbar { background: #34343c; }
+  html[data-theme="dark"] .amt button { background: var(--card); color: var(--ink); }
+  html[data-theme="dark"] .savebox { background: var(--card); color: var(--ink); }
+  html[data-theme="dark"] .note code { background: #34343c; }
+  html[data-theme="dark"] .buff { background: #55541f; border-color: #8a8730; color: #fdffb6; }
+  html[data-theme="dark"] .buff.bad { background: #5a2020; border-color: #8a3030; color: #ffc9c9; }
+  html[data-theme="dark"] .soundbtn:hover { background: #2c2c34; }
 </style>
 </head>
 <body>
-<div class="topbar"><a class="back" href="index.html">← Tous les jeux</a><span class="logo">🔴</span></div>
+<div class="topbar"><a class="back" href="index.html">&larr; Tous les jeux</a><span class="logo">&#128308;</span></div>
 <div class="wrap">
   <h1 class="center">Le Bouton Inutile</h1>
-  <p class="sub center">Ce bouton ne fait rien. Absolument rien. Enfin… presque.</p>
+  <p class="sub center">Ce bouton ne sert toujours &agrave; rien. Mais d&eacute;sormais il ne sert &agrave; rien <b>&agrave; l'&eacute;chelle industrielle</b>.</p>
+
   <div class="layout">
-    <div class="panel main">
-      <div class="count" id="count">0</div>
-      <div class="rate" id="rate">clics</div>
-      <div class="bigbtn-wrap" id="wrap"><button id="big">NE PAS<br>APPUYER</button></div>
+
+    <div class="panel colMain">
+      <div class="count"><span id="countVal">0</span><small>clics inutiles</small></div>
+      <div class="rate" id="rate">0 par seconde</div>
+      <div class="perclic" id="perclic">1 par clic</div>
+      <div class="buffs" id="buffs"></div>
+      <div class="bigbtn-wrap" id="wrap"><button id="big" type="button">NE PAS<br>APPUYER</button></div>
       <div class="message" id="message">Vas-y. Clique. Tu sais que tu en as envie.</div>
+      <button class="soundbtn" id="sound" type="button">&#128266; Son activ&eacute;</button>
+      <div class="ticker" id="ticker"></div>
     </div>
-    <div>
-      <div class="panel shop"><h3>🛒 Boutique inutile</h3><div id="shop"></div></div>
-      <div class="panel ach"><h3>🏅 Succès</h3><div class="badges" id="badges"></div>
-        <button class="btn alt reset" id="reset">Tout effacer</button></div>
+
+    <div class="colTabs">
+      <div class="tabs">
+        <button class="tab on" type="button" data-p="upg">&#10024; Am&eacute;liorations <span id="upgDot"></span></button>
+        <button class="tab" type="button" data-p="ach">&#127941; Succ&egrave;s</button>
+        <button class="tab" type="button" data-p="pres">&#127754; Prestige</button>
+        <button class="tab" type="button" data-p="stats">&#128202; Stats</button>
+        <button class="tab" type="button" data-p="save">&#128190; Sauvegarde</button>
+      </div>
+
+      <div class="panel">
+        <div class="pane on" id="pane-upg">
+          <div class="paneHead"><h3>&#10024; Am&eacute;liorations disponibles</h3><span id="upgCount"></span></div>
+          <div id="upgList"></div>
+          <div class="paneHead" style="margin-top:18px"><h3>&#128230; D&eacute;j&agrave; achet&eacute;es</h3><span id="ownedCount"></span></div>
+          <div class="badges" id="upgOwned"></div>
+        </div>
+
+        <div class="pane" id="pane-ach">
+          <div class="paneHead"><h3>&#127941; Succ&egrave;s</h3><span id="achCount"></span></div>
+          <div class="pbar"><i id="achBar"></i></div>
+          <p class="note" id="achNote"></p>
+          <div class="badges" id="badges"></div>
+        </div>
+
+        <div class="pane" id="pane-pres">
+          <div class="paneHead"><h3>&#127754; Prestige</h3><span>La remise &agrave; z&eacute;ro qui rapporte</span></div>
+          <p class="note">Tout recommencer efface tes clics, tes b&acirc;timents et tes am&eacute;liorations&nbsp;: tu gardes les succ&egrave;s, les pouets et les h&eacute;ritages. Chaque <b>pouet</b> donne un bonus permanent de production.</p>
+          <div class="statgrid" style="margin:12px 0 14px">
+            <div class="stat"><b id="pPouets">0</b><small>pouets en banque</small></div>
+            <div class="stat"><b id="pGain">0</b><small>pouets si tu recommences</small></div>
+            <div class="stat"><b id="pBonus">+0 %</b><small>bonus de production actuel</small></div>
+            <div class="stat"><b id="pNext">-</b><small>total requis pour le pouet suivant</small></div>
+          </div>
+          <button class="btn" id="doPrestige" type="button">&#127754; Tout recommencer</button>
+          <div class="paneHead" style="margin-top:20px"><h3>&#129528; H&eacute;ritages</h3><span>pay&eacute;s en pouets</span></div>
+          <div id="herList"></div>
+        </div>
+
+        <div class="pane" id="pane-stats">
+          <div class="paneHead"><h3>&#128202; Statistiques</h3><span id="statVersion"></span></div>
+          <div class="statgrid" id="statGrid"></div>
+          <div class="paneHead" style="margin-top:18px"><h3>&#127981; Production par b&acirc;timent</h3><span>part du total</span></div>
+          <div id="prodList"></div>
+        </div>
+
+        <div class="pane" id="pane-save">
+          <div class="paneHead"><h3>&#128190; Sauvegarder / charger</h3><span id="lastSave"></span></div>
+          <p class="note">La partie est sauvegard&eacute;e automatiquement toutes les 5&nbsp;minutes dans ce navigateur, ainsi qu'au moment o&ugrave; tu fermes ou quittes la page. Pour la garder ailleurs (ou la transf&eacute;rer), exporte un fichier <code>.pouet</code>.</p>
+          <div class="saverow">
+            <button class="btn" id="btnExport" type="button">&#11015;&#65039; Exporter un fichier</button>
+            <button class="btn alt" id="btnImport" type="button">&#128193; Charger un fichier</button>
+            <button class="btn alt" id="btnCopy" type="button">&#128203; Copier le code</button>
+            <button class="btn alt" id="btnPaste" type="button">&#128229; Charger le code coll&eacute;</button>
+          </div>
+          <input type="file" id="fileIn" accept=".pouet,.txt,text/plain" class="hide">
+          <textarea class="savebox" id="saveBox" spellcheck="false" placeholder="Colle ici un code de sauvegarde, puis clique sur &laquo; Charger le code coll&eacute; &raquo;."></textarea>
+          <div class="flash" id="saveFlash"></div>
+          <p class="note" style="margin-top:14px">&#128274; <b>Anti-triche&nbsp;:</b> le fichier est brouill&eacute; puis <b>sign&eacute;</b>. Si une seule lettre change, la signature ne correspond plus et la sauvegarde est refus&eacute;e. Les valeurs sont aussi recalcul&eacute;es et v&eacute;rifi&eacute;es au chargement (pouets, b&acirc;timents, am&eacute;liorations). Bref&nbsp;: ouvrir le fichier dans un bloc-notes pour se mettre 10&nbsp;milliards de clics, &ccedil;a ne marche pas.</p>
+          <div class="saverow" style="margin-top:14px">
+            <button class="btn alt" id="btnWipe" type="button">&#128465;&#65039; Effacer la partie</button>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div class="colShop">
+      <div class="panel">
+        <div class="shopHead">
+          <h3>&#128722; B&acirc;timents</h3>
+          <div class="amt" id="amtBox">
+            <button type="button" data-a="1" class="on">&times;1</button>
+            <button type="button" data-a="10">&times;10</button>
+            <button type="button" data-a="100">&times;100</button>
+            <button type="button" data-a="max">max</button>
+            <button type="button" data-a="sell" class="sell">vendre</button>
+          </div>
+        </div>
+        <p class="shopNote" id="shopNote">Chaque achat rench&eacute;rit de 15 %. La revente rembourse 25 %.</p>
+        <div id="shop"></div>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<div class="toasts" id="toasts"></div>
+<button id="gold" type="button" class="hide" title="Vite !">&#129680;</button>
+
 <script>
 (function () {
-  var S = { clicks: 0, total: 0, perClick: 1, auto: 0, owned: {}, ach: {}, sound: false };
-  var KEY = "bouton-inutile-v1";
-  try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && typeof saved.clicks === "number") S = Object.assign(S, saved); } catch (e) {}
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  "use strict";
 
-  var UPGRADES = [
-    { id: "doigt", e: "👆", n: "Doigt musclé", d: "+1 par clic", base: 15, rep: true, buy: function () { S.perClick += 1; } },
-    { id: "chat", e: "🐈", n: "Chat qui marche sur le clavier", d: "+1 clic / seconde", base: 50, rep: true, buy: function () { S.auto += 1; } },
-    { id: "son", e: "🔊", n: "Son de pouet", d: "Le bouton fait pouet", base: 100, rep: false, buy: function () { S.sound = true; } },
-    { id: "mamie", e: "👵", n: "Mamie cliqueuse", d: "+10 clics / seconde", base: 600, rep: true, buy: function () { S.auto += 10; } },
-    { id: "gros", e: "🎈", n: "Bouton plus gros", d: "Il est plus gros. C'est tout.", base: 1000, rep: false, buy: function () {} },
-    { id: "disco", e: "🪩", n: "Mode disco", d: "Parce que pourquoi pas", base: 5000, rep: false, buy: function () {} },
-    { id: "usine", e: "🏭", n: "Usine à clics", d: "+100 clics / seconde", base: 8000, rep: true, buy: function () { S.auto += 100; } },
-    { id: "robot", e: "🤖", n: "IA de clic", d: "+1 000 clics / seconde", base: 100000, rep: true, buy: function () { S.auto += 1000; } }
-  ];
-  var MESSAGES = [
-    [1, "Bon. Tu as cliqué. Satisfait ?"], [10, "Il ne se passe toujours rien, tu sais."],
-    [25, "Tu as sûrement mieux à faire."], [50, "Ta productivité pleure en silence."],
-    [100, "100 clics. Ta souris te déteste."], [250, "On pourrait appeler ça une addiction."],
-    [500, "Tu as vu la boutique ? Elle est aussi inutile que le reste."], [1000, "1 000 ! Tu mérites une médaille (en chocolat imaginaire)."],
-    [2500, "Tes ancêtres seraient… perplexes."], [5000, "Ce bouton est désormais ton meilleur ami."],
-    [10000, "10 000 clics. Tu pourrais avoir appris l'espagnol."], [50000, "Le bouton commence à te respecter."],
-    [100000, "100 000. Le bouton te craint."], [1000000, "UN MILLION. Tu as gagné… rien. Félicitations !"]
-  ];
-  var ACH = [
-    ["🐣", "Premier clic", function () { return S.total >= 1; }], ["🔟", "10 clics", function () { return S.total >= 10; }],
-    ["💯", "100 clics", function () { return S.total >= 100; }], ["🛍️", "Premier achat", function () { return Object.keys(S.owned).length > 0; }],
-    ["🐈", "3 chats", function () { return (S.owned.chat || 0) >= 3; }], ["🔊", "Pouet", function () { return !!S.owned.son; }],
-    ["🪩", "Disco", function () { return !!S.owned.disco; }], ["🥉", "1 000 clics", function () { return S.total >= 1000; }],
-    ["🥈", "10 000 clics", function () { return S.total >= 10000; }], ["🥇", "100 000 clics", function () { return S.total >= 100000; }],
-    ["👑", "Un million", function () { return S.total >= 1000000; }]
-  ];
+  /* ============================================================
+     0. Petits outils
+     ============================================================ */
+  var $ = function (id) { return document.getElementById(id); };
+  var N0 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+  var N1 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+  var N3 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 });
+  var SCALE = ["million", "milliard", "billion", "billiard", "trillion", "trilliard", "quadrillion",
+    "quadrilliard", "quintillion", "quintilliard", "sextillion", "sextilliard", "septillion",
+    "septilliard", "octillion", "octilliard", "nonillion", "nonilliard", "décillion", "décilliard"];
 
-  var fmt = new Intl.NumberFormat("fr-FR");
-  function cost(u) { return u.rep ? Math.floor(u.base * Math.pow(1.15, S.owned[u.id] || 0)) : u.base; }
+  function fmt(n) {
+    if (!isFinite(n)) return "∞";
+    if (n < 0) n = 0;
+    if (n < 1000) return N1.format(Math.floor(n * 10) / 10);
+    if (n < 1e6) return N0.format(Math.floor(n));
+    var g = Math.floor(Math.log10(n) / 3), i = g - 2;
+    if (i < 0) return N0.format(Math.floor(n));
+    if (i >= SCALE.length) return n.toExponential(3).replace(".", ",");
+    var m = n / Math.pow(10, g * 3);
+    return N3.format(Math.floor(m * 1000) / 1000) + " " + SCALE[i] + (m >= 2 ? "s" : "");
+  }
+  /* fmt() garde une decimale sous 1000 (pratique pour les prix et les debits).
+     fmtEnt() ne montre que des entiers : le compteur principal saute de +1 en
+     +1 au lieu de grignoter des dixiemes, ce qui est plus lisible. */
+  function fmtEnt(n) {
+    if (!isFinite(n)) return "∞";
+    if (n < 0) n = 0;
+    if (n < 1e6) return N0.format(Math.floor(n));
+    return fmt(n);
+  }
+  function fmtTime(s) {
+    s = Math.floor(s);
+    if (s < 60) return s + " s";
+    if (s < 3600) return Math.floor(s / 60) + " min " + (s % 60) + " s";
+    if (s < 86400) return Math.floor(s / 3600) + " h " + Math.floor((s % 3600) / 60) + " min";
+    return Math.floor(s / 86400) + " j " + Math.floor((s % 86400) / 3600) + " h";
+  }
 
-  var shop = document.getElementById("shop");
-  UPGRADES.forEach(function (u) {
-    var b = document.createElement("button");
-    b.className = "up";
-    b.innerHTML = '<span class="e">' + u.e + '</span><span class="t"><b></b><small>' + u.d + '</small></span><span class="c"></span>';
-    u.nameEl = b.querySelector("b"); u.costEl = b.querySelector(".c");
-    b.addEventListener("click", function () {
-      var c = cost(u);
-      if (S.clicks < c || (!u.rep && S.owned[u.id])) return;
-      S.clicks -= c; S.owned[u.id] = (S.owned[u.id] || 0) + 1; u.buy();
-      save(); render();
-    });
-    u.el = b; shop.appendChild(b);
+  /* ============================================================
+     1. Contenu du jeu
+     ============================================================ */
+  var BUILD = [
+    { id: "doigt",     e: "👆", n: "Doigt supplémentaire",       cost: 15,     cps: 0.1,
+      t: ["Manucure de compétition", "Doigt bionique", "Triple articulation", "Doigt en titane", "Doigt divin"] },
+    { id: "chat",      e: "🐈", n: "Chat sur le clavier",             cost: 100,    cps: 1,
+      t: ["Croquettes premium", "Chat à six pattes", "Colonie de chats", "Chat quantique", "Chat éternel"] },
+    { id: "mamie",     e: "👵", n: "Mamie cliqueuse",                 cost: 1100,   cps: 8,
+      t: ["Tricot accéléré", "Dentier turbo", "Club des mamies", "Mamie nucléaire", "Mamie immortelle"] },
+    { id: "souris",    e: "🖱️", n: "Souris mécanique",     cost: 12000,  cps: 47,
+      t: ["Switches bruyants", "Double clic automatique", "Souris sans fil", "Souris à douze boutons", "Souris plasma"] },
+    { id: "stagiaire", e: "🧑‍💻", n: "Stagiaire non payé", cost: 130000, cps: 260,
+      t: ["Café illimité", "Contrat de six mois", "Open space", "Stagiaire manager", "Stagiaire actionnaire"] },
+    { id: "usine",     e: "🏭", n: "Usine à clics",              cost: 1.4e6,  cps: 1400,
+      t: ["Chaîne de montage", "Équipe de nuit", "Délocalisation", "Usine automatisée", "Usine orbitale"] },
+    { id: "banque",    e: "🏦", n: "Banque de clics",                 cost: 2e7,    cps: 7800,
+      t: ["Intérêts composés", "Paradis fiscal", "Clic-crypto", "Banque centrale", "Banque galactique"] },
+    { id: "temple",    e: "🛕", n: "Temple du Bouton",                cost: 3.3e8,  cps: 44000,
+      t: ["Encens au pouet", "Moines cliqueurs", "Grand pèlerinage", "Dogme du clic", "Panthéon"] },
+    { id: "sorcier",   e: "🧙", n: "Sorcier du clic",                 cost: 5.1e9,  cps: 260000,
+      t: ["Baguette ergonomique", "Grimoire de macros", "Familier cliqueur", "École de magie", "Magie interdite"] },
+    { id: "fusee",     e: "🚀", n: "Fusée cliqueuse",            cost: 7.5e10, cps: 1.6e6,
+      t: ["Carburant bio", "Étage supplémentaire", "Flotte de fusées", "Colonie martienne", "Voile solaire"] },
+    { id: "labo",      e: "⚗️", n: "Transmutateur de clics",          cost: 1e12,   cps: 1e7,
+      t: ["Catalyseur", "Pierre philoclic", "Réaction en chaîne", "Alchimie quantique", "Transmutation pure"] },
+    { id: "portail",   e: "🌀", n: "Portail à pouces",           cost: 1.4e13, cps: 6.5e7,
+      t: ["Portail stabilisé", "Double portail", "Réseau de portails", "Portail permanent", "Portail multiversel"] },
+    { id: "temps",     e: "⏳", n: "Machine à remonter le clic",       cost: 1.7e14, cps: 4.3e8,
+      t: ["Condensateur temporel", "Boucle courte", "Paradoxe utile", "Ligne temporelle bis", "Éternité"] },
+    { id: "adn",       e: "🧬", n: "Condensateur d'ADN",              cost: 2.1e15, cps: 2.9e9,
+      t: ["Gène du clic", "Clonage express", "Évolution forcée", "ADN synthétique", "Espèce cliqueuse"] },
+    { id: "trou",      e: "🕳️", n: "Trou noir à clics",    cost: 2.6e16, cps: 2.1e10,
+      t: ["Disque d'accrétion", "Horizon élargi", "Singularité", "Trou de ver", "Univers aspiré"] },
+    { id: "ia",        e: "🤖", n: "IA qui clique pour toi",          cost: 3.1e17, cps: 1.5e11,
+      t: ["Entraînement intensif", "Plus de paramètres", "Auto-amélioration", "Conscience de soi", "Singularité"] }
+  ];
+  var BI = {};
+  BUILD.forEach(function (b, i) { b.i = i; BI[b.id] = b; });
+
+  /* --- Ameliorations ------------------------------------------------ */
+  var UPG = [];
+  var TREQ = [1, 5, 25, 50, 100];
+  var TCOST = [10, 100, 1200, 25000, 600000];
+  BUILD.forEach(function (b) {
+    for (var t = 0; t < 5; t++) {
+      (function (tier) {
+        UPG.push({
+          id: b.id + "_t" + tier, e: b.e, cat: "bat",
+          n: b.t[tier],
+          d: "Production des « " + b.n + " » × 2.",
+          cost: b.cost * TCOST[tier],
+          req: function () { return (S.b[b.id] || 0) >= TREQ[tier]; },
+          reqTxt: "posséder " + TREQ[tier] + " " + b.n,
+          eff: function () { bMult[b.i] *= 2; }
+        });
+      })(t);
+    }
   });
 
-  var badges = document.getElementById("badges");
-  ACH.forEach(function (a) { var d = document.createElement("div"); d.className = "badge"; d.textContent = a[0]; d.title = a[1]; a.el = d; badges.appendChild(d); });
+  function upg(o) { UPG.push(o); return o; }
+  var CLICKUP = [
+    ["c1", "👍", "Pouce opposable", 100, 10],
+    ["c2", "🧤", "Gant de frappe", 1200, 100],
+    ["c3", "💪", "Tendinite assumée", 60000, 500],
+    ["c4", "⌨️", "Macro douteuse", 6e6, 2000],
+    ["c5", "🦾", "Bras robotisé", 6e8, 5000],
+    ["c6", "🌟", "Clic stellaire", 6e10, 10000],
+    ["c7", "✋", "Main divine", 6e12, 25000],
+    ["c8", "🫳", "Paume de l'univers", 6e14, 50000],
+    ["c9", "🖐️", "Main du vide", 6e16, 100000]
+  ];
+  CLICKUP.forEach(function (u) {
+    upg({ id: u[0], e: u[1], n: u[2], cat: "clic", d: "Gain par clic × 2.", cost: u[3],
+      req: function () { return S.hand >= u[4]; }, reqTxt: "appuyer " + N0.format(u[4]) + " fois à la main",
+      eff: function () { clickMul *= 2; } });
+  });
 
-  var audio = null;
-  function pouet() {
+  var CPSUP = [
+    ["cs1", "🖐️", "Doigts mouillés", 5000, 10, 0.01],
+    ["cs2", "🖖", "Doigts électriques", 6e6, 1000, 0.02],
+    ["cs3", "🤲", "Mains cosmiques", 6e9, 1e6, 0.05],
+    ["cs4", "👐", "Mains du néant", 6e12, 1e9, 0.12],
+    ["cs5", "👏", "Applaudissement final", 6e15, 1e12, 0.3]
+  ];
+  CPSUP.forEach(function (u) {
+    upg({ id: u[0], e: u[1], n: u[2], cat: "clic",
+      d: "Chaque clic rapporte en plus " + (u[5] * 100).toString().replace(".", ",") + " % de ta production par seconde.",
+      cost: u[3], req: function () { return cps >= u[4]; }, reqTxt: "produire " + fmt(u[4]) + " par seconde",
+      eff: function () { clickCps += u[5]; } });
+  });
+
+  upg({ id: "cr1", e: "🎯", n: "Viseur à pouce", cat: "clic", d: "+ 4 % de chance de clic critique.", cost: 30000,
+    req: function () { return S.hand >= 200; }, reqTxt: "appuyer 200 fois", eff: function () { critC += 0.04; } });
+  upg({ id: "cr2", e: "💥", n: "Critique renforcé", cat: "clic", d: "Les clics critiques rapportent × 30 au lieu de × 10.", cost: 1.2e7,
+    req: function () { return S.golden >= 1; }, reqTxt: "attraper un bouton doré", eff: function () { critM = 30; } });
+  upg({ id: "cr3", e: "🎰", n: "Chance insolente", cat: "clic", d: "+ 6 % de chance de clic critique.", cost: 1.2e10,
+    req: function () { return S.hand >= 10000; }, reqTxt: "appuyer 10 000 fois", eff: function () { critC += 0.06; } });
+
+  var GLOBUP = [
+    ["g1", "☕", "Café pour tout le monde", 2e6, 50, 0.05],
+    ["g2", "🎵", "Musique d'ascenseur", 2e8, 120, 0.05],
+    ["g3", "🏖️", "Semaine de quatre jours", 2e10, 220, 0.1],
+    ["g4", "🧘", "Méditation collective", 2e13, 350, 0.15],
+    ["g5", "🛸", "Management extraterrestre", 2e16, 500, 0.25],
+    ["g6", "♾️", "Organigramme infini", 2e19, 750, 0.4]
+  ];
+  GLOBUP.forEach(function (u) {
+    upg({ id: u[0], e: u[1], n: u[2], cat: "glob", d: "Production globale + " + Math.round(u[5] * 100) + " %.",
+      cost: u[3], req: function () { return totalBuildings() >= u[4]; }, reqTxt: "posséder " + u[4] + " bâtiments",
+      eff: function () { globalM *= 1 + u[5]; } });
+  });
+  upg({ id: "gdisco", e: "🪩", n: "Mode disco", cat: "glob", d: "Production globale + 7 %. Et le fond d'écran devient insupportable.", cost: 7.7e6,
+    req: function () { return totalBuildings() >= 80; }, reqTxt: "posséder 80 bâtiments", eff: function () { globalM *= 1.07; } });
+
+  var GOLDUP = [
+    ["o1", "🍀", "Trèfle à quatre clics", 77777, 1, function () { goldFreq *= 1.25; }, "Les boutons dorés apparaissent 25 % plus souvent."],
+    ["o2", "🪄", "Aimant à dorés", 7.7e7, 7, function () { goldFreq *= 1.25; }, "Les boutons dorés apparaissent encore 25 % plus souvent."],
+    ["o3", "⏲️", "Doré collant", 7.7e9, 20, function () { goldDur *= 1.5; }, "Les boutons dorés restent 50 % plus longtemps à l'écran."],
+    ["o4", "🌈", "Effets prolongés", 7.7e11, 50, function () { buffDur *= 1.5; }, "Les effets dorés durent 50 % plus longtemps."],
+    ["o5", "💫", "Effets majuscules", 7.7e13, 120, function () { buffPow *= 1.5; }, "Les effets dorés sont 50 % plus puissants."]
+  ];
+  GOLDUP.forEach(function (u) {
+    upg({ id: u[0], e: u[1], n: u[2], cat: "gold", d: u[6], cost: u[3],
+      req: function () { return S.golden >= u[4]; }, reqTxt: "attraper " + u[4] + " boutons dorés", eff: u[5] });
+  });
+  var UI_ = {}; UPG.forEach(function (u) { UI_[u.id] = u; });
+
+  /* --- Heritages (boutique de prestige) ----------------------------- */
+  var HER = [
+    { id: "sieste",   e: "💤", n: "Sieste productive", c: 3,   d: "La production hors-ligne passe de 30 % à 60 %.", eff: function () { offRate = 0.6; } },
+    { id: "tirelire", e: "👛", n: "Tirelire",          c: 5,   d: "Tu redémarres chaque partie avec 1 million de clics.", eff: function () {} },
+    { id: "trefle",   e: "🍀", n: "Trèfle porte-pouet", c: 10, d: "Les boutons dorés apparaissent deux fois plus souvent.", eff: function () { goldFreq *= 2; } },
+    { id: "vitrine",  e: "🏆", n: "Vitrine à trophées", c: 15, d: "Chaque succès donne + 2 % de production au lieu de + 1 %.", eff: function () { achBonus = 0.02; } },
+    { id: "hiber",    e: "🛌", n: "Hibernation",       c: 25,  d: "Le plafond hors-ligne passe de 3 h à 12 h.", eff: function () { offCap = 12 * 3600; } },
+    { id: "patient",  e: "⏱️", n: "Doré patient",  c: 30,  d: "Les boutons dorés restent deux fois plus longtemps.", eff: function () { goldDur *= 2; } },
+    { id: "lynx",     e: "🎯", n: "Œil de lynx",  c: 50,  d: "+ 10 % de chance de clic critique.", eff: function () { critC += 0.1; } },
+    { id: "coffre",   e: "🏦", n: "Coffre-fort",       c: 60,  d: "Tu redémarres chaque partie avec 100 millions de clics en plus.", eff: function () {} },
+    { id: "karma",    e: "✨", n: "Karma",                   c: 100, d: "Production globale × 2. Pour toujours.", eff: function () { globalM *= 2; } },
+    { id: "puiss",    e: "💫", n: "Effets majeurs",    c: 150, d: "Les effets dorés sont 50 % plus puissants.", eff: function () { buffPow *= 1.5; } },
+    { id: "interets", e: "🪙", n: "Intérêts composés", c: 200, d: "Chaque pouet donne + 1,5 % au lieu de + 1 %.", eff: function () { pouetBonus = 0.015; } },
+    { id: "recyc",    e: "🔁", n: "Recyclage",         c: 500, d: "Tu gardes toutes tes améliorations de clic quand tu recommences.", eff: function () {} }
+  ];
+
+  /* --- Succes -------------------------------------------------------- */
+  var ACH = [];
+  function ach(id, e, n, d, f) { ACH.push({ id: id, e: e, n: n, d: d, f: f }); }
+  var TOT = [[1, "Premier clic", "🐣"], [10, "Une dizaine", "🔟"], [100, "Une centaine", "💯"],
+    [1000, "Un millier", "🧮"], [1e4, "Dix mille", "🔢"], [1e5, "Cent mille", "💥"],
+    [1e6, "Un million", "🎖️"], [1e8, "Cent millions", "🏅"], [1e9, "Un milliard", "🥉"],
+    [1e12, "Un billion", "🥈"], [1e15, "Un billiard", "🥇"], [1e18, "Un trillion", "👑"],
+    [1e21, "Un trilliard", "🌌"], [1e24, "Un quadrillion", "🛸"]];
+  TOT.forEach(function (t, i) {
+    ach("tot" + i, t[2], t[1], "Gagner " + fmt(t[0]) + " clics au total.", function () { return S.allTime >= t[0]; });
+  });
+  var HAND = [[100, "✋", "Échauffement"], [1000, "🖐️", "Doigts chauds"], [1e4, "🤚", "Main d'acier"],
+    [5e4, "🦾", "Cyborg"], [2e5, "🩹", "Tendinite confirmée"]];
+  HAND.forEach(function (t, i) {
+    ach("hand" + i, t[1], t[2], "Appuyer " + N0.format(t[0]) + " fois à la main.", function () { return S.hand >= t[0]; });
+  });
+  var CPSA = [[10, "⚙️", "Ça tourne"], [1000, "🔧", "Petite industrie"], [1e6, "🏗️", "Grande industrie"],
+    [1e9, "🚧", "Production absurde"], [1e12, "🌋", "Production illisible"], [1e15, "☄️", "Production cosmique"]];
+  CPSA.forEach(function (t, i) {
+    ach("cps" + i, t[1], t[2], "Produire " + fmt(t[0]) + " clics par seconde.", function () { return cps >= t[0]; });
+  });
+  var BLD = [[10, "🧱", "Petit patron"], [50, "🏘️", "Promoteur"], [150, "🏙️", "Urbaniste"],
+    [300, "🌆", "Métropole"], [600, "🌃", "Mégalopole"], [1000, "🗺️", "Civilisation du clic"]];
+  BLD.forEach(function (t, i) {
+    ach("bld" + i, t[1], t[2], "Posséder " + t[0] + " bâtiments en tout.", function () { return totalBuildings() >= t[0]; });
+  });
+  ach("sp1", "🐈", "Refuge félin", "Posséder 50 chats sur le clavier.", function () { return (S.b.chat || 0) >= 50; });
+  ach("sp2", "👵", "Maison de retraite", "Posséder 100 mamies cliqueuses.", function () { return (S.b.mamie || 0) >= 100; });
+  ach("sp3", "🏭", "Zone industrielle", "Posséder 100 usines à clics.", function () { return (S.b.usine || 0) >= 100; });
+  ach("sp4", "🕳️", "Aspirateur cosmique", "Posséder un trou noir à clics.", function () { return (S.b.trou || 0) >= 1; });
+  ach("sp5", "🤖", "Délégation totale", "Posséder 50 IA qui cliquent pour toi.", function () { return (S.b.ia || 0) >= 50; });
+  ach("sp6", "🧩", "Collectionneur", "Posséder au moins un exemplaire de chaque bâtiment.", function () {
+    for (var i = 0; i < BUILD.length; i++) if (!(S.b[BUILD[i].id] > 0)) return false; return true;
+  });
+  var UPA = [[1, "🛍️", "Premier achat"], [20, "🛒", "Client fidèle"], [50, "🧾", "Accro au shopping"],
+    [100, "📜", "Catalogue complet"]];
+  UPA.forEach(function (t, i) {
+    ach("upg" + i, t[1], t[2], "Acheter " + t[0] + " amélioration(s).", function () { return ownedUpg() >= t[0]; });
+  });
+  var GLD = [[1, "🟡", "Brillant"], [10, "🍀", "Chanceux"], [50, "🌟", "Collectionneur d'or"], [200, "🎰", "Casino ambulant"]];
+  GLD.forEach(function (t, i) {
+    ach("gld" + i, t[1], t[2], "Attraper " + t[0] + " bouton(s) doré(s).", function () { return S.golden >= t[0]; });
+  });
+  ach("pr1", "🔄", "Recommencer", "Faire un prestige.", function () { return S.prestiges >= 1; });
+  ach("pr2", "♻️", "Habitué", "Faire 5 prestiges.", function () { return S.prestiges >= 5; });
+  ach("pr3", "🌀", "Boucle infinie", "Faire 25 prestiges.", function () { return S.prestiges >= 25; });
+  ach("po1", "🫧", "Premier pouet", "Obtenir 1 pouet.", function () { return (S.pouets + S.pouetsSpent) >= 1; });
+  ach("po2", "💨", "Cent pouets", "Obtenir 100 pouets.", function () { return (S.pouets + S.pouetsSpent) >= 100; });
+  ach("po3", "🧿", "Pouet suprrême", "Obtenir 10 000 pouets.", function () { return (S.pouets + S.pouetsSpent) >= 10000; });
+  ach("f1", "⏰", "Une heure de ta vie", "Jouer une heure au total.", function () { return S.playtime >= 3600; });
+  ach("f2", "🌙", "Insomnie", "Jouer six heures au total.", function () { return S.playtime >= 21600; });
+  ach("f3", "🛌", "Fainéant", "Laisser le jeu tourner 5 minutes sans toucher au bouton.", function () { return S.idleBest >= 300 && cps > 0; });
+  ach("f4", "🔥", "Rafale", "Faire 100 clics manuels en 30 secondes.", function () { return S.burst >= 100; });
+  ach("f5", "🪩", "Boule à facettes", "Acheter le mode disco.", function () { return !!S.u.gdisco; });
+  ach("f6", "💾", "Archiviste", "Exporter une sauvegarde dans un fichier.", function () { return !!S.exported; });
+  var AI_ = {}; ACH.forEach(function (a) { AI_[a.id] = a; });
+
+  /* --- Textes -------------------------------------------------------- */
+  var MESSAGES = [
+    [1, "Bon. Tu as cliqué. Satisfait ?"],
+    [10, "Il ne se passe toujours rien, tu sais."],
+    [50, "Ta productivité pleure en silence."],
+    [200, "Tu as sûrement mieux à faire. Vraiment."],
+    [1000, "Mille clics. Ta souris demande une augmentation."],
+    [1e4, "Dix mille. On pourrait appeler ça une addiction."],
+    [1e5, "Cent mille. Le bouton commence à te respecter."],
+    [1e6, "Un million ! Tu aurais pu apprendre l'espagnol."],
+    [1e7, "Dix millions. Tes ancêtres seraient perplexes."],
+    [1e8, "Cent millions. Le bouton te craint."],
+    [1e9, "Un milliard. Tu emploies plus de mamies qu'un pays entier."],
+    [1e11, "Cent milliards. L'économie du clic est ta création."],
+    [1e12, "Un billion. Les physiciens commencent à s'inquiéter."],
+    [1e15, "Un billiard. Le bouton apparaît dans les manuels d'histoire."],
+    [1e18, "Un trillion. Des civilisations entières cliquent pour toi."],
+    [1e21, "Un trilliard. L'univers est majoritairement composé de clics."],
+    [1e24, "Tu as gagné. Absolument rien. Félicitations sincères."]
+  ];
+  var NEWS = [
+    [0, "Un bouton rouge reste introuvable après avoir été pressé trop fort."],
+    [0, "Des chercheurs confirment que ce bouton ne sert absolument à rien."],
+    [0, "Sondage : 3 % des gens savent pourquoi ils cliquent."],
+    [0, "Ton index a demandé un congé sans solde."],
+    [100, "Un clic sur deux serait effectué par pure inertie, selon une étude."],
+    [100, "Le bouton nie toute responsabilité dans la perte de ton après-midi."],
+    [1000, "Une mamie cliqueuse bat le record du monde de tricot simultané."],
+    [1000, "Les chats du pays refusent de quitter les claviers."],
+    [1e4, "Le prix du clic reste stable malgré une inflation galopante."],
+    [1e4, "Un stagiaire demande à être payé. Rires dans l'open space."],
+    [1e5, "Une usine à clics ouvre ses portes. Personne ne sait ce qu'elle produit."],
+    [1e5, "La bourse du clic s'effondre. Puis remonte. Puis s'en fiche."],
+    [1e6, "Le Temple du Bouton accueille son millionième pèlerin distrait."],
+    [1e6, "Des sorciers transforment du café en clics. Le café proteste."],
+    [1e8, "Une fusée cliqueuse rate son atterrissage mais continue de cliquer."],
+    [1e8, "La banque centrale du clic baisse ses taux. Personne ne comprend pourquoi."],
+    [1e10, "Un portail à pouces s'ouvre dans ta cuisine. C'est normal."],
+    [1e10, "L'alchimie du clic officiellement reconnue comme science molle."],
+    [1e12, "La machine à remonter le clic revient d'hier avec de mauvaises nouvelles."],
+    [1e12, "Ton ADN contient désormais 4 % de bouton."],
+    [1e15, "Un trou noir à clics avale une région entière. Léger contretemps."],
+    [1e15, "L'IA qui clique pour toi demande un jour de congé."],
+    [1e18, "Les astronomes observent un amas de clics à 12 milliards d'années-lumière."],
+    [1e18, "Le bouton entre en négociation avec les lois de la physique."],
+    [1e21, "Une nouvelle unité de mesure est créée : le pouet par seconde."],
+    [1e21, "L'univers envisage un changement de carrière."]
+  ];
+
+  /* ============================================================
+     2. Etat
+     ============================================================ */
+  function freshState() {
+    return {
+      v: 3, clicks: 0, total: 0, allTime: 0, hand: 0, manual: 0,
+      b: {}, u: {}, a: {}, h: {},
+      pouets: 0, pouetsSpent: 0, prestiges: 0, golden: 0,
+      playtime: 0, burst: 0, idleBest: 0, exported: 0, mute: 0,
+      start: Date.now(), savedAt: Date.now()
+    };
+  }
+  var S = freshState();
+
+  /* valeurs derivees (jamais sauvegardees : impossible de les trafiquer) */
+  var bMult = [], globalM = 1, clickMul = 1, clickCps = 0, critC = 0.01, critM = 10,
+      goldFreq = 1, goldDur = 1, buffPow = 1, buffDur = 1, offRate = 0.3, offCap = 3 * 3600,
+      achBonus = 0.01, pouetBonus = 0.01, cps = 0, perClick = 1;
+  var buffs = [];
+
+  function totalBuildings() { var t = 0; for (var k in S.b) if (S.b.hasOwnProperty(k)) t += S.b[k]; return t; }
+  function ownedUpg() { var t = 0; for (var k in S.u) if (S.u.hasOwnProperty(k)) t++; return t; }
+  function achCount() { var t = 0; for (var k in S.a) if (S.a.hasOwnProperty(k)) t++; return t; }
+
+  function recompute() {
+    bMult = BUILD.map(function () { return 1; });
+    globalM = 1; clickMul = 1; clickCps = 0; critC = 0.01; critM = 10;
+    goldFreq = 1; goldDur = 1; buffPow = 1; buffDur = 1; offRate = 0.3; offCap = 3 * 3600;
+    achBonus = 0.01; pouetBonus = 0.01;
+
+    HER.forEach(function (h) { if (S.h[h.id]) h.eff(); });
+    UPG.forEach(function (u) { if (S.u[u.id]) u.eff(); });
+
+    globalM *= 1 + achBonus * achCount();
+    globalM *= 1 + pouetBonus * (S.pouets + S.pouetsSpent);
+
+    var now = Date.now(), bCps = 1, bClick = 1;
+    buffs = buffs.filter(function (b) { return b.until > now; });
+    buffs.forEach(function (b) {
+      if (b.cps) bCps *= b.cps > 1 ? 1 + (b.cps - 1) * buffPow : b.cps;
+      if (b.click) bClick *= b.click > 1 ? 1 + (b.click - 1) * buffPow : b.click;
+    });
+
+    var raw = 0;
+    BUILD.forEach(function (b, i) { raw += (S.b[b.id] || 0) * b.cps * bMult[i]; });
+    cps = raw * globalM * bCps;
+    perClick = clickMul * globalM * bClick + cps * clickCps;
+  }
+
+  function gain(n) { S.clicks += n; S.total += n; S.allTime += n; }
+
+  /* ============================================================
+     3. Sauvegarde signee
+     ============================================================ */
+  var SECRET = "P0u3t!-bouton-inutile-2026-@nt1-tr1ch3-ça-ne-marchera-pas";
+  var SAVE_V = 3;
+  var HEAD = "=== SAUVEGARDE - LE BOUTON INUTILE ===";
+  var FOOT = "=== FIN - NE MODIFIE RIEN, LE FICHIER EST SIGNE ===";
+
+  function h32(str, seed) {
+    var h = seed >>> 0;
+    for (var i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+      h = ((h << 13) | (h >>> 19)) >>> 0;
+    }
+    h ^= h >>> 16; h = Math.imul(h, 2246822507) >>> 0; h ^= h >>> 13;
+    return h >>> 0;
+  }
+  function sign(data) {
+    var salted = SECRET + "" + data.length + "" + data + "" + SECRET;
+    var seeds = [0x811c9dc5, 0x1b873593, 0x85ebca6b, 0xc2b2ae35], out = "";
+    for (var i = 0; i < seeds.length; i++) out += ("00000000" + h32(salted + "#" + i, seeds[i]).toString(16)).slice(-8);
+    return out;
+  }
+  function scramble(bytes) {
+    var x = h32(SECRET, 0x9e3779b9) || 1, out = new Uint8Array(bytes.length);
+    for (var i = 0; i < bytes.length; i++) {
+      x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0;
+      out[i] = bytes[i] ^ (x & 255);
+    }
+    return out;
+  }
+  function b64enc(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s); }
+  function b64dec(str) { var s = atob(str), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+
+  function encodeSave() {
+    S.savedAt = Date.now();
+    var data = JSON.stringify(S);
+    var env = JSON.stringify({ v: SAVE_V, d: data, s: sign(data) });
+    return b64enc(scramble(new TextEncoder().encode(env)));
+  }
+  function decodeSave(code) {
+    /* on jette l'en-tete, le pied et les commentaires ; le "=" de bourrage
+       du base64 doit survivre, d'ou le test sur "===" et non sur "=" */
+    code = String(code).split("\n").filter(function (l) {
+      var t = l.trim(); return t && t.indexOf("===") !== 0 && t.charAt(0) !== "#";
+    }).join("").replace(/\s+/g, "");
+    if (!code) throw new Error("vide");
+    var env;
+    try { env = JSON.parse(new TextDecoder().decode(scramble(b64dec(code)))); }
+    catch (e) { throw new Error("illisible"); }
+    if (!env || env.v !== SAVE_V) throw new Error("version");
+    if (typeof env.d !== "string" || sign(env.d) !== env.s) throw new Error("signature");
+    var obj;
+    try { obj = JSON.parse(env.d); } catch (e) { throw new Error("illisible"); }
+    return sanitize(obj);
+  }
+
+  function num(v, max) { v = Number(v); if (!isFinite(v) || v < 0) return 0; return Math.min(v, max); }
+  function sanitize(o) {
+    if (!o || typeof o !== "object") throw new Error("format");
+    var s = freshState(), MAX = 1e300, now = Date.now();
+    s.clicks = num(o.clicks, MAX);
+    s.total = num(o.total, MAX);
+    s.allTime = num(o.allTime, MAX);
+    s.hand = Math.floor(num(o.hand, 1e12));
+    s.manual = num(o.manual, MAX);
+    s.pouets = Math.floor(num(o.pouets, 1e15));
+    s.pouetsSpent = Math.floor(num(o.pouetsSpent, 1e15));
+    s.prestiges = Math.floor(num(o.prestiges, 1e7));
+    s.golden = Math.floor(num(o.golden, 1e9));
+    s.playtime = num(o.playtime, 1e10);
+    s.burst = Math.floor(num(o.burst, 1e6));
+    s.idleBest = num(o.idleBest, 1e9);
+    s.exported = o.exported ? 1 : 0;
+    s.mute = o.mute ? 1 : 0;
+    s.start = num(o.start, now) || now;
+    s.savedAt = Math.min(num(o.savedAt, now) || now, now);
+
+    s.b = {};
+    BUILD.forEach(function (b) { var c = Math.floor(num(o.b && o.b[b.id], 1e7)); if (c > 0) s.b[b.id] = c; });
+    s.u = {}; UPG.forEach(function (u) { if (o.u && o.u[u.id]) s.u[u.id] = 1; });
+    s.a = {}; ACH.forEach(function (a) { if (o.a && o.a[a.id]) s.a[a.id] = 1; });
+    s.h = {}; HER.forEach(function (h) { if (o.h && o.h[h.id]) s.h[h.id] = 1; });
+
+    /* coherence : on ne peut pas avoir gagne moins que ce qu'on possede */
+    s.allTime = Math.max(s.allTime, s.total, s.clicks);
+    /* coherence : les pouets doivent etre justifies par le total de tous les temps */
+    var maxP = Math.floor(Math.cbrt(s.allTime / 1e12));
+    var spent = 0; HER.forEach(function (h) { if (s.h[h.id]) spent += h.c; });
+    s.pouetsSpent = spent;
+    if (s.pouets + spent > maxP) s.pouets = Math.max(0, maxP - spent);
+    return s;
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, encodeSave()); lastSaveAt = Date.now(); } catch (e) {}
+  }
+  var KEY = "bouton-inutile-v3", lastSaveAt = 0;
+
+  function load() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) {}
+    if (!raw) return migrateOld();
+    try { S = decodeSave(raw); return true; }
+    catch (e) {
+      S = freshState();
+      setTimeout(function () {
+        modal("⚠️ Sauvegarde refusée",
+          "La sauvegarde enregistrée dans ce navigateur est invalide ou a été modifiée (" + e.message + "). Une nouvelle partie commence.",
+          [{ t: "D'accord", cls: "btn" }]);
+      }, 400);
+      return false;
+    }
+  }
+  function migrateOld() {
+    var old = null;
+    try { old = JSON.parse(localStorage.getItem("bouton-inutile-v1")); } catch (e) {}
+    if (!old || typeof old.clicks !== "number") return false;
+    S = freshState();
+    S.clicks = num(old.clicks, 1e9); S.total = S.allTime = num(old.total, 1e9);
+    var map = { doigt: "doigt", chat: "chat", mamie: "mamie", usine: "usine", robot: "ia" };
+    for (var k in map) if (old.owned && old.owned[k]) S.b[map[k]] = Math.min(Math.floor(old.owned[k]), 1000);
+    setTimeout(function () {
+      modal("📦 Ancienne partie récupérée",
+        "Ta vieille sauvegarde a été convertie au nouveau format. Bienvenue dans la version longue.",
+        [{ t: "Allons-y", cls: "btn" }]);
+    }, 400);
+    return true;
+  }
+
+  /* ============================================================
+     4. Fenetres et notifications
+     ============================================================ */
+  function modal(title, html, buttons) {
+    var o = document.createElement("div");
+    o.className = "over";
+    var m = document.createElement("div");
+    m.className = "modal";
+    m.innerHTML = "<h2></h2><p></p><div class=\"row\"></div>";
+    m.querySelector("h2").textContent = title;
+    m.querySelector("p").innerHTML = html;
+    var row = m.querySelector(".row");
+    (buttons || [{ t: "Fermer", cls: "btn" }]).forEach(function (b) {
+      var el = document.createElement("button");
+      el.type = "button"; el.className = b.cls || "btn alt"; el.textContent = b.t;
+      el.addEventListener("click", function () { o.remove(); if (b.go) b.go(); });
+      row.appendChild(el);
+    });
+    o.appendChild(m); document.body.appendChild(o);
+    o.addEventListener("click", function (e) { if (e.target === o) o.remove(); });
+  }
+  function toast(icon, title, text) {
+    var box = $("toasts"), t = document.createElement("div");
+    t.className = "toast";
+    t.innerHTML = "<b></b><span></span>";
+    t.querySelector("b").textContent = icon + " " + title;
+    t.querySelector("span").textContent = text || "";
+    box.appendChild(t);
+    setTimeout(function () { t.style.transition = "opacity .4s"; t.style.opacity = "0"; }, 4200);
+    setTimeout(function () { t.remove(); }, 4700);
+    while (box.children.length > 4) box.firstChild.remove();
+  }
+
+  /* ============================================================
+     5. Son
+     ============================================================ */
+  /* soundOn : le navigateur n'autorise le son qu'apres un vrai geste de
+     l'utilisateur. S.mute : le choix du joueur, lui il est sauvegarde. */
+  var audio = null, soundOn = false;
+  function pouet(freq) {
+    if (!soundOn || S.mute) return;
     try {
       if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
       var o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
-      o.type = "square"; o.frequency.setValueAtTime(320 + Math.random() * 120, t); o.frequency.exponentialRampToValueAtTime(110, t + 0.18);
-      g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      o.type = "square";
+      o.frequency.setValueAtTime(freq || (300 + Math.random() * 140), t);
+      o.frequency.exponentialRampToValueAtTime(110, t + 0.18);
+      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
       o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + 0.21);
     } catch (e) {}
   }
+  function renderSound() {
+    var b = $("sound");
+    b.textContent = S.mute ? "🔇 Son coupé" : "🔊 Son activé";
+    b.title = S.mute ? "Remettre le bruit de pouet" : "Couper le bruit de pouet";
+    b.classList.toggle("off", !!S.mute);
+  }
+  $("sound").addEventListener("click", function () {
+    S.mute = S.mute ? 0 : 1;
+    soundOn = true;            /* ce clic est un geste valide : on debloque l'audio */
+    renderSound();
+    if (!S.mute) pouet(520);   /* petit apercu quand on le rallume */
+    save();
+  });
 
-  var lastMsg = -1;
-  function render() {
-    document.getElementById("count").textContent = fmt.format(Math.floor(S.clicks));
-    document.getElementById("rate").textContent = S.auto > 0 ? fmt.format(S.auto) + " clics / seconde · " + fmt.format(S.perClick) + " par clic" : (S.perClick > 1 ? fmt.format(S.perClick) + " par clic" : "clics");
-    UPGRADES.forEach(function (u) {
-      var owned = S.owned[u.id] || 0, c = cost(u), soldOut = !u.rep && owned > 0;
-      u.el.disabled = soldOut || S.clicks < c;
-      u.nameEl.textContent = u.n + (u.rep && owned ? " ×" + owned : "");
-      u.costEl.textContent = soldOut ? "✔" : fmt.format(c);
-    });
-    ACH.forEach(function (a) { a.el.className = "badge" + (a[2]() ? " on" : ""); });
-    document.getElementById("big").className = S.owned.gros ? "huge" : "";
-    document.body.className = S.owned.disco ? "disco" : "";
-    var idx = -1;
-    for (var i = 0; i < MESSAGES.length; i++) if (S.total >= MESSAGES[i][0]) idx = i;
-    if (idx !== lastMsg && idx >= 0) { document.getElementById("message").textContent = MESSAGES[idx][1]; lastMsg = idx; }
+  /* ============================================================
+     6. Boutons dores
+     ============================================================ */
+  var goldEl = $("gold"), goldAt = 0, goldHideAt = 0;
+  function scheduleGold() { goldAt = Date.now() + (55 + Math.random() * 125) * 1000 / goldFreq; }
+  function addBuff(o) { o.until = Date.now() + o.dur * 1000 * buffDur; buffs.push(o); recompute(); }
+
+  var GOLD = [
+    { w: 32, go: function () { addBuff({ e: "⚡", n: "Frénésie", cps: 7, dur: 77 }); toast("⚡", "Frénésie !", "Production × 7 pendant 77 secondes."); } },
+    { w: 24, go: function () { var g = Math.min(S.clicks * 0.15, cps * 600) + 13; gain(g); toast("🍀", "Chance !", "+ " + fmtEnt(g) + " clics."); } },
+    { w: 13, go: function () { addBuff({ e: "🧚", n: "Doigts de fée", click: 777, dur: 13 }); toast("🧚", "Doigts de fée !", "Clic × 777 pendant 13 secondes."); } },
+    { w: 9, go: function () { addBuff({ e: "🙏", n: "Bénédiction", cps: 2, dur: 300 }); toast("🙏", "Bénédiction", "Production × 2 pendant 5 minutes."); } },
+    { w: 8, go: function () { addBuff({ e: "🥊", n: "Clic frénétique", click: 11, dur: 66 }); toast("🥊", "Clic frénétique", "Clic × 11 pendant 66 secondes."); } },
+    { w: 7, go: function () { var g = cps * 1800 + 100; gain(g); toast("🎰", "Jackpot !", "+ " + fmtEnt(g) + " clics d'un coup."); } },
+    { w: 7, go: function () { addBuff({ e: "🐈‍⬛", n: "Chat noir", cps: 0.5, dur: 30, bad: 1 }); toast("🐈‍⬛", "Chat noir...", "Production divisée par 2 pendant 30 secondes."); } }
+  ];
+  var GOLDW = GOLD.reduce(function (a, g) { return a + g.w; }, 0);
+
+  function showGold() {
+    var w = Math.max(320, window.innerWidth), h = Math.max(320, window.innerHeight);
+    goldEl.style.left = Math.floor(20 + Math.random() * (w - 130)) + "px";
+    goldEl.style.top = Math.floor(20 + Math.random() * (h - 130)) + "px";
+    goldEl.classList.remove("hide");
+    goldHideAt = Date.now() + 13000 * goldDur;
+  }
+  goldEl.addEventListener("click", function () {
+    goldEl.classList.add("hide");
+    soundOn = true;
+    S.golden++;
+    var r = Math.random() * GOLDW;
+    for (var i = 0; i < GOLD.length; i++) { r -= GOLD[i].w; if (r <= 0) { GOLD[i].go(); break; } }
+    pouet(700);
+    scheduleGold(); recompute(); save();
+  });
+
+  /* ============================================================
+     7. Boutique
+     ============================================================ */
+  var buyAmt = 1, sellMode = false;
+  function bCost(b, k) {
+    var o = S.b[b.id] || 0, r = 1.15;
+    return Math.ceil(b.cost * Math.pow(r, o) * (Math.pow(r, k) - 1) / (r - 1));
+  }
+  function bRefund(b, k) {
+    var o = S.b[b.id] || 0, r = 1.15;
+    if (k > o) k = o;
+    return Math.floor(b.cost * Math.pow(r, o - k) * (Math.pow(r, k) - 1) / (r - 1) * 0.25);
+  }
+  function bMax(b) {
+    var o = S.b[b.id] || 0, r = 1.15;
+    var k = Math.floor(Math.log(S.clicks * (r - 1) / (b.cost * Math.pow(r, o)) + 1) / Math.log(r));
+    if (!isFinite(k) || k < 0) k = 0;
+    if (k > 500) k = 500;
+    while (k > 0 && bCost(b, k) > S.clicks) k--;
+    return k;
+  }
+  function amtFor(b) {
+    if (sellMode) return Math.min(buyAmt === "max" ? (S.b[b.id] || 0) : buyAmt, S.b[b.id] || 0);
+    return buyAmt === "max" ? bMax(b) : buyAmt;
   }
 
-  var wrap = document.getElementById("wrap");
-  document.getElementById("big").addEventListener("click", function (e) {
-    S.clicks += S.perClick; S.total += S.perClick;
-    if (S.sound) pouet();
-    var f = document.createElement("div");
-    f.className = "float"; f.textContent = "+" + fmt.format(S.perClick);
-    var r = wrap.getBoundingClientRect();
-    var x = e.clientX ? e.clientX - r.left : r.width / 2, y = e.clientY ? e.clientY - r.top : r.height / 2;
-    f.style.left = (x - 10 + (Math.random() * 30 - 15)) + "px"; f.style.top = (y - 30) + "px";
-    f.style.color = "hsl(" + Math.floor(Math.random() * 360) + ",80%,45%)";
-    wrap.appendChild(f);
-    setTimeout(function () { f.remove(); }, 900);
-    render();
+  var shopEl = $("shop");
+  BUILD.forEach(function (b) {
+    var el = document.createElement("button");
+    el.type = "button"; el.className = "up";
+    el.innerHTML = "<span class=\"e\"></span><span class=\"t\"><b></b><small></small></span><span class=\"c\"></span>";
+    el.querySelector(".e").textContent = b.e;
+    b.el = el; b.nameEl = el.querySelector("b"); b.subEl = el.querySelector("small"); b.costEl = el.querySelector(".c");
+    el.addEventListener("click", function () {
+      var k = amtFor(b);
+      if (k <= 0) return;
+      if (sellMode) {
+        var back = bRefund(b, k);
+        S.b[b.id] -= k; if (S.b[b.id] <= 0) delete S.b[b.id];
+        S.clicks += back;
+      } else {
+        var c = bCost(b, k);
+        if (S.clicks < c) return;
+        S.clicks -= c; S.b[b.id] = (S.b[b.id] || 0) + k;
+        pouet(220 + b.i * 18);
+      }
+      recompute(); renderShop(); renderUpg(); save();
+    });
+    shopEl.appendChild(el);
   });
 
-  var lastTick = performance.now(), saveCounter = 0;
-  setInterval(function () {
+  $("amtBox").addEventListener("click", function (e) {
+    var t = e.target.closest("button"); if (!t) return;
+    var a = t.dataset.a;
+    if (a === "sell") { sellMode = !sellMode; }
+    else { buyAmt = a === "max" ? "max" : parseInt(a, 10); }
+    Array.prototype.forEach.call(this.children, function (c) {
+      if (c.dataset.a === "sell") c.classList.toggle("on", sellMode);
+      else c.classList.toggle("on", String(buyAmt) === c.dataset.a);
+    });
+    $("shopNote").textContent = sellMode
+      ? "Mode revente : tu récupères 25 % du prix payé."
+      : "Chaque achat renchérit de 15 %. La revente rembourse 25 %.";
+    renderShop();
+  });
+
+  /* ============================================================
+     8. Ameliorations / heritages (listes)
+     ============================================================ */
+  var upgListEl = $("upgList"), upgOwnedEl = $("upgOwned"), herListEl = $("herList");
+
+  function buyUpg(u) {
+    if (S.u[u.id] || S.clicks < u.cost || !u.req()) return;
+    S.clicks -= u.cost; S.u[u.id] = 1;
+    pouet(520); recompute(); renderUpg(); renderShop(); save();
+    toast(u.e, u.n, "Amélioration achetée !");
+  }
+  function buyHer(h) {
+    if (S.h[h.id] || S.pouets < h.c) return;
+    S.pouets -= h.c; S.pouetsSpent += h.c; S.h[h.id] = 1;
+    recompute(); renderPrestige(); save();
+    toast(h.e, h.n, "Héritage acquis !");
+  }
+
+  HER.forEach(function (h) {
+    var el = document.createElement("button");
+    el.type = "button"; el.className = "up";
+    el.innerHTML = "<span class=\"e\"></span><span class=\"t\"><b></b><small></small></span><span class=\"c\"></span>";
+    el.querySelector(".e").textContent = h.e;
+    el.querySelector("b").textContent = h.n;
+    el.querySelector("small").textContent = h.d;
+    h.el = el; h.costEl = el.querySelector(".c");
+    el.addEventListener("click", function () { buyHer(h); });
+    herListEl.appendChild(el);
+  });
+
+  /* ============================================================
+     9. Rendu
+     ============================================================ */
+  var lastMsg = -1;
+
+  function renderTop() {
+    $("countVal").textContent = fmtEnt(S.clicks);
+    $("rate").textContent = fmt(cps) + " par seconde";
+    $("perclic").textContent = fmtEnt(perClick) + " par clic" +
+      (critC > 0 ? " · " + Math.round(critC * 100) + " % de critique ×" + critM : "");
+
+    var bf = $("buffs"); bf.innerHTML = "";
+    var now = Date.now();
+    buffs.forEach(function (b) {
+      var d = document.createElement("span");
+      d.className = "buff" + (b.bad ? " bad" : "");
+      d.textContent = b.e + " " + b.n + " " + Math.ceil((b.until - now) / 1000) + " s";
+      bf.appendChild(d);
+    });
+
+    var big = $("big");
+    var tier = totalBuildings() >= 400 ? "t3" : totalBuildings() >= 150 ? "t2" : totalBuildings() >= 40 ? "t1" : "";
+    if (big.className !== tier) big.className = tier;
+    document.body.className = S.u.gdisco ? "disco" : "";
+
+    var idx = -1;
+    for (var i = 0; i < MESSAGES.length; i++) if (S.allTime >= MESSAGES[i][0]) idx = i;
+    if (idx !== lastMsg && idx >= 0) { $("message").textContent = MESSAGES[idx][1]; lastMsg = idx; }
+  }
+
+  function renderShop() {
+    BUILD.forEach(function (b) {
+      var owned = S.b[b.id] || 0;
+      var unlocked = owned > 0 || S.clicks >= b.cost * 0.35 || S.allTime >= b.cost * 0.6;
+      b.el.classList.toggle("hide", !unlocked);
+      if (!unlocked) return;
+      var k = amtFor(b);
+      b.nameEl.textContent = b.n + (owned ? "  ×" + N0.format(owned) : "");
+      b.subEl.textContent = fmt(b.cps * bMult[b.i] * globalM) + "/s chacun" +
+        (owned ? " · " + fmt(owned * b.cps * bMult[b.i] * globalM) + "/s au total" : "");
+      if (sellMode) {
+        b.costEl.innerHTML = "";
+        b.costEl.appendChild(document.createTextNode(k > 0 ? "+" + fmt(bRefund(b, k)) : "—"));
+        var i1 = document.createElement("i"); i1.textContent = "vendre ×" + k; b.costEl.appendChild(i1);
+        b.el.disabled = k <= 0;
+        b.el.classList.remove("can");
+      } else {
+        var c = bCost(b, k || 1);
+        b.costEl.innerHTML = "";
+        b.costEl.appendChild(document.createTextNode(fmt(c)));
+        var i2 = document.createElement("i"); i2.textContent = "×" + (k || 1); b.costEl.appendChild(i2);
+        var ok = k > 0 && S.clicks >= c;
+        b.el.disabled = !ok;
+        b.el.classList.toggle("can", ok);
+      }
+    });
+  }
+
+  var upgKey = null, ownKey = null;
+  function renderUpg() {
+    var avail = UPG.filter(function (u) { return !S.u[u.id] && u.req(); });
+    avail.sort(function (a, b) { return a.cost - b.cost; });
+    var shown = avail.slice(0, 14);
+
+    /* on ne reconstruit la liste que si quelque chose a vraiment changé */
+    var key = shown.map(function (u) { return u.id + (S.clicks >= u.cost ? "+" : "-"); }).join(",");
+    if (key !== upgKey) {
+      upgKey = key;
+      upgListEl.innerHTML = "";
+      if (!shown.length) {
+        var p = document.createElement("div");
+        p.className = "empty";
+        p.textContent = "Rien de nouveau pour l'instant. Achète des bâtiments et clique encore : les améliorations se débloquent toutes seules.";
+        upgListEl.appendChild(p);
+      }
+      shown.forEach(function (u) {
+        var el = document.createElement("button");
+        el.type = "button";
+        el.className = "up" + (S.clicks >= u.cost ? " can" : "");
+        el.disabled = S.clicks < u.cost;
+        el.title = "Débloqué en : " + u.reqTxt;
+        el.innerHTML = "<span class=\"e\"></span><span class=\"t\"><b></b><small></small></span><span class=\"c\"></span>";
+        el.querySelector(".e").textContent = u.e;
+        el.querySelector("b").textContent = u.n;
+        el.querySelector("small").textContent = u.d;
+        el.querySelector(".c").textContent = fmt(u.cost);
+        el.addEventListener("click", function () { buyUpg(u); });
+        upgListEl.appendChild(el);
+      });
+    }
+    $("upgCount").textContent = avail.length + " disponible(s)" + (avail.length > shown.length ? " · " + shown.length + " affichées" : "");
+    var afford = avail.filter(function (u) { return S.clicks >= u.cost; }).length;
+    $("upgDot").textContent = afford ? "(" + afford + ")" : "";
+
+    var own = UPG.filter(function (u) { return S.u[u.id]; });
+    var ok = own.map(function (u) { return u.id; }).join(",");
+    if (ok !== ownKey) {
+      ownKey = ok;
+      upgOwnedEl.innerHTML = "";
+      own.forEach(function (u) {
+        var d = document.createElement("div");
+        d.className = "badge on"; d.textContent = u.e; d.title = u.n + " — " + u.d;
+        upgOwnedEl.appendChild(d);
+      });
+    }
+    $("ownedCount").textContent = own.length + " / " + UPG.length;
+  }
+
+  var badgesEl = $("badges");
+  ACH.forEach(function (a) {
+    var d = document.createElement("div");
+    d.className = "badge"; d.textContent = a.e; a.el = d;
+    badgesEl.appendChild(d);
+  });
+  function renderAch() {
+    ACH.forEach(function (a) {
+      var on = !!S.a[a.id];
+      a.el.classList.toggle("on", on);
+      a.el.title = on ? a.n + " — " + a.d : "??? — " + a.d;
+    });
+    var c = achCount();
+    $("achCount").textContent = c + " / " + ACH.length;
+    $("achBar").style.width = (c / ACH.length * 100) + "%";
+    $("achNote").textContent = "Chaque succès donne + " + (achBonus * 100).toString().replace(".", ",") +
+      " % de production. Bonus actuel : + " + Math.round(achBonus * c * 100) + " %.";
+  }
+
+  function pouetsTotal() { return Math.floor(Math.cbrt(Math.max(0, S.allTime) / 1e12)); }
+  function pouetGain() { return Math.max(0, pouetsTotal() - (S.pouets + S.pouetsSpent)); }
+  function renderPrestige() {
+    $("pPouets").textContent = N0.format(S.pouets);
+    $("pGain").textContent = "+ " + N0.format(pouetGain());
+    $("pBonus").textContent = "+ " + N0.format(Math.round(pouetBonus * (S.pouets + S.pouetsSpent) * 100)) + " %";
+    var next = Math.pow(pouetsTotal() + 1, 3) * 1e12;
+    $("pNext").textContent = fmt(next);
+    $("doPrestige").disabled = pouetGain() < 1;
+    $("doPrestige").textContent = pouetGain() < 1
+      ? "🌊 Pas encore assez (il faut " + fmt(next) + " au total)"
+      : "🌊 Recommencer et gagner " + N0.format(pouetGain()) + " pouet(s)";
+    HER.forEach(function (h) {
+      var owned = !!S.h[h.id];
+      h.costEl.innerHTML = "";
+      h.costEl.appendChild(document.createTextNode(owned ? "✔" : N0.format(h.c)));
+      if (!owned) { var i = document.createElement("i"); i.textContent = "pouets"; h.costEl.appendChild(i); }
+      h.el.disabled = owned || S.pouets < h.c;
+      h.el.classList.toggle("can", !owned && S.pouets >= h.c);
+    });
+  }
+
+  function renderStats() {
+    var g = $("statGrid"); g.innerHTML = "";
+    function st(v, l) {
+      var d = document.createElement("div"); d.className = "stat";
+      var b = document.createElement("b"); b.textContent = v;
+      var s = document.createElement("small"); s.textContent = l;
+      d.appendChild(b); d.appendChild(s); g.appendChild(d);
+    }
+    st(fmtEnt(S.clicks), "clics en banque");
+    st(fmtEnt(S.total), "gagnés depuis le dernier prestige");
+    st(fmtEnt(S.allTime), "gagnés depuis toujours");
+    st(fmt(cps), "clics par seconde");
+    st(fmtEnt(perClick), "clics par clic manuel");
+    st(N0.format(S.hand), "pressions du bouton");
+    st(fmtEnt(S.manual), "clics gagnés à la main");
+    st(N0.format(totalBuildings()), "bâtiments");
+    st(ownedUpg() + " / " + UPG.length, "améliorations");
+    st(achCount() + " / " + ACH.length, "succès");
+    st(N0.format(S.golden), "boutons dorés attrapés");
+    st(N0.format(S.prestiges), "prestiges");
+    st(N0.format(S.pouets + S.pouetsSpent), "pouets gagnés en tout");
+    st("× " + N3.format(Math.round(globalM * 1000) / 1000), "multiplicateur global");
+    st(fmtTime(S.playtime), "temps de jeu");
+    st(N0.format(S.burst), "record de clics en 30 s");
+
+    var p = $("prodList"); p.innerHTML = "";
+    var rows = BUILD.filter(function (b) { return (S.b[b.id] || 0) > 0; });
+    if (!rows.length) { var e = document.createElement("div"); e.className = "empty"; e.textContent = "Aucun bâtiment pour l'instant."; p.appendChild(e); return; }
+    rows.forEach(function (b) {
+      var prod = (S.b[b.id] || 0) * b.cps * bMult[b.i] * globalM;
+      var d = document.createElement("div");
+      d.className = "up"; d.style.cursor = "default";
+      d.innerHTML = "<span class=\"e\"></span><span class=\"t\"><b></b><small></small></span><span class=\"c\"></span>";
+      d.querySelector(".e").textContent = b.e;
+      d.querySelector("b").textContent = b.n + " ×" + N0.format(S.b[b.id]);
+      d.querySelector("small").textContent = fmt(prod) + " par seconde";
+      d.querySelector(".c").textContent = cps > 0 ? Math.round(prod / cps * 100) + " %" : "0 %";
+      p.appendChild(d);
+    });
+  }
+
+  /* ============================================================
+     10. Onglets
+     ============================================================ */
+  var panes = { upg: renderUpg, ach: renderAch, pres: renderPrestige, stats: renderStats, save: renderSaveTab };
+  var current = "upg";
+  document.querySelector(".tabs").addEventListener("click", function (e) {
+    var t = e.target.closest(".tab"); if (!t) return;
+    current = t.dataset.p;
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function (x) { x.classList.toggle("on", x === t); });
+    Array.prototype.forEach.call(document.querySelectorAll(".pane"), function (x) { x.classList.toggle("on", x.id === "pane-" + current); });
+    panes[current]();
+  });
+
+  /* ============================================================
+     11. Le clic
+     ============================================================ */
+  var wrapEl = $("wrap"), recent = [];
+  function doClick(e) {
+    var crit = Math.random() < critC;
+    var g = perClick * (crit ? critM : 1);
+    gain(g);
+    S.hand++; S.manual += g;
+    idle = 0;
+
+    var now = Date.now();
+    recent.push(now);
+    while (recent.length && recent[0] < now - 30000) recent.shift();
+    if (recent.length > S.burst) S.burst = recent.length;
+
+    pouet();
+
+    var f = document.createElement("div");
+    f.className = "float" + (crit ? " crit" : "");
+    f.textContent = (crit ? "✨ +" : "+") + fmtEnt(g);
+    var r = wrapEl.getBoundingClientRect();
+    var x = e && e.clientX ? e.clientX - r.left : r.width / 2;
+    var y = e && e.clientY ? e.clientY - r.top : r.height / 2;
+    f.style.left = (x - 14 + (Math.random() * 30 - 15)) + "px";
+    f.style.top = (y - 30) + "px";
+    f.style.color = crit ? "#f08c00" : "hsl(" + Math.floor(Math.random() * 360) + ",80%,45%)";
+    wrapEl.appendChild(f);
+    setTimeout(function () { f.remove(); }, crit ? 1200 : 900);
+    renderTop();
+  }
+  $("big").addEventListener("click", doClick);
+  document.addEventListener("keydown", function (e) {
+    if (e.code === "Space" && e.target === document.body) { e.preventDefault(); doClick(null); }
+  });
+
+  /* ============================================================
+     12. Boucle
+     ============================================================ */
+  /* la boucle tourne toutes les 100 ms : 3000 tours = 5 minutes */
+  var AUTOSAVE = 3000;
+  var lastTick = performance.now(), slow = 0, saveTick = 0, idle = 0, newsAt = 0;
+  function tick() {
     var now = performance.now(), dt = Math.min(5, (now - lastTick) / 1000);
     lastTick = now;
-    if (S.auto > 0) { var g = S.auto * dt; S.clicks += g; S.total += g; render(); }
-    if (++saveCounter >= 20) { saveCounter = 0; save(); }
-  }, 100);
-  window.addEventListener("beforeunload", save);
+    S.playtime += dt;
+    idle += dt;
+    if (idle > S.idleBest) S.idleBest = idle;
+    if (cps > 0) gain(cps * dt);
 
-  document.getElementById("reset").addEventListener("click", function () {
-    if (!document.getElementById("reset").dataset.confirm) {
-      document.getElementById("reset").dataset.confirm = "1";
-      document.getElementById("reset").textContent = "Sûr ? Clique encore";
-      setTimeout(function () { var b = document.getElementById("reset"); b.dataset.confirm = ""; b.textContent = "Tout effacer"; }, 3000);
+    var d = Date.now();
+    if (!goldAt) scheduleGold();
+    if (!goldEl.classList.contains("hide") && d > goldHideAt) { goldEl.classList.add("hide"); scheduleGold(); }
+    else if (goldEl.classList.contains("hide") && d > goldAt) showGold();
+
+    if (buffs.length) recompute();
+    renderTop();
+
+    if (d > newsAt) {
+      newsAt = d + 9000;
+      var pool = NEWS.filter(function (n) { return S.allTime >= n[0]; });
+      $("ticker").textContent = "📰 " + pool[Math.floor(Math.random() * pool.length)][1];
+    }
+
+    if (++slow >= 4) {
+      slow = 0;
+      checkAch();
+      recompute();
+      renderShop();
+      if (panes[current]) panes[current]();
+    }
+    if (++saveTick >= AUTOSAVE) { saveTick = 0; save(); }
+  }
+  setInterval(tick, 100);
+
+  function checkAch() {
+    ACH.forEach(function (a) {
+      if (!S.a[a.id] && a.f()) {
+        S.a[a.id] = 1;
+        toast(a.e, "Succès : " + a.n, a.d);
+        recompute();
+      }
+    });
+  }
+
+  window.addEventListener("beforeunload", save);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) save(); });
+
+  /* ============================================================
+     13. Prestige
+     ============================================================ */
+  $("doPrestige").addEventListener("click", function () {
+    var g = pouetGain();
+    if (g < 1) return;
+    modal("🌊 Tout recommencer ?",
+      "Tu vas perdre <b>" + fmtEnt(S.clicks) + "</b> clics, <b>" + N0.format(totalBuildings()) + "</b> bâtiments et <b>" +
+      ownedUpg() + "</b> améliorations.<br>Tu gagnes <b>" + N0.format(g) + " pouet(s)</b>, soit + " +
+      N0.format(Math.round(pouetBonus * g * 100)) + " % de production permanente en plus.",
+      [{ t: "Annuler", cls: "btn alt" }, { t: "Oui, tout effacer", cls: "btn", go: doPrestige }]);
+  });
+  function doPrestige() {
+    var g = pouetGain();
+    var keep = {};
+    if (S.h.recyc) UPG.forEach(function (u) { if (u.cat === "clic" && S.u[u.id]) keep[u.id] = 1; });
+    S.pouets += g; S.prestiges++;
+    S.b = {}; S.u = keep; S.total = 0;
+    S.clicks = (S.h.tirelire ? 1e6 : 0) + (S.h.coffre ? 1e8 : 0);
+    buffs = []; lastMsg = -1;
+    recompute(); save();
+    renderUpg(); renderShop(); renderPrestige(); renderTop();
+    toast("🌊", "Prestige !", "+ " + N0.format(g) + " pouet(s). On repart de zéro, en mieux.");
+  }
+
+  /* ============================================================
+     14. Onglet sauvegarde
+     ============================================================ */
+  function flash(msg, ok) {
+    var f = $("saveFlash");
+    f.textContent = msg;
+    f.className = "flash " + (ok ? "ok" : "ko");
+  }
+  function renderSaveTab() {
+    $("lastSave").textContent = lastSaveAt
+      ? "dernière sauvegarde il y a " + fmtTime((Date.now() - lastSaveAt) / 1000)
+      : "pas encore sauvegardé";
+  }
+  function fileText() {
+    return HEAD + "\n" +
+      "# Partie du " + new Date().toLocaleString("fr-FR") + "\n" +
+      "# Ce fichier est brouille et signe. Le modifier le rend invalide.\n" +
+      (encodeSave().match(/.{1,76}/g) || []).join("\n") + "\n" + FOOT + "\n";
+  }
+  $("btnExport").addEventListener("click", function () {
+    S.exported = 1;
+    var blob = new Blob([fileText()], { type: "text/plain;charset=utf-8" });
+    var a = document.createElement("a");
+    var d = new Date();
+    var stamp = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2) +
+      "_" + ("0" + d.getHours()).slice(-2) + "h" + ("0" + d.getMinutes()).slice(-2);
+    a.href = URL.createObjectURL(blob);
+    a.download = "bouton-inutile_" + stamp + ".pouet";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    save();
+    flash("Fichier exporté. Garde-le précieusement.", true);
+  });
+  $("btnImport").addEventListener("click", function () { $("fileIn").click(); });
+  $("fileIn").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { applyCode(String(r.result), f.name); };
+    r.onerror = function () { flash("Impossible de lire le fichier.", false); };
+    r.readAsText(f);
+    this.value = "";
+  });
+  $("btnCopy").addEventListener("click", function () {
+    var txt = fileText();
+    $("saveBox").value = txt;
+    $("saveBox").select();
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(
+      function () { flash("Code copié dans le presse-papier.", true); },
+      function () { flash("Code affiché ci-dessous : copie-le à la main.", true); }
+    );
+    else flash("Code affiché ci-dessous : copie-le à la main.", true);
+  });
+  $("btnPaste").addEventListener("click", function () { applyCode($("saveBox").value, "code collé"); });
+
+  var ERR = {
+    vide: "il n'y a rien à charger",
+    illisible: "le contenu est illisible ou tronqué",
+    version: "cette sauvegarde vient d'une autre version du jeu",
+    signature: "la signature ne correspond pas : le fichier a été modifié",
+    format: "ce n'est pas une sauvegarde"
+  };
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
+    });
+  }
+  function applyCode(txt, src) {
+    var st;
+    try { st = decodeSave(txt); }
+    catch (e) {
+      flash("❌ Sauvegarde refusée (" + (ERR[e.message] || e.message) + ").", false);
+      modal("❌ Sauvegarde refusée",
+        "Impossible de charger <b>" + esc(src) + "</b> : " + (ERR[e.message] || e.message) +
+        ".<br><br>Le fichier est signé : si tu changes ne serait-ce qu'un caractère, il devient invalide. Bien tenté.",
+        [{ t: "Compris", cls: "btn" }]);
       return;
     }
-    S = { clicks: 0, total: 0, perClick: 1, auto: 0, owned: {}, ach: {}, sound: false };
-    lastMsg = -1; document.getElementById("message").textContent = "Tout est effacé. Comme si rien ne s'était passé.";
-    try { localStorage.removeItem(KEY); } catch (e) {}
-    render();
+    modal("📂 Charger cette partie ?",
+      "Signature valide ✔<br>" + fmtEnt(st.allTime) + " clics gagnés depuis toujours · " +
+      N0.format(st.pouets + st.pouetsSpent) + " pouet(s) · " + fmtTime(st.playtime) + " de jeu." +
+      "<br><br>Ta partie actuelle sera remplacée.",
+      [{ t: "Annuler", cls: "btn alt" }, { t: "Charger", cls: "btn", go: function () {
+        S = st; buffs = []; lastMsg = -1;
+        recompute(); renderUpg(); renderShop(); renderPrestige(); renderAch(); renderTop(); renderSound(); save();
+        flash("✔ Partie chargée.", true);
+        toast("📂", "Partie chargée", "Bon retour.");
+      } }]);
+  }
+  $("btnWipe").addEventListener("click", function () {
+    modal("🗑️ Tout effacer ?",
+      "Clics, bâtiments, succès, pouets, héritages : tout disparaît définitivement. Pense à exporter un fichier d'abord si tu hésites.",
+      [{ t: "Annuler", cls: "btn alt" }, { t: "Effacer définitivement", cls: "btn", go: function () {
+        S = freshState(); buffs = []; lastMsg = -1;
+        try { localStorage.removeItem(KEY); localStorage.removeItem("bouton-inutile-v1"); } catch (e) {}
+        recompute(); renderUpg(); renderShop(); renderPrestige(); renderAch(); renderTop(); renderSound();
+        $("message").textContent = "Tout est effacé. Comme si rien ne s'était jamais passé.";
+        flash("Partie effacée.", true);
+      } }]);
   });
 
-  render();
+  /* ============================================================
+     15. Demarrage
+     ============================================================ */
+  load();
+  recompute();
+
+  (function offline() {
+    var away = (Date.now() - S.savedAt) / 1000;
+    if (away < 60 || cps <= 0) return;
+    var eff = Math.min(away, offCap);
+    var g = cps * eff * offRate;
+    if (g < 1) return;
+    gain(g);
+    setTimeout(function () {
+      modal("💤 Pendant ton absence",
+        "Tu es parti " + fmtTime(away) + ". Tes employés ont continué (" +
+        Math.round(offRate * 100) + " % du rendement, " + fmtTime(offCap) + " maximum).<br><br>" +
+        "<b>+ " + fmtEnt(g) + " clics.</b>",
+        [{ t: "Merci les gars", cls: "btn" }]);
+    }, 500);
+  })();
+
+  scheduleGold();
+  checkAch();
+  recompute();
+  renderTop(); renderShop(); renderUpg(); renderAch(); renderPrestige(); renderStats(); renderSaveTab(); renderSound();
+  $("ticker").textContent = "📰 " + NEWS[0][1];
+  save();
+
+  /* le son se declenche au premier clic reel (politique des navigateurs) */
+  $("big").addEventListener("click", function once() { soundOn = true; $("big").removeEventListener("click", once); });
 })();
 </script>
 </body>
